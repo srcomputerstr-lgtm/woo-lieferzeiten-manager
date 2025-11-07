@@ -1,0 +1,222 @@
+/**
+ * Admin styles for Woo Lieferzeiten Manager
+ *
+ * @package WooLieferzeitenManager
+ */
+
+/* Settings Page */
+.wlm-settings-wrap {
+    max-width: 1200px;
+}
+
+.wlm-tab-content {
+    background: #fff;
+    padding: 20px;
+    margin-top: 20px;
+    border: 1px solid #ccd0d4;
+    box-shadow: 0 1px 1px rgba(0,0,0,.04);
+}
+
+/* Holiday Items */
+.wlm-holiday-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.wlm-holiday-item input[type="date"] {
+    flex: 1;
+}
+
+.wlm-remove-holiday {
+    color: #b32d2e;
+}
+
+/* Shipping Methods */
+#wlm-shipping-methods-list {
+    margin-bottom: 20px;
+}
+
+.wlm-shipping-method-item {
+    margin-bottom: 20px;
+}
+
+.wlm-shipping-method-item .inside {
+    padding: 12px;
+}
+
+.wlm-express-settings {
+    background: #f9f9f9;
+    padding: 12px;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+}
+
+.wlm-express-settings label {
+    display: block;
+    margin-bottom: 8px;
+}
+
+.wlm-remove-shipping-method {
+    color: #b32d2e;
+}
+
+/* Surcharges */
+#wlm-surcharges-list {
+    margin-bottom: 20px;
+}
+
+.wlm-surcharge-item {
+    margin-bottom: 20px;
+}
+
+.wlm-surcharge-item .inside {
+    padding: 12px;
+}
+
+.wlm-remove-surcharge {
+    color: #b32d2e;
+}
+
+/* Product Fields */
+.wlm-product-fields {
+    border-top: 1px solid #eee;
+    padding-top: 12px;
+    margin-top: 12px;
+}
+
+.wlm-product-fields h3 {
+    margin: 0 0 12px 0;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+/* Variation Fields */
+.wlm-variation-fields {
+    padding: 10px 0;
+    border-top: 1px solid #eee;
+    margin-top: 10px;
+}
+
+/* Postbox Toggle */
+.wlm-shipping-method-item .handlediv,
+.wlm-surcharge-item .handlediv {
+    cursor: pointer;
+}
+
+.wlm-shipping-method-item .postbox-header,
+.wlm-surcharge-item .postbox-header {
+    cursor: pointer;
+}
+
+/* Responsive */
+@media (max-width: 782px) {
+    .wlm-holiday-item {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .wlm-holiday-item input[type="date"] {
+        width: 100%;
+    }
+}
+
+/* Loading State */
+.wlm-loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+/* Sortable Placeholder */
+.wlm-sortable-placeholder {
+    border: 2px dashed #ccc;
+    background: #f9f9f9;
+    margin-bottom: 20px;
+    height: 100px;
+}
+
+/* Drag Handle */
+.wlm-drag-handle {
+    cursor: move;
+    padding: 5px;
+    color: #999;
+}
+
+.wlm-drag-handle:hover {
+    color: #333;
+}
+
+/* Notice Styles */
+.wlm-notice {
+    background: #fff;
+    border-left: 4px solid #00a0d2;
+    padding: 12px;
+    margin: 20px 0;
+    box-shadow: 0 1px 1px rgba(0,0,0,.04);
+}
+
+.wlm-notice.wlm-notice-success {
+    border-left-color: #46b450;
+}
+
+.wlm-notice.wlm-notice-error {
+    border-left-color: #dc3232;
+}
+
+.wlm-notice.wlm-notice-warning {
+    border-left-color: #ffb900;
+}
+
+/* Help Text */
+.wlm-help-text {
+    font-size: 13px;
+    color: #666;
+    font-style: italic;
+    margin-top: 4px;
+}
+
+/* Button Styles */
+.wlm-button-primary {
+    background: #2271b1;
+    border-color: #2271b1;
+    color: #fff;
+}
+
+.wlm-button-primary:hover {
+    background: #135e96;
+    border-color: #135e96;
+}
+
+.wlm-button-secondary {
+    background: #f6f7f7;
+    border-color: #dcdcde;
+    color: #2c3338;
+}
+
+.wlm-button-secondary:hover {
+    background: #f0f0f1;
+    border-color: #8c8f94;
+}
+
+/* Table Styles */
+.wlm-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.wlm-table th,
+.wlm-table td {
+    padding: 10px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+.wlm-table th {
+    background: #f9f9f9;
+    font-weight: 600;
+}
+
+.wlm-table tr:hover {
+    background: #f9f9f9;
+}
