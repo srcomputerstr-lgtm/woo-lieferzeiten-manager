@@ -80,6 +80,30 @@ Regelbasierte Versandzuschläge mit:
 - Stacking-Regel (Addieren, Maximum, Erster Treffer)
 - Optionen (Freigrenze ignorieren, Rabattierbar, Bei Express anwenden)
 
+## Shortcodes
+
+Das Plugin bietet flexible Shortcodes für die Integration in Page Builder wie Oxygen, Elementor oder Gutenberg.
+
+### Verfügbare Shortcodes
+
+- `[wlm_delivery_info]` - Komplettes Lieferzeiten-Panel
+- `[wlm_stock_status]` - Nur Lagerstatus
+- `[wlm_shipping_method]` - Nur Versandart
+- `[wlm_delivery_window]` - Nur Lieferfenster
+- `[wlm_delivery_panel]` - Alias für wlm_delivery_info
+
+### Beispiele
+
+```
+[wlm_delivery_info]
+[wlm_delivery_info product_id="123"]
+[wlm_delivery_info show="stock,delivery"]
+[wlm_stock_status show_icon="no"]
+[wlm_delivery_window format="short"]
+```
+
+**Detaillierte Dokumentation**: Siehe [SHORTCODES.md](SHORTCODES.md)
+
 ## Produkteinstellungen
 
 Im Produkt-Editor (Tab "Lagerbestand"):
@@ -226,6 +250,11 @@ Für Fragen, Feature-Requests oder Bug-Reports wenden Sie sich bitte an den Plug
 GPL v2 oder höher
 
 ## Changelog
+
+### Version 1.0.1 (in Entwicklung)
+- ✨ Neue Shortcodes für flexible Produktseiten-Integration
+- 🏛️ Oxygen Builder Unterstützung
+- 📝 Umfassende Shortcode-Dokumentation (SHORTCODES.md)
 
 ### Version 1.0.0
 - Initiale Veröffentlichung
