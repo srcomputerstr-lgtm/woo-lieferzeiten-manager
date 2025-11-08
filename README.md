@@ -251,6 +251,13 @@ GPL v2 oder höher
 
 ## Changelog
 
+### Version 1.1.1
+- 🐛 **CRITICAL FIX**: JavaScript-Template für neue Versandarten vollständig repariert
+- ✅ **Fix**: Alle erweiterten Felder jetzt verfügbar (Gewicht, Warenkorbwert, Attribute, Express)
+- 🔧 **Fix**: Attribut-Bedingungen Template außerhalb der Schleife verschoben
+- 📝 **Fix**: Doppeltes Template entfernt
+- ⚙️ **Improvement**: Vollständiges Template mit allen 15+ Feldern
+
 ### Version 1.1.0
 - ✨ **Feature**: Attributwert-Dropdown mit AJAX - automatische Werte-Vorschläge beim Auswählen von Attributen
 - ⚙️ **Feature**: Konfigurierbarer Nicht-auf-Lager-Text im Backend (Zeiten-Tab)
