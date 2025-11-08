@@ -251,6 +251,26 @@ GPL v2 oder höher
 
 ## Changelog
 
+### Version 1.2.0 🎉
+- ✨ **MAJOR FEATURE**: Verbessertes Bedingungssystem für Attribut-Bedingungen
+  - **Logik-Operatoren**: at least one, all, none, only
+  - **Multi-Value-Support**: Mehrere Werte pro Bedingung möglich
+  - **Tag-basierte UI**: Werte als Tags mit einfachem Hinzufügen/Entfernen
+  - **Flexible Kombinationen**: Mehrere Attribute kombinierbar
+- 🎯 **Logik-Operatoren erklärt**:
+  - `at least one`: Mindestens einer der Werte muss zutreffen
+  - `all`: Alle Werte müssen zutreffen
+  - `none`: Keiner der Werte darf zutreffen
+  - `only`: Nur die angegebenen Werte dürfen vorhanden sein
+- 📦 **Beispiel**: Versandgruppe: [at least one] [Paketgut, Sperrgut]
+- 🔄 **Backward Compatible**: Alte Bedingungen werden automatisch konvertiert
+- 🎨 **Besseres Design**: Cleane UI mit Hover-Effekten und Boxen
+- ⌨️ **UX-Verbesserungen**: 
+  - Enter-Taste zum Hinzufügen von Werten
+  - Fade-out Animation beim Entfernen
+  - Visuelle Feedback-Effekte
+- 📝 **Datenstruktur**: Neue flexible Struktur mit `logic` und `values` Arrays
+
 ### Version 1.1.3
 - ⚡ **CRITICAL FIX**: Express-Hinweis wird jetzt im Frontend angezeigt
   - Express-Felder werden jetzt in get_applicable_shipping_method zurückgegeben

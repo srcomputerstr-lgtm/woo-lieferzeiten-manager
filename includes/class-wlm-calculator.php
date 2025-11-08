@@ -428,28 +428,40 @@ class WLM_Calculator {
         
         // Check each attribute condition
         foreach ($required_attrs as $condition) {
-            $attr_slug = $condition['attribute'] ?? '';
-            $attr_value = $condition['value'] ?? '';
+            // Convert old format to new format if needed
+            if (isset($condition['value']) && !isset($condition['values'])) {
+                $condition['values'] = array($condition['value']);
+                $condition['logic'] = 'at_least_one';
+            }
             
-            if (empty($attr_slug) || empty($attr_value)) {
+            $attr_slug = $condition['attribute'] ?? '';
+            $values = $condition['values'] ?? array();
+            $logic = $condition['logic'] ?? 'at_least_one';
+            
+            if (empty($attr_slug) || empty($values)) {
                 continue;
             }
             
-            $has_attribute = false;
+            // Get product attribute values
+            $product_values = array();
             
             if ($product->is_type('variation')) {
                 $variation_attrs = $product->get_attributes();
-                if (isset($variation_attrs[$attr_slug]) && $variation_attrs[$attr_slug] === $attr_value) {
-                    $has_attribute = true;
+                if (isset($variation_attrs[$attr_slug])) {
+                    $product_values[] = $variation_attrs[$attr_slug];
                 }
             } else {
                 $product_attr = $product->get_attribute($attr_slug);
-                if ($product_attr === $attr_value) {
-                    $has_attribute = true;
+                if ($product_attr) {
+                    // Split by comma for multi-value attributes
+                    $product_values = array_map('trim', explode(',', $product_attr));
                 }
             }
             
-            if (!$has_attribute) {
+            // Apply logic operator
+            $condition_met = $this->check_attribute_logic($product_values, $values, $logic);
+            
+            if (!$condition_met) {
                 return false;
             }
         }
@@ -471,6 +483,53 @@ class WLM_Calculator {
         }
 
         return true;
+    }
+    
+    /**
+     * Check attribute logic
+     *
+     * @param array $product_values Product attribute values.
+     * @param array $required_values Required values from condition.
+     * @param string $logic Logic operator (at_least_one, all, none, only).
+     * @return bool Whether condition is met.
+     */
+    private function check_attribute_logic($product_values, $required_values, $logic) {
+        // Normalize values for comparison (case-insensitive)
+        $product_values = array_map('strtolower', $product_values);
+        $required_values = array_map('strtolower', $required_values);
+        
+        switch ($logic) {
+            case 'at_least_one':
+                // At least one of the required values must be present
+                return !empty(array_intersect($product_values, $required_values));
+                
+            case 'all':
+                // All required values must be present
+                foreach ($required_values as $value) {
+                    if (!in_array($value, $product_values)) {
+                        return false;
+                    }
+                }
+                return true;
+                
+            case 'none':
+                // None of the required values must be present
+                return empty(array_intersect($product_values, $required_values));
+                
+            case 'only':
+                // Only the required values (and no others) must be present
+                // Product values must be subset of required values
+                foreach ($product_values as $value) {
+                    if (!in_array($value, $required_values)) {
+                        return false;
+                    }
+                }
+                return !empty($product_values);
+                
+            default:
+                // Default to at_least_one
+                return !empty(array_intersect($product_values, $required_values));
+        }
     }
 
     /**

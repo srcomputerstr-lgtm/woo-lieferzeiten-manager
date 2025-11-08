@@ -32,6 +32,11 @@
         $(document).on('click', '.wlm-add-attribute-condition', this.addAttributeCondition.bind(this));
         $(document).on('click', '.wlm-remove-attribute-condition', this.removeAttributeCondition.bind(this));
         $(document).on('change', '.wlm-attribute-select', this.loadAttributeValues.bind(this));
+        
+        // Value tags
+        $(document).on('click', '.wlm-add-value', this.addValueTag.bind(this));
+        $(document).on('click', '.wlm-remove-value-tag', this.removeValueTag.bind(this));
+        $(document).on('keypress', '.wlm-value-input', this.handleValueInputKeypress.bind(this));
         },
 
         /**
@@ -425,6 +430,82 @@
                     $valueInput.prop('disabled', false).val(currentValue).attr('placeholder', 'Wert eingeben');
                 }
             });
+        },
+        
+        /**
+         * Add value tag
+         */
+        addValueTag: function(e) {
+            e.preventDefault();
+            
+            var $button = $(e.currentTarget);
+            var $conditionRow = $button.closest('.wlm-attribute-condition-row');
+            var $valueInput = $conditionRow.find('.wlm-value-input');
+            var $tagsContainer = $conditionRow.find('.wlm-value-tags');
+            var value = $valueInput.val().trim();
+            
+            if (!value) {
+                return;
+            }
+            
+            // Get method and condition indices from name attributes
+            var $logicSelect = $conditionRow.find('.wlm-logic-select');
+            var nameAttr = $logicSelect.attr('name');
+            var matches = nameAttr.match(/\[(\d+)\].*\[(\d+)\]/);
+            
+            if (!matches) {
+                return;
+            }
+            
+            var methodIndex = matches[1];
+            var conditionIndex = matches[2];
+            
+            // Create tag
+            var $tag = $('<span class="wlm-value-tag" style="display: inline-flex; align-items: center; gap: 5px; padding: 5px 10px; background: #0073aa; color: white; border-radius: 3px;">' +
+                '<span>' + this.escapeHtml(value) + '</span>' +
+                '<input type="hidden" name="wlm_shipping_methods[' + methodIndex + '][attribute_conditions][' + conditionIndex + '][values][]" value="' + this.escapeHtml(value) + '">' +
+                '<button type="button" class="wlm-remove-value-tag" style="background: none; border: none; color: white; cursor: pointer; padding: 0; font-size: 16px;">×</button>' +
+                '</span>');
+            
+            // Append tag
+            $tagsContainer.append($tag);
+            
+            // Clear input
+            $valueInput.val('');
+        },
+        
+        /**
+         * Remove value tag
+         */
+        removeValueTag: function(e) {
+            e.preventDefault();
+            $(e.currentTarget).closest('.wlm-value-tag').fadeOut(200, function() {
+                $(this).remove();
+            });
+        },
+        
+        /**
+         * Handle Enter key in value input
+         */
+        handleValueInputKeypress: function(e) {
+            if (e.which === 13) { // Enter key
+                e.preventDefault();
+                $(e.currentTarget).closest('.wlm-condition-values').find('.wlm-add-value').click();
+            }
+        },
+        
+        /**
+         * Escape HTML
+         */
+        escapeHtml: function(text) {
+            var map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, function(m) { return map[m]; });
         }
     };
 
