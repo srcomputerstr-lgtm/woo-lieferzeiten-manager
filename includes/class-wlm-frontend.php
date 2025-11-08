@@ -120,7 +120,8 @@ class WLM_Frontend {
             echo '</div>';
             
             // Express option
-            if (!empty($method) && !empty($method['express_enabled']) && $stock_status['in_stock']) {
+            if (!empty($window['shipping_method']) && !empty($window['shipping_method']['express_enabled']) && $stock_status['in_stock']) {
+                $method = $window['shipping_method'];
                 $express_window = $calculator->calculate_product_window($parent_id, $variation_id, 1, $method, true);
                 if (!empty($express_window)) {
                     $express_cost = floatval($method['express_cost'] ?? 0);

@@ -251,6 +251,14 @@ GPL v2 oder höher
 
 ## Changelog
 
+### Version 1.1.2
+- 🐛 **CRITICAL FIX**: wlm_admin Variable-Problem behoben (war wlm_admin_params)
+- ✅ **Fix**: Attribute werden jetzt in wp_localize_script geladen
+- ⚡ **Fix**: Express-Hinweis im Frontend wird jetzt korrekt angezeigt
+- 🔧 **Fix**: Express-Bedingung korrigiert (shipping_method statt method)
+- 📊 **Improvement**: Alle WooCommerce-Attribute werden an JavaScript übergeben
+- 📦 **Ready**: Vorbereitung für Conditional-Shipping-ähnliches Bedingungssystem in 1.2.0
+
 ### Version 1.1.1
 - 🐛 **CRITICAL FIX**: JavaScript-Template für neue Versandarten vollständig repariert
 - ✅ **Fix**: Alle erweiterten Felder jetzt verfügbar (Gewicht, Warenkorbwert, Attribute, Express)

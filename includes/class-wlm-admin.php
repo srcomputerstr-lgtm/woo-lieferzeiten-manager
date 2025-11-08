@@ -63,9 +63,20 @@ class WLM_Admin {
             true
         );
 
-        wp_localize_script('wlm-admin', 'wlm_admin_params', array(
+        // Get all product attributes
+        $attributes = array();
+        if (function_exists('wc_get_attribute_taxonomies')) {
+            $attribute_taxonomies = wc_get_attribute_taxonomies();
+            foreach ($attribute_taxonomies as $tax) {
+                $attr_name = wc_attribute_taxonomy_name($tax->attribute_name);
+                $attributes[$attr_name] = $tax->attribute_label;
+            }
+        }
+        
+        wp_localize_script('wlm-admin', 'wlm_admin', array(
             'ajax_url' => admin_url('admin-ajax.php'),
-            'nonce' => wp_create_nonce('wlm-admin-nonce')
+            'nonce' => wp_create_nonce('wlm-admin-nonce'),
+            'attributes' => $attributes
         ));
     }
 
