@@ -70,6 +70,7 @@ function wlm_init() {
     require_once WLM_PLUGIN_DIR . 'includes/class-wlm-product-fields.php';
     require_once WLM_PLUGIN_DIR . 'includes/class-wlm-rest-api.php';
     require_once WLM_PLUGIN_DIR . 'includes/class-wlm-frontend.php';
+    require_once WLM_PLUGIN_DIR . 'includes/class-wlm-shortcodes.php';
     require_once WLM_PLUGIN_DIR . 'includes/class-wlm-admin.php';
 
     // Initialize core

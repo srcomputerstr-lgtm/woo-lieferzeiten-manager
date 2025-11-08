@@ -67,6 +67,13 @@ class WLM_Core {
     public $frontend;
 
     /**
+     * Shortcodes instance
+     *
+     * @var WLM_Shortcodes
+     */
+    public $shortcodes;
+
+    /**
      * Admin instance
      *
      * @var WLM_Admin
@@ -112,6 +119,7 @@ class WLM_Core {
         $this->product_fields = new WLM_Product_Fields();
         $this->rest_api = new WLM_REST_API();
         $this->frontend = new WLM_Frontend();
+        $this->shortcodes = new WLM_Shortcodes();
         
         if (is_admin()) {
             $this->admin = new WLM_Admin();
