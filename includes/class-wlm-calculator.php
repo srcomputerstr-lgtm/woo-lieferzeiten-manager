@@ -353,7 +353,13 @@ class WLM_Calculator {
             'cost_type' => $selected_method['cost_type'] ?? 'flat',
             'transit_min' => $selected_method['transit_min'] ?? 1,
             'transit_max' => $selected_method['transit_max'] ?? 3,
-            'cost_info' => $this->format_cost_info($selected_method)
+            'cost_info' => $this->format_cost_info($selected_method),
+            // Express fields
+            'express_enabled' => $selected_method['express_enabled'] ?? false,
+            'express_cutoff' => $selected_method['express_cutoff'] ?? '12:00',
+            'express_cost' => $selected_method['express_cost'] ?? 0,
+            'express_transit_min' => $selected_method['express_transit_min'] ?? 0,
+            'express_transit_max' => $selected_method['express_transit_max'] ?? 1
         );
     }
 
@@ -564,7 +570,7 @@ class WLM_Calculator {
         if ($cost <= 0) {
             $parts[] = __('Kostenlos', 'woo-lieferzeiten-manager');
         } else {
-            $cost_text = wc_price($cost);
+            $cost_text = strip_tags(wc_price($cost));
             
             switch ($cost_type) {
                 case 'by_weight':
@@ -605,16 +611,16 @@ class WLM_Calculator {
             $total_text = '';
             if (!empty($method['cart_total_min']) && !empty($method['cart_total_max'])) {
                 $total_text = sprintf(__('Warenkorbwert: %s-%s', 'woo-lieferzeiten-manager'), 
-                    wc_price($method['cart_total_min']),
-                    wc_price($method['cart_total_max'])
+                    strip_tags(wc_price($method['cart_total_min'])),
+                    strip_tags(wc_price($method['cart_total_max']))
                 );
             } elseif (!empty($method['cart_total_max'])) {
                 $total_text = sprintf(__('Warenkorbwert bis %s', 'woo-lieferzeiten-manager'), 
-                    wc_price($method['cart_total_max'])
+                    strip_tags(wc_price($method['cart_total_max']))
                 );
             } elseif (!empty($method['cart_total_min'])) {
                 $total_text = sprintf(__('Warenkorbwert ab %s', 'woo-lieferzeiten-manager'), 
-                    wc_price($method['cart_total_min'])
+                    strip_tags(wc_price($method['cart_total_min']))
                 );
             }
             if ($total_text) {

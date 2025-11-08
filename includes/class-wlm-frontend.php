@@ -125,7 +125,7 @@ class WLM_Frontend {
                 $express_window = $calculator->calculate_product_window($parent_id, $variation_id, 1, $method, true);
                 if (!empty($express_window)) {
                     $express_cost = floatval($method['express_cost'] ?? 0);
-                    $express_cost_text = $express_cost > 0 ? wc_price($express_cost) : __('Kostenlos', 'woo-lieferzeiten-manager');
+                    $express_cost_text = $express_cost > 0 ? strip_tags(wc_price($express_cost)) : __('Kostenlos', 'woo-lieferzeiten-manager');
                     
                     echo '<div class="wlm-express-info">';
                     echo '⚡ ' . esc_html__('Express verfügbar:', 'woo-lieferzeiten-manager') . ' ';

@@ -251,6 +251,16 @@ GPL v2 oder höher
 
 ## Changelog
 
+### Version 1.1.3
+- ⚡ **CRITICAL FIX**: Express-Hinweis wird jetzt im Frontend angezeigt
+  - Express-Felder werden jetzt in get_applicable_shipping_method zurückgegeben
+  - express_enabled, express_cost, express_cutoff, express_transit_min/max
+- 🐛 **FIX**: Tooltip zeigt jetzt sauberen Text statt HTML-Code
+  - strip_tags() für alle wc_price() Aufrufe
+  - Kein `<span class="woocommerce-Price-amount">` mehr sichtbar
+  - Tooltip ist jetzt lesbar: "3,00 € | bis 50,00 kg"
+- 🎨 **Improvement**: Alle Preisformatierungen bereinigt
+
 ### Version 1.1.2
 - 🐛 **CRITICAL FIX**: wlm_admin Variable-Problem behoben (war wlm_admin_params)
 - ✅ **Fix**: Attribute werden jetzt in wp_localize_script geladen
