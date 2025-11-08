@@ -49,6 +49,10 @@ class WLM_Shipping_Methods {
         if (class_exists($class_name)) {
             return;
         }
+        
+        // Get method title (support both 'title' and 'name' keys)
+        $method_title = !empty($method_config['title']) ? $method_config['title'] : ($method_config['name'] ?? 'Versandart');
+        $method_enabled = isset($method_config['enabled']) && $method_config['enabled'] ? 'yes' : 'no';
 
         // Create dynamic class
         eval('
@@ -58,11 +62,11 @@ class WLM_Shipping_Methods {
             public function __construct($instance_id = 0) {
                 $this->id = "' . $method_id . '";
                 $this->instance_id = absint($instance_id);
-                $this->method_title = "' . esc_js($method_config['name']) . '";
-                $this->method_description = __("Lieferzeiten-Manager Versandart", "woo-lieferzeiten-manager");
+                $this->method_title = "' . esc_js($method_title) . '";
+                $this->method_description = __("MEGA Versandmanager Versandart", "woo-lieferzeiten-manager");
                 $this->supports = array("shipping-zones", "instance-settings");
-                $this->enabled = "' . ($method_config['enabled'] ? 'yes' : 'no') . '";
-                $this->title = "' . esc_js($method_config['name']) . '";
+                $this->enabled = "' . $method_enabled . '";
+                $this->title = "' . esc_js($method_title) . '";
                 
                 // Load configuration
                 $methods_manager = new WLM_Shipping_Methods();
@@ -180,12 +184,23 @@ class WLM_Shipping_Methods {
      * @return array Configured methods.
      */
     public function get_configured_methods() {
-        $settings = get_option('wlm_settings', array());
-        $methods = $settings['shipping_methods'] ?? array();
+        $methods = get_option('wlm_shipping_methods', array());
+        
+        // Ensure methods is an array
+        if (!is_array($methods)) {
+            $methods = array();
+        }
+        
+        // Add unique ID if missing
+        foreach ($methods as $index => &$method) {
+            if (empty($method['id'])) {
+                $method['id'] = 'wlm_method_' . ($index + 1);
+            }
+        }
         
         // Filter out empty methods
         $methods = array_filter($methods, function($method) {
-            return !empty($method['name']) && !empty($method['id']);
+            return !empty($method['title']) || !empty($method['name']);
         });
         
         return $methods;
@@ -388,7 +403,52 @@ class WLM_Shipping_Methods {
      * Ensure methods are available in shipping zones
      */
     public function ensure_methods_in_zones() {
-        // This is called when WooCommerce loads shipping methods
-        // Methods are automatically available in zones through woocommerce_shipping_methods filter
+        // Make methods available globally (like Conditional Shipping)
+        // They will appear in all zones automatically
+        
+        $configured_methods = $this->get_configured_methods();
+        
+        if (empty($configured_methods)) {
+            return;
+        }
+        
+        // Get all shipping zones
+        $zones = WC_Shipping_Zones::get_zones();
+        
+        // Add "Rest of the World" zone
+        $zones[] = array(
+            'id' => 0,
+            'zone_name' => __('Rest of the World', 'woocommerce')
+        );
+        
+        foreach ($zones as $zone_data) {
+            $zone_id = $zone_data['id'] ?? $zone_data['zone_id'] ?? 0;
+            $zone = WC_Shipping_Zones::get_zone($zone_id);
+            
+            if (!$zone) {
+                continue;
+            }
+            
+            // Get existing shipping methods in this zone
+            $existing_methods = $zone->get_shipping_methods();
+            $existing_method_ids = array();
+            
+            foreach ($existing_methods as $method) {
+                $existing_method_ids[] = $method->id;
+            }
+            
+            // Add our methods if not already present
+            foreach ($configured_methods as $method_config) {
+                $method_id = $method_config['id'];
+                
+                // Skip if already in zone
+                if (in_array($method_id, $existing_method_ids)) {
+                    continue;
+                }
+                
+                // Add method to zone
+                $zone->add_shipping_method($method_id);
+            }
+        }
     }
 }

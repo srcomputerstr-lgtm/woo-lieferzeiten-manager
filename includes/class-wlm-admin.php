@@ -28,14 +28,62 @@ class WLM_Admin {
      * Add admin menu
      */
     public function add_admin_menu() {
-        add_submenu_page(
-            'woocommerce',
-            __('Lieferzeiten Manager', 'woo-lieferzeiten-manager'),
-            __('Lieferzeiten', 'woo-lieferzeiten-manager'),
-            'manage_woocommerce',
-            'wlm-settings',
-            array($this, 'render_settings_page')
-        );
+        // Add as tab in WooCommerce Shipping settings
+        add_filter('woocommerce_get_sections_shipping', array($this, 'add_shipping_section'));
+        add_filter('woocommerce_get_settings_shipping', array($this, 'get_shipping_settings'), 10, 2);
+        add_action('woocommerce_settings_shipping', array($this, 'render_shipping_section'));
+        add_action('woocommerce_settings_save_shipping', array($this, 'save_shipping_section'));
+    }
+    
+    /**
+     * Add MEGA Versandmanager section to shipping settings
+     */
+    public function add_shipping_section($sections) {
+        $sections['wlm'] = __('MEGA Versandmanager', 'woo-lieferzeiten-manager');
+        return $sections;
+    }
+    
+    /**
+     * Get settings for MEGA Versandmanager section
+     */
+    public function get_shipping_settings($settings, $current_section) {
+        if ($current_section === 'wlm') {
+            // Return empty to prevent default settings rendering
+            return array();
+        }
+        return $settings;
+    }
+    
+    /**
+     * Render MEGA Versandmanager section
+     */
+    public function render_shipping_section() {
+        global $current_section;
+        
+        if ($current_section === 'wlm') {
+            $this->render_settings_page();
+        }
+    }
+    
+    /**
+     * Save MEGA Versandmanager section
+     */
+    public function save_shipping_section() {
+        global $current_section;
+        
+        if ($current_section === 'wlm' && isset($_POST['wlm_settings'])) {
+            // Settings are saved via register_settings
+            // Just trigger the save action
+            if (isset($_POST['wlm_settings'])) {
+                update_option('wlm_settings', $_POST['wlm_settings']);
+            }
+            if (isset($_POST['wlm_shipping_methods'])) {
+                update_option('wlm_shipping_methods', $_POST['wlm_shipping_methods']);
+            }
+            if (isset($_POST['wlm_surcharges'])) {
+                update_option('wlm_surcharges', $_POST['wlm_surcharges']);
+            }
+        }
     }
 
     /**
@@ -44,7 +92,11 @@ class WLM_Admin {
      * @param string $hook Current admin page hook.
      */
     public function enqueue_admin_scripts($hook) {
-        if (strpos($hook, 'wlm-settings') === false && $hook !== 'post.php' && $hook !== 'post-new.php') {
+        // Load on WooCommerce settings page (shipping section)
+        $is_wc_settings = ($hook === 'woocommerce_page_wc-settings' && isset($_GET['tab']) && $_GET['tab'] === 'shipping');
+        $is_product_page = ($hook === 'post.php' || $hook === 'post-new.php');
+        
+        if (!$is_wc_settings && !$is_product_page) {
             return;
         }
 

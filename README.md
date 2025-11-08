@@ -251,6 +251,39 @@ GPL v2 oder höher
 
 ## Changelog
 
+### Version 1.3.0 🚀
+- 🎯 **MAJOR FEATURE**: WooCommerce-Integration als echte Versandmethoden
+  - **Backend verschoben**: Jetzt unter WooCommerce → Einstellungen → Versand → MEGA Versandmanager
+  - **Echte WC_Shipping_Methods**: Versandarten werden als native WooCommerce-Versandmethoden registriert
+  - **Automatische Verfügbarkeit**: In allen Versandzonen automatisch verfügbar (wie Conditional Shipping)
+  - **Checkout-Integration**: Kunden können Versandarten im Checkout wählen
+- 📦 **Versandarten-Registrierung**:
+  - Jede konfigurierte Versandart wird als `WC_Shipping_Method` Klasse erstellt
+  - Dynamische Klassen-Generierung zur Laufzeit
+  - Unterstützung für Versandzonen und Instance-Settings
+- 💰 **Kostenberechnung**:
+  - Pauschalkosten
+  - Kosten nach Gewicht
+  - Kosten nach Stückzahl
+  - Automatische Berechnung im Checkout
+- ✅ **Bedingungsprüfung**:
+  - Gewichtsgrenzen
+  - Warenkorbwert-Grenzen
+  - Attribut-Bedingungen mit Logik-Operatoren
+  - Kategorie-Bedingungen
+- 📅 **Lieferzeit-Anzeige**:
+  - Unter jeder Versandart im Checkout
+  - Express-Option mit Kosten und Lieferzeit
+  - Formatierte Lieferfenster
+- 🔄 **Zonen-Integration**:
+  - Automatisches Hinzufügen zu allen Zonen
+  - "Rest of the World" Zone unterstützt
+  - Später: Zonen-Auswahl pro Versandart konfigurierbar
+- 🎨 **Backend-Verbesserungen**:
+  - Tab-Name: "MEGA Versandmanager"
+  - Saubere Integration in WooCommerce-Einstellungen
+  - Scripts laden nur auf relevanten Seiten
+
 ### Version 1.2.0 🎉
 - ✨ **MAJOR FEATURE**: Verbessertes Bedingungssystem für Attribut-Bedingungen
   - **Logik-Operatoren**: at least one, all, none, only
