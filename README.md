@@ -251,6 +251,13 @@ GPL v2 oder höher
 
 ## Changelog
 
+### Version 1.0.4
+- 🐛 **CRITICAL FIX**: Sanitize-Callback entfernt - verhindert Datenverlust beim Speichern
+- ⚠️ **Warnung**: Versandarten müssen nach Update neu konfiguriert werden
+- 📝 **Docs**: VERSANDARTEN-ANLEITUNG.md mit Schritt-für-Schritt-Anleitung
+- ✅ **Validation**: WordPress Standard-Sanitization statt Custom-Callback
+- 🔧 **Fix**: Alle Felder (Express, Attribute, Bedingungen) bleiben erhalten
+
 ### Version 1.0.3
 - 🐛 **Bugfix**: "Paketdienst" Fallback entfernt - nur konfigurierte Versandarten werden angezeigt
 - 🔍 **Debug**: Umfangreiches Debug-Logging für Versandarten-Auswahl
