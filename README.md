@@ -251,10 +251,13 @@ GPL v2 oder höher
 
 ## Changelog
 
-### Version 1.0.1 (in Entwicklung)
-- ✨ Neue Shortcodes für flexible Produktseiten-Integration
-- 🏛️ Oxygen Builder Unterstützung
+### Version 1.0.1
+- ✨ Neue Shortcodes für flexible Produktseiten-Integration (Oxygen Builder)
+- 🚀 Versandarten werden jetzt als echte WooCommerce-Versandmethoden registriert
+- ⚙️ Erweiterte Bedingungen: Gewichtsgrenzen, Warenkorbsummen, Produktattribute, Kategorien
 - 📝 Umfassende Shortcode-Dokumentation (SHORTCODES.md)
+- 🐛 Bugfix: Versandarten-Namen werden jetzt korrekt angezeigt
+- ✅ Versionierung korrekt implementiert
 
 ### Version 1.0.0
 - Initiale Veröffentlichung

@@ -90,9 +90,11 @@ class WLM_Calculator {
     /**
      * Calculate delivery window for cart
      *
-     * @return array
+     * @param array|null $method_config Optional shipping method configuration.
+     * @param bool $is_express Whether to calculate for express shipping.
+     * @return array Delivery window data.
      */
-    public function calculate_cart_window() {
+    public function calculate_cart_window($method_config = null, $is_express = false) {
         if (!WC()->cart) {
             return array();
         }
@@ -310,23 +312,87 @@ class WLM_Calculator {
      * @return bool
      */
     private function check_shipping_method_conditions($method, $product, $quantity, $shipping_zone) {
-        // Check weight
-        if (!empty($method['weight_min']) && $product->get_weight() < $method['weight_min']) {
+        // Check if method is enabled
+        if (isset($method['enabled']) && !$method['enabled']) {
             return false;
         }
-        if (!empty($method['weight_max']) && $product->get_weight() > $method['weight_max']) {
-            return false;
+        
+        // Check weight
+        $weight = $product->get_weight();
+        if ($weight) {
+            $total_weight = floatval($weight) * $quantity;
+            
+            if (!empty($method['weight_min']) && $total_weight < floatval($method['weight_min'])) {
+                return false;
+            }
+            if (!empty($method['weight_max']) && $total_weight > floatval($method['weight_max'])) {
+                return false;
+            }
         }
 
         // Check quantity
-        if (!empty($method['qty_min']) && $quantity < $method['qty_min']) {
+        if (!empty($method['qty_min']) && $quantity < intval($method['qty_min'])) {
             return false;
         }
-        if (!empty($method['qty_max']) && $quantity > $method['qty_max']) {
+        if (!empty($method['qty_max']) && $quantity > intval($method['qty_max'])) {
             return false;
         }
-
-        // Additional conditions can be added here
+        
+        // Check product price (for cart total simulation)
+        $product_price = $product->get_price() * $quantity;
+        if (!empty($method['cart_total_min']) && $product_price < floatval($method['cart_total_min'])) {
+            return false;
+        }
+        if (!empty($method['cart_total_max']) && $product_price > floatval($method['cart_total_max'])) {
+            return false;
+        }
+        
+        // Check required attributes
+        if (!empty($method['required_attributes'])) {
+            $required_attrs = array_filter(array_map('trim', explode("\n", $method['required_attributes'])));
+            
+            foreach ($required_attrs as $attr_line) {
+                if (strpos($attr_line, '=') === false) {
+                    continue;
+                }
+                
+                list($attr_slug, $attr_value) = array_map('trim', explode('=', $attr_line, 2));
+                
+                $has_attribute = false;
+                
+                if ($product->is_type('variation')) {
+                    $variation_attrs = $product->get_attributes();
+                    if (isset($variation_attrs[$attr_slug]) && $variation_attrs[$attr_slug] === $attr_value) {
+                        $has_attribute = true;
+                    }
+                } else {
+                    $product_attr = $product->get_attribute($attr_slug);
+                    if ($product_attr === $attr_value) {
+                        $has_attribute = true;
+                    }
+                }
+                
+                if (!$has_attribute) {
+                    return false;
+                }
+            }
+        }
+        
+        // Check required categories
+        if (!empty($method['required_categories'])) {
+            $required_cats = is_array($method['required_categories']) 
+                ? $method['required_categories'] 
+                : array_filter(array_map('trim', explode(',', $method['required_categories'])));
+            
+            if (!empty($required_cats)) {
+                $product_id = $product->get_parent_id() ? $product->get_parent_id() : $product->get_id();
+                $product_cats = wp_get_post_terms($product_id, 'product_cat', array('fields' => 'ids'));
+                
+                if (!array_intersect($required_cats, $product_cats)) {
+                    return false;
+                }
+            }
+        }
 
         return true;
     }

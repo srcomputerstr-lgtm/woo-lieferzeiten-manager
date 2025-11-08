@@ -1,6 +1,6 @@
 <?php
 /**
- * Shipping methods class
+ * Shipping methods class - Registers each configured shipping method as WooCommerce shipping method
  *
  * @package WooLieferzeitenManager
  */
@@ -14,32 +14,307 @@ class WLM_Shipping_Methods {
      * Constructor
      */
     public function __construct() {
-        // Register custom shipping method
-        add_action('woocommerce_shipping_init', array($this, 'init_shipping_method'));
-        add_filter('woocommerce_shipping_methods', array($this, 'add_shipping_method'));
+        // Register all configured shipping methods
+        add_action('woocommerce_shipping_init', array($this, 'init_shipping_methods'));
+        add_filter('woocommerce_shipping_methods', array($this, 'add_shipping_methods'));
 
         // Add delivery window to shipping rates
         add_action('woocommerce_after_shipping_rate', array($this, 'display_delivery_window'), 10, 2);
+        
+        // Add to shipping zones automatically
+        add_action('woocommerce_load_shipping_methods', array($this, 'ensure_methods_in_zones'));
     }
 
     /**
-     * Initialize custom shipping method
+     * Initialize all configured shipping methods
      */
-    public function init_shipping_method() {
-        if (!class_exists('WLM_Shipping_Method')) {
-            require_once WLM_PLUGIN_DIR . 'includes/class-wlm-shipping-method.php';
+    public function init_shipping_methods() {
+        $configured_methods = $this->get_configured_methods();
+        
+        foreach ($configured_methods as $method) {
+            $this->register_shipping_method_class($method);
         }
     }
 
     /**
-     * Add shipping method to WooCommerce
+     * Register a dynamic shipping method class for each configured method
+     *
+     * @param array $method_config Method configuration.
+     */
+    private function register_shipping_method_class($method_config) {
+        $method_id = $method_config['id'];
+        $class_name = 'WLM_Shipping_Method_' . str_replace('-', '_', $method_id);
+        
+        // Skip if class already exists
+        if (class_exists($class_name)) {
+            return;
+        }
+
+        // Create dynamic class
+        eval('
+        class ' . $class_name . ' extends WC_Shipping_Method {
+            private $method_config;
+            
+            public function __construct($instance_id = 0) {
+                $this->id = "' . $method_id . '";
+                $this->instance_id = absint($instance_id);
+                $this->method_title = "' . esc_js($method_config['name']) . '";
+                $this->method_description = __("Lieferzeiten-Manager Versandart", "woo-lieferzeiten-manager");
+                $this->supports = array("shipping-zones", "instance-settings");
+                $this->enabled = "' . ($method_config['enabled'] ? 'yes' : 'no') . '";
+                $this->title = "' . esc_js($method_config['name']) . '";
+                
+                // Load configuration
+                $methods_manager = new WLM_Shipping_Methods();
+                $this->method_config = $methods_manager->get_method_by_id("' . $method_id . '");
+                
+                $this->init();
+            }
+            
+            public function init() {
+                $this->init_form_fields();
+                $this->init_settings();
+                
+                add_action("woocommerce_update_options_shipping_" . $this->id, array($this, "process_admin_options"));
+            }
+            
+            public function init_form_fields() {
+                $this->form_fields = array(
+                    "enabled" => array(
+                        "title" => __("Aktivieren/Deaktivieren", "woo-lieferzeiten-manager"),
+                        "type" => "checkbox",
+                        "label" => __("Diese Versandmethode aktivieren", "woo-lieferzeiten-manager"),
+                        "default" => "yes"
+                    ),
+                    "title" => array(
+                        "title" => __("Titel", "woo-lieferzeiten-manager"),
+                        "type" => "text",
+                        "description" => __("Titel, der dem Kunden angezeigt wird", "woo-lieferzeiten-manager"),
+                        "default" => $this->method_title,
+                        "desc_tip" => true
+                    )
+                );
+            }
+            
+            public function calculate_shipping($package = array()) {
+                if (!$this->is_available($package)) {
+                    return;
+                }
+                
+                $cost = $this->calculate_cost($package);
+                
+                $rate = array(
+                    "id" => $this->id,
+                    "label" => $this->title,
+                    "cost" => $cost,
+                    "package" => $package
+                );
+                
+                $this->add_rate($rate);
+            }
+            
+            private function calculate_cost($package) {
+                if (empty($this->method_config)) {
+                    return 0;
+                }
+                
+                $cost = floatval($this->method_config["cost"] ?? 0);
+                $cost_type = $this->method_config["cost_type"] ?? "flat";
+                
+                if ($cost_type === "by_weight") {
+                    $total_weight = 0;
+                    foreach ($package["contents"] as $item) {
+                        $product = $item["data"];
+                        $total_weight += $product->get_weight() * $item["quantity"];
+                    }
+                    $cost = $cost * $total_weight;
+                } elseif ($cost_type === "by_qty") {
+                    $total_qty = array_sum(wp_list_pluck($package["contents"], "quantity"));
+                    $cost = $cost * $total_qty;
+                }
+                
+                return $cost;
+            }
+            
+            public function is_available($package) {
+                if ($this->enabled !== "yes") {
+                    return false;
+                }
+                
+                if (empty($this->method_config)) {
+                    return false;
+                }
+                
+                // Check conditions
+                $methods_manager = new WLM_Shipping_Methods();
+                return $methods_manager->check_method_conditions($this->method_config, $package);
+            }
+        }
+        ');
+    }
+
+    /**
+     * Add all configured shipping methods to WooCommerce
      *
      * @param array $methods Existing shipping methods.
      * @return array Modified shipping methods.
      */
-    public function add_shipping_method($methods) {
-        $methods['wlm_shipping'] = 'WLM_Shipping_Method';
+    public function add_shipping_methods($methods) {
+        $configured_methods = $this->get_configured_methods();
+        
+        foreach ($configured_methods as $method) {
+            $method_id = $method['id'];
+            $class_name = 'WLM_Shipping_Method_' . str_replace('-', '_', $method_id);
+            
+            if (class_exists($class_name)) {
+                $methods[$method_id] = $class_name;
+            }
+        }
+        
         return $methods;
+    }
+
+    /**
+     * Get all configured shipping methods
+     *
+     * @return array Configured methods.
+     */
+    public function get_configured_methods() {
+        $settings = get_option('wlm_settings', array());
+        $methods = $settings['shipping_methods'] ?? array();
+        
+        // Filter out empty methods
+        $methods = array_filter($methods, function($method) {
+            return !empty($method['name']) && !empty($method['id']);
+        });
+        
+        return $methods;
+    }
+
+    /**
+     * Get method configuration by ID
+     *
+     * @param string $method_id Method ID.
+     * @return array|null Method configuration.
+     */
+    public function get_method_by_id($method_id) {
+        $methods = $this->get_configured_methods();
+        
+        foreach ($methods as $method) {
+            if ($method['id'] === $method_id) {
+                return $method;
+            }
+        }
+        
+        return null;
+    }
+
+    /**
+     * Check if method conditions are met
+     *
+     * @param array $method Method configuration.
+     * @param array $package Shipping package.
+     * @return bool True if conditions are met.
+     */
+    public function check_method_conditions($method, $package) {
+        // Check weight conditions
+        if (!empty($method['weight_min']) || !empty($method['weight_max'])) {
+            $total_weight = 0;
+            foreach ($package['contents'] as $item) {
+                $product = $item['data'];
+                $weight = $product->get_weight();
+                if ($weight) {
+                    $total_weight += floatval($weight) * $item['quantity'];
+                }
+            }
+            
+            if (!empty($method['weight_min']) && $total_weight < floatval($method['weight_min'])) {
+                return false;
+            }
+            
+            if (!empty($method['weight_max']) && $total_weight > floatval($method['weight_max'])) {
+                return false;
+            }
+        }
+        
+        // Check cart total conditions
+        if (!empty($method['cart_total_min']) || !empty($method['cart_total_max'])) {
+            $cart_total = 0;
+            foreach ($package['contents'] as $item) {
+                $cart_total += $item['line_total'];
+            }
+            
+            if (!empty($method['cart_total_min']) && $cart_total < floatval($method['cart_total_min'])) {
+                return false;
+            }
+            
+            if (!empty($method['cart_total_max']) && $cart_total > floatval($method['cart_total_max'])) {
+                return false;
+            }
+        }
+        
+        // Check required attributes
+        if (!empty($method['required_attributes'])) {
+            $required_attrs = array_filter(array_map('trim', explode("\n", $method['required_attributes'])));
+            
+            foreach ($required_attrs as $attr_line) {
+                if (strpos($attr_line, '=') === false) {
+                    continue;
+                }
+                
+                list($attr_slug, $attr_value) = array_map('trim', explode('=', $attr_line, 2));
+                
+                $has_attribute = false;
+                foreach ($package['contents'] as $item) {
+                    $product = $item['data'];
+                    
+                    if ($product->is_type('variation')) {
+                        $variation_attrs = $product->get_attributes();
+                        if (isset($variation_attrs[$attr_slug]) && $variation_attrs[$attr_slug] === $attr_value) {
+                            $has_attribute = true;
+                            break;
+                        }
+                    } else {
+                        $product_attr = $product->get_attribute($attr_slug);
+                        if ($product_attr === $attr_value) {
+                            $has_attribute = true;
+                            break;
+                        }
+                    }
+                }
+                
+                if (!$has_attribute) {
+                    return false;
+                }
+            }
+        }
+        
+        // Check required categories
+        if (!empty($method['required_categories'])) {
+            $required_cats = is_array($method['required_categories']) 
+                ? $method['required_categories'] 
+                : array_filter(array_map('trim', explode(',', $method['required_categories'])));
+            
+            if (!empty($required_cats)) {
+                $has_category = false;
+                foreach ($package['contents'] as $item) {
+                    $product = $item['data'];
+                    $product_id = $product->get_parent_id() ? $product->get_parent_id() : $product->get_id();
+                    $product_cats = wp_get_post_terms($product_id, 'product_cat', array('fields' => 'ids'));
+                    
+                    if (array_intersect($required_cats, $product_cats)) {
+                        $has_category = true;
+                        break;
+                    }
+                }
+                
+                if (!$has_category) {
+                    return false;
+                }
+            }
+        }
+        
+        return true;
     }
 
     /**
@@ -50,14 +325,23 @@ class WLM_Shipping_Methods {
      */
     public function display_delivery_window($method, $index) {
         $calculator = WLM_Core::instance()->calculator;
-        $window = $calculator->calculate_cart_window();
+        
+        // Get method configuration
+        $method_id = $method->get_id();
+        $method_config = $this->get_method_by_id($method_id);
+        
+        if (!$method_config) {
+            return;
+        }
+        
+        // Calculate delivery window for this method
+        $window = $calculator->calculate_cart_window($method_config);
 
         if (empty($window)) {
             return;
         }
 
-        $method_id = $method->get_id();
-        $is_express = WC()->session->get('wlm_express_selected') === $method_id;
+        $is_express = WC()->session && WC()->session->get('wlm_express_selected') === $method_id;
 
         echo '<div class="wlm-shipping-window">';
         
@@ -78,164 +362,33 @@ class WLM_Shipping_Methods {
             echo '</div>';
 
             // Check if express is available
-            if ($this->is_express_available($method_id)) {
-                $express_cost = $this->get_express_cost($method_id);
-                $express_window = $this->get_express_window();
-
-                echo '<div class="wlm-express-cta">';
-                echo '<button type="button" class="wlm-activate-express" data-method-id="' . esc_attr($method_id) . '">';
-                echo sprintf(
-                    esc_html__('Express aktivieren (+ %s) – Zustellung: %s', 'woo-lieferzeiten-manager'),
-                    wc_price($express_cost),
-                    esc_html($express_window)
-                );
-                echo '</button>';
-                echo '</div>';
+            if (!empty($method_config['express_enabled'])) {
+                $express_available = $calculator->is_express_available();
+                
+                if ($express_available) {
+                    $express_cost = floatval($method_config['express_cost'] ?? 0);
+                    $express_window = $calculator->calculate_cart_window($method_config, true);
+                    
+                    echo '<div class="wlm-express-cta">';
+                    echo '<button type="button" class="wlm-activate-express" data-method-id="' . esc_attr($method_id) . '">';
+                    echo esc_html__('⚡ Express-Versand', 'woo-lieferzeiten-manager') . ' ';
+                    echo '(+' . wc_price($express_cost) . ') – ';
+                    echo esc_html__('Zustellung:', 'woo-lieferzeiten-manager') . ' ';
+                    echo '<strong>' . esc_html($express_window['window_formatted']) . '</strong>';
+                    echo '</button>';
+                    echo '</div>';
+                }
             }
         }
-
+        
         echo '</div>';
     }
 
     /**
-     * Check if express is available for method
-     *
-     * @param string $method_id Method ID.
-     * @return bool
+     * Ensure methods are available in shipping zones
      */
-    private function is_express_available($method_id) {
-        // Check if all products are in stock
-        if (!WC()->cart) {
-            return false;
-        }
-
-        foreach (WC()->cart->get_cart() as $cart_item) {
-            $product = $cart_item['data'];
-            if ($product->get_stock_status() !== 'instock') {
-                return false;
-            }
-        }
-
-        // Check cutoff time
-        $settings = WLM_Core::instance()->get_settings();
-        $cutoff_time = $settings['cutoff_time'] ?? '14:00';
-        $current_time = current_time('H:i');
-
-        if ($current_time > $cutoff_time) {
-            return false;
-        }
-
-        return true;
-    }
-
-    /**
-     * Get express cost for method
-     *
-     * @param string $method_id Method ID.
-     * @return float
-     */
-    private function get_express_cost($method_id) {
-        // Default express cost - should be configurable per method
-        return 9.90;
-    }
-
-    /**
-     * Get express delivery window
-     *
-     * @return string
-     */
-    private function get_express_window() {
-        $calculator = WLM_Core::instance()->calculator;
-        $current_time = current_time('timestamp');
-        
-        // Express: next business day
-        $delivery_date = $calculator->add_business_days($current_time, 1);
-        
-        $day_names = array(
-            1 => 'Mo',
-            2 => 'Di',
-            3 => 'Mi',
-            4 => 'Do',
-            5 => 'Fr',
-            6 => 'Sa',
-            7 => 'So'
-        );
-
-        $day_of_week = (int) date('N', $delivery_date);
-        $day_name = $day_names[$day_of_week];
-        $date_part = date('d.m.Y', $delivery_date);
-
-        return $day_name . ', ' . $date_part;
-    }
-
-    /**
-     * Get configured shipping methods
-     *
-     * @return array
-     */
-    public function get_methods() {
-        return get_option('wlm_shipping_methods', array());
-    }
-
-    /**
-     * Save shipping methods
-     *
-     * @param array $methods Shipping methods.
-     * @return bool
-     */
-    public function save_methods($methods) {
-        return update_option('wlm_shipping_methods', $methods);
-    }
-
-    /**
-     * Add new shipping method
-     *
-     * @param array $method Method data.
-     * @return bool
-     */
-    public function add_method($method) {
-        $methods = $this->get_methods();
-        $method['id'] = uniqid('wlm_method_');
-        $methods[] = $method;
-        return $this->save_methods($methods);
-    }
-
-    /**
-     * Update shipping method
-     *
-     * @param string $method_id Method ID.
-     * @param array $method Method data.
-     * @return bool
-     */
-    public function update_method($method_id, $method) {
-        $methods = $this->get_methods();
-        
-        foreach ($methods as $key => $existing_method) {
-            if ($existing_method['id'] === $method_id) {
-                $methods[$key] = array_merge($existing_method, $method);
-                return $this->save_methods($methods);
-            }
-        }
-        
-        return false;
-    }
-
-    /**
-     * Delete shipping method
-     *
-     * @param string $method_id Method ID.
-     * @return bool
-     */
-    public function delete_method($method_id) {
-        $methods = $this->get_methods();
-        
-        foreach ($methods as $key => $method) {
-            if ($method['id'] === $method_id) {
-                unset($methods[$key]);
-                return $this->save_methods(array_values($methods));
-            }
-        }
-        
-        return false;
+    public function ensure_methods_in_zones() {
+        // This is called when WooCommerce loads shipping methods
+        // Methods are automatically available in zones through woocommerce_shipping_methods filter
     }
 }
