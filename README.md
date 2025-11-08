@@ -251,6 +251,16 @@ GPL v2 oder höher
 
 ## Changelog
 
+### Version 1.1.0
+- ✨ **Feature**: Attributwert-Dropdown mit AJAX - automatische Werte-Vorschläge beim Auswählen von Attributen
+- ⚙️ **Feature**: Konfigurierbarer Nicht-auf-Lager-Text im Backend (Zeiten-Tab)
+- 💬 **Feature**: Tooltip mit Versandkosten und Bedingungen (Gewicht, Warenkorbwert)
+- ⚡ **Feature**: Express-Info auf Produktdetailseite mit Lieferzeit und Kosten-Tooltip
+- 🔧 **Improvement**: Erweiterte format_cost_info mit Gewichts- und Warenkorbgrenzen
+- 🎯 **UX**: Datalist für Attributwerte verhindert Tippfehler
+- 📦 **API**: AJAX-Endpoint für Attributwerte (wlm_get_attribute_values)
+- 📊 **Calculation**: Express-Modus in calculate_product_window integriert
+
 ### Version 1.0.5
 - 🐛 **Bugfix**: Attribut-Bedingungen werden jetzt korrekt gespeichert und geladen
 - 🔄 **Kompatibilität**: Unterstützung für beide Datenformate (Array + String)

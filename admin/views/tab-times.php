@@ -187,6 +187,25 @@ $debug_mode = isset($settings['debug_mode']) ? $settings['debug_mode'] : false;
 
             <tr>
                 <th scope="row">
+                    <label for="wlm_out_of_stock_text"><?php esc_html_e('Nicht-auf-Lager-Text', 'woo-lieferzeiten-manager'); ?></label>
+                </th>
+                <td>
+                    <?php
+                    $out_of_stock_text = isset($settings['out_of_stock_text']) ? $settings['out_of_stock_text'] : 'Zurzeit nicht auf Lager';
+                    ?>
+                    <input type="text" 
+                           id="wlm_out_of_stock_text" 
+                           name="wlm_settings[out_of_stock_text]" 
+                           value="<?php echo esc_attr($out_of_stock_text); ?>" 
+                           class="regular-text">
+                    <p class="description">
+                        <?php esc_html_e('Text, der angezeigt wird, wenn ein Produkt nicht auf Lager ist (gelbe Ampel).', 'woo-lieferzeiten-manager'); ?>
+                    </p>
+                </td>
+            </tr>
+
+            <tr>
+                <th scope="row">
                     <?php esc_html_e('Debug-Modus', 'woo-lieferzeiten-manager'); ?>
                 </th>
                 <td>

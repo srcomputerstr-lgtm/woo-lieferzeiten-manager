@@ -123,6 +123,9 @@ class WLM_Core {
         
         if (is_admin()) {
             $this->admin = new WLM_Admin();
+            
+            // Register AJAX handlers
+            add_action('wp_ajax_wlm_get_attribute_values', array($this->admin, 'ajax_get_attribute_values'));
         }
     }
 

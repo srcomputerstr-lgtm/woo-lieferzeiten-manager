@@ -23,10 +23,11 @@ class WLM_Calculator {
      * @param int $product_id Product ID.
      * @param int $variation_id Variation ID (optional).
      * @param int $quantity Quantity.
-     * @param string $shipping_zone Shipping zone.
+     * @param string|array|null $shipping_zone Shipping zone or method config.
+     * @param bool $is_express Whether to calculate for express shipping.
      * @return array Delivery window data.
      */
-    public function calculate_product_window($product_id, $variation_id = 0, $quantity = 1, $shipping_zone = null) {
+    public function calculate_product_window($product_id, $variation_id = 0, $quantity = 1, $shipping_zone = null, $is_express = false) {
         $cache_key = sprintf('%d_%d_%d_%s', $product_id, $variation_id, $quantity, $shipping_zone);
         
         if (isset($this->cache[$cache_key])) {
@@ -62,11 +63,30 @@ class WLM_Calculator {
         $latest_date = $this->add_business_days($start_date, $processing_max);
 
         // Get shipping method and add transit time
-        $shipping_method = $this->get_applicable_shipping_method($product, $quantity, $shipping_zone);
+        // If shipping_zone is an array, it's a method config
+        if (is_array($shipping_zone)) {
+            $shipping_method = $shipping_zone;
+        } else {
+            $shipping_method = $this->get_applicable_shipping_method($product, $quantity, $shipping_zone);
+        }
         
         if ($shipping_method) {
-            $transit_min = (int) ($shipping_method['transit_min'] ?? 1);
-            $transit_max = (int) ($shipping_method['transit_max'] ?? 3);
+            // Use express transit times if express mode
+            if ($is_express && !empty($shipping_method['express_enabled'])) {
+                // Use express cutoff time
+                $express_cutoff = $shipping_method['express_cutoff'] ?? '14:00';
+                $start_date = $this->get_start_date($current_time, $express_cutoff);
+                
+                // Recalculate with express processing (usually 0)
+                $earliest_date = $start_date;
+                $latest_date = $start_date;
+                
+                $transit_min = (int) ($shipping_method['express_transit_min'] ?? 0);
+                $transit_max = (int) ($shipping_method['express_transit_max'] ?? 1);
+            } else {
+                $transit_min = (int) ($shipping_method['transit_min'] ?? 1);
+                $transit_max = (int) ($shipping_method['transit_max'] ?? 3);
+            }
             
             $earliest_date = $this->add_business_days($earliest_date, $transit_min);
             $latest_date = $this->add_business_days($latest_date, $transit_max);
@@ -474,7 +494,15 @@ class WLM_Calculator {
             $available_from = get_post_meta($product->get_id(), '_wlm_available_from', true);
             if ($available_from) {
                 $result['message'] = sprintf(__('Wieder verfügbar ab: %s', 'woo-lieferzeiten-manager'), $this->format_date(strtotime($available_from)));
+            } else {
+                // Use configurable out-of-stock text
+                $out_of_stock_text = $settings['out_of_stock_text'] ?? __('Zurzeit nicht auf Lager', 'woo-lieferzeiten-manager');
+                $result['message'] = $out_of_stock_text;
             }
+        } elseif ($stock_status === 'outofstock') {
+            // Use configurable out-of-stock text
+            $out_of_stock_text = $settings['out_of_stock_text'] ?? __('Zurzeit nicht auf Lager', 'woo-lieferzeiten-manager');
+            $result['message'] = $out_of_stock_text;
         }
 
         return $result;
@@ -530,25 +558,70 @@ class WLM_Calculator {
         $cost = floatval($method['cost'] ?? 0);
         $cost_type = $method['cost_type'] ?? 'flat';
         
+        $parts = array();
+        
+        // Cost
         if ($cost <= 0) {
-            return __('Kostenlos', 'woo-lieferzeiten-manager');
+            $parts[] = __('Kostenlos', 'woo-lieferzeiten-manager');
+        } else {
+            $cost_text = wc_price($cost);
+            
+            switch ($cost_type) {
+                case 'by_weight':
+                    $cost_text .= ' ' . __('pro kg', 'woo-lieferzeiten-manager');
+                    break;
+                case 'by_qty':
+                    $cost_text .= ' ' . __('pro Stück', 'woo-lieferzeiten-manager');
+                    break;
+            }
+            
+            $parts[] = $cost_text;
         }
         
-        $info = wc_price($cost);
-        
-        switch ($cost_type) {
-            case 'by_weight':
-                $info .= ' ' . __('pro kg', 'woo-lieferzeiten-manager');
-                break;
-            case 'by_qty':
-                $info .= ' ' . __('pro Stück', 'woo-lieferzeiten-manager');
-                break;
-            case 'flat':
-            default:
-                // No suffix for flat rate
-                break;
+        // Weight limits
+        if (!empty($method['weight_min']) || !empty($method['weight_max'])) {
+            $weight_text = '';
+            if (!empty($method['weight_min']) && !empty($method['weight_max'])) {
+                $weight_text = sprintf(__('%s-%s kg', 'woo-lieferzeiten-manager'), 
+                    number_format_i18n($method['weight_min'], 2),
+                    number_format_i18n($method['weight_max'], 2)
+                );
+            } elseif (!empty($method['weight_max'])) {
+                $weight_text = sprintf(__('bis %s kg', 'woo-lieferzeiten-manager'), 
+                    number_format_i18n($method['weight_max'], 2)
+                );
+            } elseif (!empty($method['weight_min'])) {
+                $weight_text = sprintf(__('ab %s kg', 'woo-lieferzeiten-manager'), 
+                    number_format_i18n($method['weight_min'], 2)
+                );
+            }
+            if ($weight_text) {
+                $parts[] = $weight_text;
+            }
         }
         
-        return $info;
+        // Cart total limits
+        if (!empty($method['cart_total_min']) || !empty($method['cart_total_max'])) {
+            $total_text = '';
+            if (!empty($method['cart_total_min']) && !empty($method['cart_total_max'])) {
+                $total_text = sprintf(__('Warenkorbwert: %s-%s', 'woo-lieferzeiten-manager'), 
+                    wc_price($method['cart_total_min']),
+                    wc_price($method['cart_total_max'])
+                );
+            } elseif (!empty($method['cart_total_max'])) {
+                $total_text = sprintf(__('Warenkorbwert bis %s', 'woo-lieferzeiten-manager'), 
+                    wc_price($method['cart_total_max'])
+                );
+            } elseif (!empty($method['cart_total_min'])) {
+                $total_text = sprintf(__('Warenkorbwert ab %s', 'woo-lieferzeiten-manager'), 
+                    wc_price($method['cart_total_min'])
+                );
+            }
+            if ($total_text) {
+                $parts[] = $total_text;
+            }
+        }
+        
+        return implode(' | ', $parts);
     }
 }

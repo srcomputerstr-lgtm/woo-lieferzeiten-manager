@@ -80,6 +80,72 @@ class WLM_Admin {
     
 
     /**
+     * AJAX handler to get attribute values
+     */
+    public function ajax_get_attribute_values() {
+        check_ajax_referer('wlm-admin-nonce', 'nonce');
+        
+        $attribute = isset($_POST['attribute']) ? sanitize_text_field($_POST['attribute']) : '';
+        
+        if (empty($attribute)) {
+            wp_send_json_error('No attribute specified');
+        }
+        
+        $values = array();
+        
+        // Check if it's a product attribute
+        if (strpos($attribute, 'pa_') === 0) {
+            $terms = get_terms(array(
+                'taxonomy' => $attribute,
+                'hide_empty' => false,
+            ));
+            
+            if (!is_wp_error($terms)) {
+                foreach ($terms as $term) {
+                    $values[] = array(
+                        'value' => $term->slug,
+                        'label' => $term->name
+                    );
+                }
+            }
+        }
+        // Product categories
+        elseif ($attribute === 'product_cat') {
+            $terms = get_terms(array(
+                'taxonomy' => 'product_cat',
+                'hide_empty' => false,
+            ));
+            
+            if (!is_wp_error($terms)) {
+                foreach ($terms as $term) {
+                    $values[] = array(
+                        'value' => $term->slug,
+                        'label' => $term->name
+                    );
+                }
+            }
+        }
+        // Product tags
+        elseif ($attribute === 'product_tag') {
+            $terms = get_terms(array(
+                'taxonomy' => 'product_tag',
+                'hide_empty' => false,
+            ));
+            
+            if (!is_wp_error($terms)) {
+                foreach ($terms as $term) {
+                    $values[] = array(
+                        'value' => $term->slug,
+                        'label' => $term->name
+                    );
+                }
+            }
+        }
+        
+        wp_send_json_success($values);
+    }
+    
+    /**
      * Render settings page
      */
     public function render_settings_page() {

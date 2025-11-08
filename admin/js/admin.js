@@ -38,6 +38,7 @@
         // Attribute conditions
         $(document).on('click', '.wlm-add-attribute-condition', this.addAttributeCondition.bind(this));
         $(document).on('click', '.wlm-remove-attribute-condition', this.removeAttributeCondition.bind(this));
+        $(document).on('change', '.wlm-attribute-select', this.loadAttributeValues.bind(this));
         },
 
         /**
@@ -331,6 +332,61 @@
             // Fade out and remove
             $row.fadeOut(300, function() {
                 $(this).remove();
+            });
+        },
+        
+        /**
+         * Load attribute values via AJAX
+         */
+        loadAttributeValues: function(e) {
+            var $select = $(e.currentTarget);
+            var attribute = $select.val();
+            var $row = $select.closest('.wlm-attribute-condition-row');
+            var $valueInput = $row.find('input[type="text"]');
+            var currentValue = $valueInput.val();
+            
+            if (!attribute) {
+                // Reset to text input
+                $valueInput.replaceWith('<input type="text" name="' + $valueInput.attr('name') + '" value="" placeholder="Wert" class="regular-text" style="width: 200px;">');
+                return;
+            }
+            
+            // Show loading
+            $valueInput.prop('disabled', true).val('Lädt...');
+            
+            // AJAX request
+            $.ajax({
+                url: ajaxurl,
+                type: 'POST',
+                data: {
+                    action: 'wlm_get_attribute_values',
+                    attribute: attribute,
+                    nonce: wlm_admin.nonce
+                },
+                success: function(response) {
+                    if (response.success && response.data.length > 0) {
+                        // Create datalist
+                        var datalistId = 'wlm-values-' + Math.random().toString(36).substr(2, 9);
+                        var $newInput = $('<input type="text" list="' + datalistId + '" name="' + $valueInput.attr('name') + '" value="' + currentValue + '" placeholder="Wert wählen oder eingeben" class="regular-text" style="width: 200px;">');
+                        var $datalist = $('<datalist id="' + datalistId + '"></datalist>');
+                        
+                        // Add options
+                        $.each(response.data, function(i, item) {
+                            $datalist.append('<option value="' + item.value + '">' + item.label + '</option>');
+                        });
+                        
+                        // Replace input with datalist version
+                        $valueInput.replaceWith($newInput);
+                        $newInput.after($datalist);
+                    } else {
+                        // No values found, keep text input
+                        $valueInput.prop('disabled', false).val(currentValue).attr('placeholder', 'Wert eingeben');
+                    }
+                },
+                error: function() {
+                    // Error, keep text input
+                    $valueInput.prop('disabled', false).val(currentValue).attr('placeholder', 'Wert eingeben');
+                }
             });
         }
     };
