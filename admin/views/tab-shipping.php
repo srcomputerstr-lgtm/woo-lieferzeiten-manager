@@ -181,7 +181,13 @@ if (!defined('ABSPATH')) {
                                             
                                             // Parse existing conditions
                                             $existing_conditions = array();
-                                            if (!empty($method['required_attributes'])) {
+                                            
+                                            // Check if attribute_conditions array exists (new format)
+                                            if (!empty($method['attribute_conditions']) && is_array($method['attribute_conditions'])) {
+                                                $existing_conditions = $method['attribute_conditions'];
+                                            }
+                                            // Fallback to required_attributes string (old format)
+                                            elseif (!empty($method['required_attributes'])) {
                                                 $lines = array_filter(array_map('trim', explode("\n", $method['required_attributes'])));
                                                 foreach ($lines as $line) {
                                                     if (strpos($line, '=') !== false) {

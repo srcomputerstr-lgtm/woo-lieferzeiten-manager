@@ -383,33 +383,48 @@ class WLM_Calculator {
         }
         
         // Check required attributes
-        if (!empty($method['required_attributes'])) {
-            $required_attrs = array_filter(array_map('trim', explode("\n", $method['required_attributes'])));
+        $required_attrs = array();
+        
+        // New format: attribute_conditions array
+        if (!empty($method['attribute_conditions']) && is_array($method['attribute_conditions'])) {
+            $required_attrs = $method['attribute_conditions'];
+        }
+        // Old format: required_attributes string
+        elseif (!empty($method['required_attributes'])) {
+            $lines = array_filter(array_map('trim', explode("\n", $method['required_attributes'])));
+            foreach ($lines as $line) {
+                if (strpos($line, '=') !== false) {
+                    list($attr, $val) = array_map('trim', explode('=', $line, 2));
+                    $required_attrs[] = array('attribute' => $attr, 'value' => $val);
+                }
+            }
+        }
+        
+        // Check each attribute condition
+        foreach ($required_attrs as $condition) {
+            $attr_slug = $condition['attribute'] ?? '';
+            $attr_value = $condition['value'] ?? '';
             
-            foreach ($required_attrs as $attr_line) {
-                if (strpos($attr_line, '=') === false) {
-                    continue;
+            if (empty($attr_slug) || empty($attr_value)) {
+                continue;
+            }
+            
+            $has_attribute = false;
+            
+            if ($product->is_type('variation')) {
+                $variation_attrs = $product->get_attributes();
+                if (isset($variation_attrs[$attr_slug]) && $variation_attrs[$attr_slug] === $attr_value) {
+                    $has_attribute = true;
                 }
-                
-                list($attr_slug, $attr_value) = array_map('trim', explode('=', $attr_line, 2));
-                
-                $has_attribute = false;
-                
-                if ($product->is_type('variation')) {
-                    $variation_attrs = $product->get_attributes();
-                    if (isset($variation_attrs[$attr_slug]) && $variation_attrs[$attr_slug] === $attr_value) {
-                        $has_attribute = true;
-                    }
-                } else {
-                    $product_attr = $product->get_attribute($attr_slug);
-                    if ($product_attr === $attr_value) {
-                        $has_attribute = true;
-                    }
+            } else {
+                $product_attr = $product->get_attribute($attr_slug);
+                if ($product_attr === $attr_value) {
+                    $has_attribute = true;
                 }
-                
-                if (!$has_attribute) {
-                    return false;
-                }
+            }
+            
+            if (!$has_attribute) {
+                return false;
             }
         }
         

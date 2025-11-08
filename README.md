@@ -251,6 +251,13 @@ GPL v2 oder höher
 
 ## Changelog
 
+### Version 1.0.5
+- 🐛 **Bugfix**: Attribut-Bedingungen werden jetzt korrekt gespeichert und geladen
+- 🔄 **Kompatibilität**: Unterstützung für beide Datenformate (Array + String)
+- ✅ **Fix**: Backend lädt `attribute_conditions` Array statt nur `required_attributes` String
+- 🔧 **Fix**: Calculator prüft beide Formate für Attribut-Bedingungen
+- 💾 **Backward Compatible**: Alte String-Bedingungen funktionieren weiterhin
+
 ### Version 1.0.4
 - 🐛 **CRITICAL FIX**: Sanitize-Callback entfernt - verhindert Datenverlust beim Speichern
 - ⚠️ **Warnung**: Versandarten müssen nach Update neu konfiguriert werden
