@@ -74,8 +74,69 @@ class WLM_Admin {
      */
     public function register_settings() {
         register_setting('wlm_settings_group', 'wlm_settings');
-        register_setting('wlm_settings_group', 'wlm_shipping_methods');
+        register_setting('wlm_settings_group', 'wlm_shipping_methods', array(
+            'sanitize_callback' => array($this, 'sanitize_shipping_methods')
+        ));
         register_setting('wlm_settings_group', 'wlm_surcharges');
+    }
+    
+    /**
+     * Sanitize shipping methods before saving
+     *
+     * @param array $input Raw input data.
+     * @return array Sanitized data.
+     */
+    public function sanitize_shipping_methods($input) {
+        if (!is_array($input)) {
+            return array();
+        }
+        
+        $sanitized = array();
+        
+        foreach ($input as $index => $method) {
+            if (!is_array($method)) {
+                continue;
+            }
+            
+            // Convert attribute_conditions array to string format for backward compatibility
+            if (isset($method['attribute_conditions']) && is_array($method['attribute_conditions'])) {
+                $conditions_string = '';
+                foreach ($method['attribute_conditions'] as $condition) {
+                    if (!empty($condition['attribute']) && isset($condition['value'])) {
+                        $conditions_string .= sanitize_text_field($condition['attribute']) . '=' . sanitize_text_field($condition['value']) . "\n";
+                    }
+                }
+                $method['required_attributes'] = trim($conditions_string);
+                unset($method['attribute_conditions']);
+            }
+            
+            // Sanitize all fields
+            $sanitized[$index] = array(
+                'id' => sanitize_text_field($method['id'] ?? ''),
+                'name' => sanitize_text_field($method['name'] ?? ''),
+                'enabled' => !empty($method['enabled']),
+                'priority' => intval($method['priority'] ?? 10),
+                'cost_type' => sanitize_text_field($method['cost_type'] ?? 'flat'),
+                'cost' => floatval($method['cost'] ?? 0),
+                'weight_min' => !empty($method['weight_min']) ? floatval($method['weight_min']) : '',
+                'weight_max' => !empty($method['weight_max']) ? floatval($method['weight_max']) : '',
+                'cart_total_min' => !empty($method['cart_total_min']) ? floatval($method['cart_total_min']) : '',
+                'cart_total_max' => !empty($method['cart_total_max']) ? floatval($method['cart_total_max']) : '',
+                'required_attributes' => sanitize_textarea_field($method['required_attributes'] ?? ''),
+                'required_categories' => isset($method['required_categories']) && is_array($method['required_categories']) 
+                    ? array_map('intval', $method['required_categories']) 
+                    : array(),
+                'transit_min' => intval($method['transit_min'] ?? 1),
+                'transit_max' => intval($method['transit_max'] ?? 3),
+                'express_enabled' => !empty($method['express_enabled']),
+                'express_cost' => floatval($method['express_cost'] ?? 0),
+                'express_cutoff' => sanitize_text_field($method['express_cutoff'] ?? '14:00'),
+                'express_transit_min' => intval($method['express_transit_min'] ?? 0),
+                'express_transit_max' => intval($method['express_transit_max'] ?? 1),
+            );
+        }
+        
+        return $sanitized;
     }
 
     /**

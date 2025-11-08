@@ -251,6 +251,14 @@ GPL v2 oder höher
 
 ## Changelog
 
+### Version 1.0.2
+- ✨ Benutzerfreundliche Dropdown-Auswahl für Produktattribute und Taxonomien
+- 🎯 Dynamisches Hinzufügen/Entfernen von Attribut-Bedingungen
+- 🔍 Alle verfügbaren WooCommerce-Attribute werden automatisch geladen
+- 📋 Unterstützung für Produktkategorien und Tags als Bedingungen
+- 💾 Automatische Konvertierung zwischen altem und neuem Format
+- 🎨 Verbesserte UX im Backend mit visuellen Bedingungszeilen
+
 ### Version 1.0.1
 - ✨ Neue Shortcodes für flexible Produktseiten-Integration (Oxygen Builder)
 - 🚀 Versandarten werden jetzt als echte WooCommerce-Versandmethoden registriert

@@ -30,10 +30,14 @@
             $(document).on('click', '.wlm-remove-shipping-method', this.removeShippingMethod.bind(this));
             $(document).on('input', '.wlm-method-name-input', this.updateMethodTitle.bind(this));
 
-            // Surcharges
-            $(document).on('click', '#wlm-add-surcharge', this.addSurcharge.bind(this));
-            $(document).on('click', '.wlm-remove-surcharge', this.removeSurcharge.bind(this));
-            $(document).on('input', '.wlm-surcharge-name-input', this.updateSurchargeTitle.bind(this));
+        // Surcharges
+        $(document).on('click', '#wlm-add-surcharge', this.addSurcharge.bind(this));
+        $(document).on('click', '.wlm-remove-surcharge', this.removeSurcharge.bind(this));
+        $(document).on('input', '.wlm-surcharge-name-input', this.updateSurchargeTitle.bind(this));
+        
+        // Attribute conditions
+        $(document).on('click', '.wlm-add-attribute-condition', this.addAttributeCondition.bind(this));
+        $(document).on('click', '.wlm-remove-attribute-condition', this.removeAttributeCondition.bind(this));
         },
 
         /**
@@ -289,6 +293,45 @@
             html += '</div>';
 
             return html;
+        },
+        
+        /**
+         * Add attribute condition
+         */
+        addAttributeCondition: function(e) {
+            e.preventDefault();
+            
+            var $button = $(e.currentTarget);
+            var methodIndex = $button.data('method-index');
+            var $container = $('.wlm-attribute-conditions[data-method-index="' + methodIndex + '"]');
+            
+            // Get template
+            var template = $('#wlm-attribute-condition-template').html();
+            
+            // Get next condition index
+            var conditionIndex = $container.find('.wlm-attribute-condition-row').length;
+            
+            // Replace placeholders
+            template = template.replace(/{{METHOD_INDEX}}/g, methodIndex);
+            template = template.replace(/{{CONDITION_INDEX}}/g, conditionIndex);
+            
+            // Append to container
+            $container.append(template);
+        },
+        
+        /**
+         * Remove attribute condition
+         */
+        removeAttributeCondition: function(e) {
+            e.preventDefault();
+            
+            var $button = $(e.currentTarget);
+            var $row = $button.closest('.wlm-attribute-condition-row');
+            
+            // Fade out and remove
+            $row.fadeOut(300, function() {
+                $(this).remove();
+            });
         }
     };
 
