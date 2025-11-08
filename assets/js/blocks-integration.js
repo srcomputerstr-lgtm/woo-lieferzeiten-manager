@@ -1,66 +1,147 @@
 /**
- * Blocks integration for Cart and Checkout blocks
+ * WooCommerce Blocks Integration
  * 
- * This file should be built with @wordpress/scripts or similar build tools
- * for production use with WooCommerce Blocks.
- *
- * @package WooLieferzeitenManager
+ * Displays delivery information in Cart and Checkout blocks
  */
 
-(function() {
-    'use strict';
+const { registerPlugin } = wp.plugins;
+const { ExperimentalOrderMeta } = wc.blocksCheckout;
+const { createElement } = wp.element;
+const { useSelect } = wp.data;
+const { CART_STORE_KEY } = wc.wcBlocksData;
 
-    // Check if WooCommerce Blocks are available
-    if (typeof window.wc === 'undefined' || typeof window.wc.blocksCheckout === 'undefined') {
-        console.warn('WLM: WooCommerce Blocks not available');
-        return;
+/**
+ * Delivery Info Component for Cart/Checkout Blocks
+ */
+const DeliveryInfoComponent = () => {
+    // Get cart data including our custom extension
+    const cartData = useSelect((select) => {
+        const store = select(CART_STORE_KEY);
+        return {
+            extensions: store.getCartData()?.extensions || {},
+        };
+    }, []);
+
+    const deliveryData = cartData.extensions['woo-lieferzeiten-manager'] || {};
+    const deliveryWindow = deliveryData.delivery_window || {};
+    const expressStatus = deliveryData.express_status || {};
+
+    // Don't render if no delivery window
+    if (!deliveryWindow || !deliveryWindow.window_formatted) {
+        return null;
     }
 
-    const { registerCheckoutBlock } = window.wc.blocksCheckout;
-    const { createElement } = window.wp.element;
-    const { __ } = window.wp.i18n;
+    return createElement(
+        'div',
+        { className: 'wlm-blocks-delivery-info', style: { marginTop: '20px', padding: '15px', background: '#f7f7f7', borderRadius: '4px' } },
+        [
+            // Stock status (if available)
+            deliveryWindow.stock_status && createElement(
+                'div',
+                { key: 'stock', className: 'wlm-stock-status', style: { marginBottom: '10px' } },
+                [
+                    createElement('span', { key: 'icon' }, deliveryWindow.stock_status.in_stock ? '🟢 ' : '🟡 '),
+                    createElement('span', { key: 'text' }, deliveryWindow.stock_status.message || '')
+                ]
+            ),
 
-    /**
-     * Delivery Window Block Component
-     */
-    const DeliveryWindowBlock = ({ checkoutExtensionData }) => {
-        const extensionData = checkoutExtensionData['woo-lieferzeiten-manager'] || {};
-        const deliveryWindow = extensionData.delivery_window;
-        const expressStatus = extensionData.express_status;
+            // Shipping method (if available)
+            deliveryWindow.shipping_method && deliveryWindow.shipping_method.title && createElement(
+                'div',
+                { key: 'shipping', className: 'wlm-shipping-method', style: { marginBottom: '10px' } },
+                [
+                    createElement('span', { key: 'icon' }, '🚚 '),
+                    createElement('span', { key: 'label' }, 'Versand via '),
+                    createElement('strong', { key: 'method' }, deliveryWindow.shipping_method.title),
+                    deliveryWindow.shipping_method.cost_info && createElement(
+                        'span',
+                        { key: 'info', className: 'wlm-info-icon', title: deliveryWindow.shipping_method.cost_info, style: { marginLeft: '5px' } },
+                        'ℹ️'
+                    )
+                ]
+            ),
 
-        if (!deliveryWindow || !deliveryWindow.window_formatted) {
-            return null;
-        }
-
-        return createElement(
-            'div',
-            { className: 'wlm-checkout-delivery-window' },
+            // Delivery window
             createElement(
                 'div',
-                { className: 'wlm-delivery-estimate' },
-                createElement('strong', null, __('Deine Bestellung voraussichtlich:', 'woo-lieferzeiten-manager')),
-                createElement('br'),
-                createElement('span', null, deliveryWindow.window_formatted)
+                { key: 'delivery', className: 'wlm-delivery-window', style: { marginBottom: '10px' } },
+                [
+                    createElement('span', { key: 'icon' }, '📅 '),
+                    createElement('span', { key: 'label' }, 'Lieferung ca.: '),
+                    createElement('strong', { key: 'window' }, deliveryWindow.window_formatted)
+                ]
             ),
-            expressStatus && expressStatus.selected && createElement(
+
+            // Express option (if available)
+            expressStatus.available && !expressStatus.active && createElement(
                 'div',
-                { className: 'wlm-express-indicator' },
-                __('Express-Versand aktiv', 'woo-lieferzeiten-manager')
+                { key: 'express', className: 'wlm-express-cta', style: { marginTop: '15px' } },
+                createElement(
+                    'button',
+                    {
+                        type: 'button',
+                        className: 'button wlm-activate-express',
+                        style: { padding: '10px 15px', cursor: 'pointer' },
+                        onClick: () => {
+                            // Express activation would require AJAX call
+                            console.log('Express activation clicked');
+                        }
+                    },
+                    '⚡ Express-Versand verfügbar'
+                )
+            ),
+
+            // Express active status
+            expressStatus.active && createElement(
+                'div',
+                { key: 'express-active', className: 'wlm-express-active', style: { marginTop: '15px', color: '#2c7a2c' } },
+                [
+                    createElement('span', { key: 'checkmark' }, '✓ '),
+                    createElement('span', { key: 'text' }, 'Express-Versand gewählt')
+                ]
             )
-        );
-    };
+        ].filter(Boolean) // Remove null elements
+    );
+};
 
-    /**
-     * Register the block
-     */
-    if (typeof registerCheckoutBlock === 'function') {
-        registerCheckoutBlock({
-            metadata: {
-                name: 'woo-lieferzeiten-manager/delivery-window',
-                parent: ['woocommerce/checkout-order-summary-block']
-            },
-            component: DeliveryWindowBlock
-        });
-    }
+/**
+ * Register the plugin for Checkout block
+ */
+if (typeof ExperimentalOrderMeta !== 'undefined') {
+    registerPlugin('woo-lieferzeiten-manager', {
+        render: () => {
+            return createElement(
+                ExperimentalOrderMeta,
+                null,
+                createElement(DeliveryInfoComponent)
+            );
+        },
+        scope: 'woocommerce-checkout',
+    });
+}
 
-})();
+/**
+ * For Cart block, we need to use a different approach
+ * Add delivery info to cart totals area
+ */
+if (typeof wp.hooks !== 'undefined') {
+    const { addFilter } = wp.hooks;
+    
+    // Add delivery info after cart totals
+    addFilter(
+        'woocommerce_blocks_cart_totals_after',
+        'woo-lieferzeiten-manager',
+        (Component) => {
+            return (props) => {
+                return createElement(
+                    'div',
+                    null,
+                    [
+                        createElement(Component, { ...props, key: 'original' }),
+                        createElement(DeliveryInfoComponent, { key: 'delivery-info' })
+                    ]
+                );
+            };
+        }
+    );
+}

@@ -272,6 +272,16 @@ class WLM_Calculator {
     private function get_applicable_shipping_method($product, $quantity, $shipping_zone) {
         $shipping_methods = WLM_Core::instance()->get_shipping_methods();
         
+        // Debug logging
+        if (WLM_Core::instance()->is_debug_mode()) {
+            WLM_Core::instance()->debug_log('get_applicable_shipping_method called', array(
+                'product_id' => $product->get_id(),
+                'quantity' => $quantity,
+                'shipping_methods_count' => count($shipping_methods),
+                'shipping_methods' => $shipping_methods
+            ));
+        }
+        
         if (empty($shipping_methods)) {
             return null;
         }
@@ -279,9 +289,22 @@ class WLM_Calculator {
         $applicable = array();
 
         foreach ($shipping_methods as $method) {
+            // Skip if method is not enabled
+            if (isset($method['enabled']) && !$method['enabled']) {
+                continue;
+            }
+            
             if ($this->check_shipping_method_conditions($method, $product, $quantity, $shipping_zone)) {
                 $applicable[] = $method;
             }
+        }
+        
+        // Debug logging
+        if (WLM_Core::instance()->is_debug_mode()) {
+            WLM_Core::instance()->debug_log('Applicable shipping methods found', array(
+                'count' => count($applicable),
+                'methods' => $applicable
+            ));
         }
 
         if (empty($applicable)) {
@@ -298,8 +321,20 @@ class WLM_Calculator {
             }
             return $a['transit_min'] - $b['transit_min'];
         });
-
-        return $applicable[0];
+        
+        $selected_method = $applicable[0];
+        
+        // Ensure proper structure for frontend display
+        return array(
+            'id' => $selected_method['id'] ?? '',
+            'name' => $selected_method['name'] ?? '',
+            'title' => $selected_method['name'] ?? '', // Use 'name' as 'title' for frontend
+            'cost' => $selected_method['cost'] ?? 0,
+            'cost_type' => $selected_method['cost_type'] ?? 'flat',
+            'transit_min' => $selected_method['transit_min'] ?? 1,
+            'transit_max' => $selected_method['transit_max'] ?? 3,
+            'cost_info' => $this->format_cost_info($selected_method)
+        );
     }
 
     /**
@@ -464,5 +499,41 @@ class WLM_Calculator {
      */
     private function format_date_range($start_timestamp, $end_timestamp) {
         return $this->format_date($start_timestamp) . ' – ' . $this->format_date($end_timestamp);
+    }
+    
+    /**
+     * Format cost info for shipping method
+     *
+     * @param array $method Shipping method data.
+     * @return string Cost info string.
+     */
+    private function format_cost_info($method) {
+        if (empty($method)) {
+            return '';
+        }
+        
+        $cost = floatval($method['cost'] ?? 0);
+        $cost_type = $method['cost_type'] ?? 'flat';
+        
+        if ($cost <= 0) {
+            return __('Kostenlos', 'woo-lieferzeiten-manager');
+        }
+        
+        $info = wc_price($cost);
+        
+        switch ($cost_type) {
+            case 'by_weight':
+                $info .= ' ' . __('pro kg', 'woo-lieferzeiten-manager');
+                break;
+            case 'by_qty':
+                $info .= ' ' . __('pro Stück', 'woo-lieferzeiten-manager');
+                break;
+            case 'flat':
+            default:
+                // No suffix for flat rate
+                break;
+        }
+        
+        return $info;
     }
 }

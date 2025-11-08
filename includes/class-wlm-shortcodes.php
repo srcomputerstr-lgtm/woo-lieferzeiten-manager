@@ -74,11 +74,11 @@ class WLM_Shortcodes {
             }
 
             // Shipping method
-            if (($show_all || in_array('shipping', $show_parts)) && !empty($window['shipping_method'])) {
+            if (($show_all || in_array('shipping', $show_parts)) && !empty($window['shipping_method']) && !empty($window['shipping_method']['title'])) {
                 $method = $window['shipping_method'];
                 echo '<div class="wlm-shipping-method">';
                 echo '🚚 ' . esc_html__('Versand via', 'woo-lieferzeiten-manager') . ' ';
-                echo '<strong>' . esc_html($method['title'] ?? __('Paketdienst', 'woo-lieferzeiten-manager')) . '</strong>';
+                echo '<strong>' . esc_html($method['title']) . '</strong>';
                 
                 if (!empty($method['cost_info'])) {
                     echo ' <span class="wlm-info-icon" title="' . esc_attr($method['cost_info']) . '">ℹ️</span>';
@@ -184,11 +184,15 @@ class WLM_Shortcodes {
         $show_icon = $atts['show_icon'] === 'yes';
         $show_info = $atts['show_info'] === 'yes';
 
+        if (empty($method['title'])) {
+            return '';
+        }
+        
         ob_start();
         echo '<div class="wlm-shipping-method wlm-shortcode">';
         if ($show_icon) echo '🚚 ';
         echo esc_html__('Versand via', 'woo-lieferzeiten-manager') . ' ';
-        echo '<strong>' . esc_html($method['title'] ?? __('Paketdienst', 'woo-lieferzeiten-manager')) . '</strong>';
+        echo '<strong>' . esc_html($method['title']) . '</strong>';
         
         if ($show_info && !empty($method['cost_info'])) {
             echo ' <span class="wlm-info-icon" title="' . esc_attr($method['cost_info']) . '">ℹ️</span>';

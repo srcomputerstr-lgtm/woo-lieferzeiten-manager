@@ -100,11 +100,11 @@ class WLM_Frontend {
             }
 
             // Shipping method
-            if (!empty($window['shipping_method'])) {
+            if (!empty($window['shipping_method']) && !empty($window['shipping_method']['title'])) {
                 $method = $window['shipping_method'];
                 echo '<div class="wlm-shipping-method">';
                 echo '🚚 ' . esc_html__('Versand via', 'woo-lieferzeiten-manager') . ' ';
-                echo '<strong>' . esc_html($method['title'] ?? __('Paketdienst', 'woo-lieferzeiten-manager')) . '</strong>';
+                echo '<strong>' . esc_html($method['title']) . '</strong>';
                 
                 // Add info icon with tooltip
                 if (!empty($method['cost_info'])) {

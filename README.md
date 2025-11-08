@@ -251,6 +251,15 @@ GPL v2 oder höher
 
 ## Changelog
 
+### Version 1.0.3
+- 🐛 **Bugfix**: "Paketdienst" Fallback entfernt - nur konfigurierte Versandarten werden angezeigt
+- 🔍 **Debug**: Umfangreiches Debug-Logging für Versandarten-Auswahl
+- ✅ **Validation**: Versandarten müssen aktiviert sein und Namen haben
+- 📦 **Struktur**: Einheitliche Datenstruktur für Frontend-Anzeige
+- 📊 **Info**: Cost-Info-Formatierung (Kostenlos, pro kg, pro Stück)
+- 📝 **Docs**: DEBUG.md mit Troubleshooting-Anleitung hinzugefügt
+- 🧩 **Blocks**: Verbesserte WooCommerce Blocks Integration
+
 ### Version 1.0.2
 - ✨ Benutzerfreundliche Dropdown-Auswahl für Produktattribute und Taxonomien
 - 🎯 Dynamisches Hinzufügen/Entfernen von Attribut-Bedingungen
