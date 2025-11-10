@@ -18,6 +18,9 @@
          * Bind events
          */
         bindEvents: function() {
+        // Save settings via AJAX
+        $(document).on('click', '#wlm-save-settings', this.saveSettings.bind(this));
+        
         // Shipping methods
         $(document).on('click', '#wlm-add-shipping-method', this.addShippingMethod.bind(this));
         $(document).on('click', '.wlm-remove-shipping-method', this.removeShippingMethod.bind(this));
@@ -38,6 +41,113 @@
         $(document).on('click', '.wlm-remove-value-tag', this.removeValueTag.bind(this));
         $(document).on('keypress', '.wlm-value-input', this.handleValueInputKeypress.bind(this));
         },
+
+        /**
+         * Save settings via AJAX
+         */
+        saveSettings: function(e) {
+            e.preventDefault();
+            
+            var $button = $('#wlm-save-settings');
+            var $spinner = $('.wlm-save-spinner');
+            
+            // Collect all form data
+            var formData = {};
+            
+            // Collect wlm_settings
+            $('[name^="wlm_settings"]').each(function() {
+                var name = $(this).attr('name');
+                var match = name.match(/wlm_settings\[(.+)\](?:\[\])?/);
+                if (match) {
+                    var key = match[1];
+                    if ($(this).is(':checkbox')) {
+                        if (!formData.wlm_settings) formData.wlm_settings = {};
+                        if (!formData.wlm_settings[key]) formData.wlm_settings[key] = [];
+                        if ($(this).is(':checked')) {
+                            formData.wlm_settings[key].push($(this).val());
+                        }
+                    } else {
+                        if (!formData.wlm_settings) formData.wlm_settings = {};
+                        formData.wlm_settings[key] = $(this).val();
+                    }
+                }
+            });
+            
+            // Collect wlm_shipping_methods
+            formData.wlm_shipping_methods = [];
+            $('.wlm-shipping-method').each(function() {
+                var method = {};
+                $(this).find('[name^="wlm_shipping_methods"]').each(function() {
+                    var name = $(this).attr('name');
+                    var match = name.match(/wlm_shipping_methods\[\d+\]\[(.+)\]/);
+                    if (match) {
+                        var key = match[1];
+                        if ($(this).is(':checkbox')) {
+                            method[key] = $(this).is(':checked');
+                        } else {
+                            method[key] = $(this).val();
+                        }
+                    }
+                });
+                if (Object.keys(method).length > 0) {
+                    formData.wlm_shipping_methods.push(method);
+                }
+            });
+            
+            // Collect wlm_surcharges
+            formData.wlm_surcharges = [];
+            $('.wlm-surcharge').each(function() {
+                var surcharge = {};
+                $(this).find('[name^="wlm_surcharges"]').each(function() {
+                    var name = $(this).attr('name');
+                    var match = name.match(/wlm_surcharges\[\d+\]\[(.+)\]/);
+                    if (match) {
+                        var key = match[1];
+                        if ($(this).is(':checkbox')) {
+                            surcharge[key] = $(this).is(':checked');
+                        } else {
+                            surcharge[key] = $(this).val();
+                        }
+                    }
+                });
+                if (Object.keys(surcharge).length > 0) {
+                    formData.wlm_surcharges.push(surcharge);
+                }
+            });
+            
+            // Show spinner
+            $button.prop('disabled', true);
+            $spinner.show();
+            
+            // Send AJAX request
+            $.ajax({
+                url: ajaxurl,
+                type: 'POST',
+                data: {
+                    action: 'wlm_save_settings',
+                    nonce: wlm_admin_params.nonce,
+                    data: formData
+                },
+                success: function(response) {
+                    if (response.success) {
+                        // Show success message
+                        $('<div class="notice notice-success is-dismissible"><p>Einstellungen gespeichert.</p></div>')
+                            .insertAfter('.wrap h1, .wrap h2.nav-tab-wrapper')
+                            .delay(3000)
+                            .fadeOut();
+                    } else {
+                        alert('Fehler beim Speichern: ' + (response.data || 'Unbekannter Fehler'));
+                    }
+                },
+                error: function() {
+                    alert('Fehler beim Speichern der Einstellungen.');
+                },
+                complete: function() {
+                    $button.prop('disabled', false);
+                    $spinner.hide();
+                }
+            });
+        }
 
         /**
          * Initialize sortable

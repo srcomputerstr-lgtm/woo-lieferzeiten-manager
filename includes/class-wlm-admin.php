@@ -22,6 +22,9 @@ class WLM_Admin {
         
         // Register settings
         add_action('admin_init', array($this, 'register_settings'));
+        
+        // AJAX handler for saving settings
+        add_action('wp_ajax_wlm_save_settings', array($this, 'ajax_save_settings'));
     }
 
     /**
@@ -144,7 +147,7 @@ class WLM_Admin {
             }
         }
         
-        wp_localize_script('wlm-admin', 'wlm_admin', array(
+        wp_localize_script('wlm-admin', 'wlm_admin_params', array(
             'ajax_url' => admin_url('admin-ajax.php'),
             'nonce' => wp_create_nonce('wlm-admin-nonce'),
             'attributes' => $attributes
@@ -281,10 +284,11 @@ class WLM_Admin {
                     break;
             }
             
-            // Show submit button only for standalone page
-            if (!$is_wc_settings) {
-                submit_button();
-            }
+            // Show submit button
+            echo '<p class="submit">';
+            echo '<button type="button" id="wlm-save-settings" class="button-primary">' . esc_html__('Änderungen speichern', 'woo-lieferzeiten-manager') . '</button>';
+            echo '<span class="wlm-save-spinner" style="display:none; margin-left: 10px;">Speichern...</span>';
+            echo '</p>';
             
             if (!$is_wc_settings):
             ?>
@@ -316,5 +320,45 @@ class WLM_Admin {
     private function render_surcharges_tab() {
         $surcharges = get_option('wlm_surcharges', array());
         require_once WLM_PLUGIN_DIR . 'admin/views/tab-surcharges.php';
+    }
+
+    /**
+     * AJAX handler for saving settings
+     */
+    public function ajax_save_settings() {
+        // Verify nonce
+        if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'wlm-admin-nonce')) {
+            wp_send_json_error('Invalid nonce');
+            return;
+        }
+        
+        // Check permissions
+        if (!current_user_can('manage_woocommerce')) {
+            wp_send_json_error('Insufficient permissions');
+            return;
+        }
+        
+        // Get data
+        $data = isset($_POST['data']) ? $_POST['data'] : array();
+        
+        // Save settings
+        if (isset($data['wlm_settings'])) {
+            update_option('wlm_settings', $data['wlm_settings']);
+        }
+        
+        // Save shipping methods
+        if (isset($data['wlm_shipping_methods'])) {
+            update_option('wlm_shipping_methods', $data['wlm_shipping_methods']);
+        }
+        
+        // Save surcharges
+        if (isset($data['wlm_surcharges'])) {
+            update_option('wlm_surcharges', $data['wlm_surcharges']);
+        }
+        
+        // Force shipping methods to re-register
+        do_action('woocommerce_load_shipping_methods');
+        
+        wp_send_json_success('Settings saved');
     }
 }
