@@ -251,6 +251,22 @@ GPL v2 oder höher
 
 ## Changelog
 
+### Version 1.3.4 ✅
+- ✅ **BACKEND FIX**: Speichern funktioniert jetzt endlich!
+  - Kein eigenes Formular mehr in WooCommerce-Settings
+  - WooCommerce stellt das `<form>` Tag bereit
+  - Kein eigener Save-Button mehr (WooCommerce fügt automatisch hinzu)
+  - Korrektes Nonce-Handling mit `woocommerce-settings`
+  - Kein "Link abgelaufen" Fehler mehr
+  - Nur noch **ein** Button (von WooCommerce)
+- 🎨 **FRONTEND FIX**: Lieferzeit-Darstellung korrigiert
+  - Lieferzeit nicht mehr im Label (wird escaped)
+  - Lieferzeit wird über `woocommerce_after_shipping_rate` Hook angezeigt
+  - Kleinere Schrift unter der Versandart
+  - Format: "Lieferung: **Mi, 12.11. – Fr, 14.11.**"
+  - Express-Option wird jetzt angezeigt (wenn aktiviert)
+  - Inline-Styling für konsistente Darstellung
+
 ### Version 1.3.3 🐛
 - 🐛 **CRITICAL FIX**: Speichern-Button jetzt innerhalb des Formulars
   - Button war außerhalb des `<form>` Tags und funktionierte nicht
