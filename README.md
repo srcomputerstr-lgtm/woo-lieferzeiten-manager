@@ -251,6 +251,14 @@ GPL v2 oder höher
 
 ## Changelog
 
+### Version 1.3.6 🐞
+- 🐞 **CRITICAL HOTFIX**: Parse Error behoben
+  - PHP Parse Error in Zeile 177 und 54 von `class-wlm-shipping-methods.php`
+  - Fehler: `syntax error, unexpected identifier "font"`
+  - Ursache: Falsche Anführungszeichen in HTML-Attributen (`style='...'` statt `style="..."`)
+  - Gelöst: Einfache und doppelte Anführungszeichen korrekt getauscht
+  - Plugin funktioniert jetzt wieder!
+
 ### Version 1.3.5 🚀
 - 🚀 **MAJOR CHANGE**: Versandarten laufen jetzt parallel zu WooCommerce (wie Conditional Shipping)
   - Versandarten werden **nicht mehr** in Versandzonen angezeigt
