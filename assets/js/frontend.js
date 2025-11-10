@@ -208,14 +208,55 @@
          * Handle cart/checkout updates
          */
         onCartUpdate: function() {
-            // Additional logic after cart/checkout updates if needed
-            console.log('WLM: Cart/Checkout updated');
+            // Move delivery time from label to below
+            this.moveDeliveryTimeFromLabel();
+        },
+
+        /**
+         * Move delivery time from shipping label to below the label
+         */
+        moveDeliveryTimeFromLabel: function() {
+            // Find all shipping method labels
+            $('.woocommerce-shipping-methods li label').each(function() {
+                var $label = $(this);
+                var $input = $label.find('input[type="radio"]');
+                var methodId = $input.val();
+                
+                // Only process WLM methods
+                if (!methodId || methodId.indexOf('wlm_method_') !== 0) {
+                    return;
+                }
+                
+                // Check if already processed
+                if ($label.data('wlm-processed')) {
+                    return;
+                }
+                $label.data('wlm-processed', true);
+                
+                // Extract delivery time from label HTML
+                var labelHtml = $label.html();
+                var deliveryTimeMatch = labelHtml.match(/<br><span[^>]*>([^<]+)<\/span>/);
+                
+                if (deliveryTimeMatch) {
+                    // Remove delivery time from label
+                    var cleanLabelHtml = labelHtml.replace(/<br><span[^>]*>.*?<\/span>/, '');
+                    $label.html(cleanLabelHtml);
+                    
+                    // Add delivery time below label
+                    var deliveryTimeHtml = deliveryTimeMatch[1];
+                    var $deliveryTime = $('<div class="wlm-delivery-time" style="font-size: 0.9em; color: #666; margin-top: 5px;">' + deliveryTimeHtml + '</div>');
+                    $label.closest('li').append($deliveryTime);
+                }
+            });
         }
     };
 
     // Initialize on document ready
     $(document).ready(function() {
         WLM_Frontend.init();
+        
+        // Move delivery time from labels on initial load
+        WLM_Frontend.moveDeliveryTimeFromLabel();
     });
 
 })(jQuery);
