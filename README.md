@@ -251,6 +251,17 @@ GPL v2 oder höher
 
 ## Changelog
 
+### Version 1.4.7 🎉
+- 🎉 **MAJOR FIX**: Versandarten werden jetzt im Warenkorb/Checkout angezeigt!
+  - Problem: WooCommerce filterte unsere Rates basierend auf Versandzonen
+  - Rates waren auf Produktseite sichtbar, aber nicht im Warenkorb
+  - Lösung: `preserve_global_rates()` Filter mit Priority 500
+  - Prüft ob unsere Rates gefiltert wurden und fügt sie wieder hinzu
+  - Rates sind jetzt **global verfügbar** für alle Zonen!
+- 🔧 Meta-Data zu Rates hinzugefügt:
+  - `wlm_global`: Markiert Rate als global
+  - `wlm_method_config`: Speichert Methoden-Konfiguration
+
 ### Version 1.4.6 🐞
 - 🐞 **CRITICAL FIX**: Versandarten werden jetzt im Warenkorb angezeigt!
   - Problem: `WC_Shipping_Rate` wurde mit ungültigem `method_id` Parameter erstellt
