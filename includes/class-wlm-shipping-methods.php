@@ -1,8 +1,8 @@
 <?php
 /**
- * Shipping methods class - Registers each configured shipping method as WooCommerce shipping method
+ * Shipping Methods Handler
  *
- * @package WooLieferzeitenManager
+ * @package WooCommerce_Lieferzeiten_Manager
  */
 
 if (!defined('ABSPATH')) {
@@ -14,13 +14,8 @@ class WLM_Shipping_Methods {
      * Constructor
      */
     public function __construct() {
-        // Add shipping rates directly to packages (bypass zones)
-        // Use high priority to ensure our rates are added after other plugins
-        add_filter('woocommerce_package_rates', array($this, 'add_shipping_rates'), 100, 2);
-        
-        // Prevent WooCommerce from filtering our rates based on zones
-        // This must run AFTER zone filtering (priority > 10)
-        add_filter('woocommerce_package_rates', array($this, 'preserve_global_rates'), 500, 2);
+        // Register our shipping methods with WooCommerce
+        add_filter('woocommerce_shipping_methods', array($this, 'register_shipping_methods'));
         
         // Debug: Log final rates
         add_filter('woocommerce_package_rates', array($this, 'debug_final_rates'), 999, 2);
@@ -30,111 +25,166 @@ class WLM_Shipping_Methods {
     }
 
     /**
-     * Add shipping rates directly to package (bypass zones)
+     * Register our shipping methods with WooCommerce
      *
-     * @param array $rates Existing shipping rates.
-     * @param array $package Shipping package.
-     * @return array Modified shipping rates.
+     * @param array $methods Existing shipping methods.
+     * @return array Modified shipping methods.
      */
-    public function add_shipping_rates($rates, $package) {
+    public function register_shipping_methods($methods) {
+        // Get configured methods
         $configured_methods = $this->get_configured_methods();
         
-        // DEBUG
-        error_log('WLM: add_shipping_rates called');
-        error_log('WLM: Configured methods: ' . print_r($configured_methods, true));
-        
-        foreach ($configured_methods as $method) {
-            // Check if method is enabled
-            error_log('WLM: Checking method: ' . ($method['name'] ?? 'unknown'));
-            error_log('WLM: Method enabled: ' . var_export($method['enabled'] ?? false, true));
-            if (empty($method['enabled'])) {
-                error_log('WLM: Method disabled, skipping');
+        // Register each configured method with a dynamic class
+        foreach ($configured_methods as $method_config) {
+            if (empty($method_config['enabled'])) {
                 continue;
             }
             
-            // Check conditions
-            $conditions_met = $this->check_method_conditions($method, $package);
-            error_log('WLM: Conditions met: ' . var_export($conditions_met, true));
-            if (!$conditions_met) {
-                error_log('WLM: Conditions not met, skipping');
-                continue;
-            }
+            $method_id = $method_config['id'];
             
-            // Calculate cost
-            $cost = $this->calculate_method_cost($method, $package);
+            // Create a unique class for this method
+            $this->create_method_class($method_id, $method_config);
             
-            // Get delivery window (but don't add to label - will be displayed via hook)
-            $label = $method['title'] ?? $method['name'] ?? 'Versandart';
-            // Note: Delivery time is displayed via woocommerce_after_shipping_rate hook
-            
-            // Create rate
-            // Note: Don't pass method_id (5th parameter) as we're not a registered WC_Shipping_Method
-            $rate = new WC_Shipping_Rate(
-                $method['id'],  // Unique rate ID
-                $label,         // Label to display
-                $cost,          // Cost
-                array()         // Taxes (empty for now)
-            );
-            
-            // Add meta data to make rate globally available (bypass zone restrictions)
-            $rate->add_meta_data('wlm_global', true);
-            $rate->add_meta_data('wlm_method_config', $method);
-            
-            // Add rate to rates array
-            error_log('WLM: Adding rate: ' . $method['id'] . ' - ' . $label);
-            $rates[$method['id']] = $rate;
+            // Register the class
+            $class_name = 'WLM_Shipping_Method_' . str_replace('wlm_method_', '', $method_id);
+            $methods[$method_id] = $class_name;
         }
         
-        error_log('WLM: Total rates after adding: ' . count($rates));
-        
-        return $rates;
+        return $methods;
     }
     
     /**
-     * Calculate cost for a method
+     * Create a dynamic shipping method class
      *
-     * @param array $method Method configuration.
-     * @param array $package Shipping package.
-     * @return float Cost.
+     * @param string $method_id Method ID.
+     * @param array $method_config Method configuration.
      */
-    private function calculate_method_cost($method, $package) {
-        $cost = floatval($method['cost'] ?? 0);
-        $cost_type = $method['cost_type'] ?? 'flat';
+    private function create_method_class($method_id, $method_config) {
+        $class_name = 'WLM_Shipping_Method_' . str_replace('wlm_method_', '', $method_id);
         
-        if ($cost_type === 'by_weight') {
-            $total_weight = 0;
-            foreach ($package['contents'] as $item) {
-                $product = $item['data'];
-                $total_weight += $product->get_weight() * $item['quantity'];
-            }
-            $cost = $cost * $total_weight;
-        } elseif ($cost_type === 'by_qty') {
-            $total_qty = array_sum(wp_list_pluck($package['contents'], 'quantity'));
-            $cost = $cost * $total_qty;
+        // Skip if class already exists
+        if (class_exists($class_name)) {
+            return;
         }
         
-        return $cost;
+        // Create the class dynamically
+        $code = '
+        class ' . $class_name . ' extends WC_Shipping_Method {
+            private $wlm_method_id = "' . addslashes($method_id) . '";
+            private $wlm_method_config = null;
+            
+            public function __construct($instance_id = 0) {
+                $this->id = "' . addslashes($method_id) . '";
+                $this->instance_id = absint($instance_id);
+                $this->method_title = "' . addslashes($method_config['name'] ?? 'WLM Versandart') . '";
+                $this->method_description = "Lieferzeiten Manager Versandart";
+                $this->title = "' . addslashes($method_config['title'] ?? $method_config['name'] ?? 'Versandart') . '";
+                $this->enabled = "yes";
+                
+                $this->supports = array(
+                    "shipping-zones",
+                    "instance-settings",
+                    "instance-settings-modal",
+                );
+                
+                $this->init();
+            }
+            
+            public function init() {
+                $this->init_form_fields();
+                $this->init_settings();
+                
+                add_action("woocommerce_update_options_shipping_" . $this->id, array($this, "process_admin_options"));
+            }
+            
+            public function init_form_fields() {
+                $this->form_fields = array(
+                    "enabled" => array(
+                        "title" => __("Aktiviert", "woo-lieferzeiten-manager"),
+                        "type" => "checkbox",
+                        "label" => __("Diese Versandart aktivieren", "woo-lieferzeiten-manager"),
+                        "default" => "yes"
+                    ),
+                    "title" => array(
+                        "title" => __("Titel", "woo-lieferzeiten-manager"),
+                        "type" => "text",
+                        "description" => __("Wird dem Kunden angezeigt", "woo-lieferzeiten-manager"),
+                        "default" => $this->method_title,
+                        "desc_tip" => true
+                    ),
+                    "note" => array(
+                        "title" => __("Hinweis", "woo-lieferzeiten-manager"),
+                        "type" => "textarea",
+                        "description" => __("Diese Versandart wird über WooCommerce → Einstellungen → Lieferzeiten Manager konfiguriert.", "woo-lieferzeiten-manager"),
+                        "custom_attributes" => array("readonly" => "readonly"),
+                        "default" => ""
+                    )
+                );
+            }
+            
+            private function get_method_config() {
+                if ($this->wlm_method_config === null) {
+                    $methods_handler = WLM_Core::instance()->shipping_methods;
+                    $this->wlm_method_config = $methods_handler->get_method_by_id($this->wlm_method_id);
+                }
+                return $this->wlm_method_config;
+            }
+            
+            public function calculate_shipping($package = array()) {
+                $method_config = $this->get_method_config();
+                
+                if (!$method_config) {
+                    error_log("WLM: Method config not found for ID: " . $this->wlm_method_id);
+                    return;
+                }
+                
+                if (empty($method_config["enabled"])) {
+                    error_log("WLM: Method disabled: " . $this->wlm_method_id);
+                    return;
+                }
+                
+                $methods_handler = WLM_Core::instance()->shipping_methods;
+                
+                if (!$methods_handler->check_method_conditions($method_config, $package)) {
+                    error_log("WLM: Method conditions not met: " . $this->wlm_method_id);
+                    return;
+                }
+                
+                $cost = $methods_handler->calculate_method_cost($method_config, $package);
+                
+                $rate = array(
+                    "id" => $this->get_rate_id(),
+                    "label" => $this->title,
+                    "cost" => $cost,
+                    "package" => $package,
+                );
+                
+                $this->add_rate($rate);
+                
+                error_log("WLM: Added rate for method: " . $this->wlm_method_id . " - Cost: " . $cost);
+            }
+        }
+        ';
+        
+        eval($code);
     }
-
-
 
     /**
      * Get all configured shipping methods
      *
-     * @return array Configured methods.
+     * @return array Array of method configurations.
      */
     public function get_configured_methods() {
         $methods = get_option('wlm_shipping_methods', array());
         
-        // Ensure methods is an array
         if (!is_array($methods)) {
-            $methods = array();
+            return array();
         }
         
-        // Add unique ID if missing
-        foreach ($methods as $index => &$method) {
+        // Ensure each method has an ID
+        foreach ($methods as $key => $method) {
             if (empty($method['id'])) {
-                $method['id'] = 'wlm_method_' . ($index + 1);
+                $methods[$key]['id'] = 'wlm_method_' . $key;
             }
         }
         
@@ -217,59 +267,46 @@ class WLM_Shipping_Methods {
                     continue;
                 }
                 
-                list($attr_slug, $attr_value) = array_map('trim', explode('=', $attr_line, 2));
+                list($attr_name, $attr_value) = array_map('trim', explode('=', $attr_line, 2));
                 
-                $has_attribute = false;
+                $found = false;
                 foreach ($package['contents'] as $item) {
                     $product = $item['data'];
+                    $product_attr = $product->get_attribute($attr_name);
                     
-                    if ($product->is_type('variation')) {
-                        $variation_attrs = $product->get_attributes();
-                        if (isset($variation_attrs[$attr_slug]) && $variation_attrs[$attr_slug] === $attr_value) {
-                            $has_attribute = true;
-                            break;
-                        }
-                    } else {
-                        $product_attr = $product->get_attribute($attr_slug);
-                        if ($product_attr === $attr_value) {
-                            $has_attribute = true;
-                            break;
-                        }
-                    }
-                }
-                
-                if (!$has_attribute) {
-                    return false;
-                }
-            }
-        }
-        
-        // Check required categories
-        if (!empty($method['required_categories'])) {
-            $required_cats = is_array($method['required_categories']) 
-                ? $method['required_categories'] 
-                : array_filter(array_map('trim', explode(',', $method['required_categories'])));
-            
-            if (!empty($required_cats)) {
-                $has_category = false;
-                foreach ($package['contents'] as $item) {
-                    $product = $item['data'];
-                    $product_id = $product->get_parent_id() ? $product->get_parent_id() : $product->get_id();
-                    $product_cats = wp_get_post_terms($product_id, 'product_cat', array('fields' => 'ids'));
-                    
-                    if (array_intersect($required_cats, $product_cats)) {
-                        $has_category = true;
+                    if ($product_attr && strtolower($product_attr) === strtolower($attr_value)) {
+                        $found = true;
                         break;
                     }
                 }
                 
-                if (!$has_category) {
+                if (!$found) {
                     return false;
                 }
             }
         }
         
         return true;
+    }
+
+    /**
+     * Calculate cost for a shipping method
+     *
+     * @param array $method Method configuration.
+     * @param array $package Shipping package.
+     * @return float Calculated cost.
+     */
+    public function calculate_method_cost($method, $package) {
+        $base_cost = floatval($method['cost'] ?? 0);
+        
+        // Check if express is selected
+        $is_express = WC()->session && WC()->session->get('wlm_express_selected') === $method['id'];
+        
+        if ($is_express && !empty($method['express_enabled'])) {
+            $base_cost += floatval($method['express_cost'] ?? 0);
+        }
+        
+        return $base_cost;
     }
 
     /**
@@ -283,7 +320,11 @@ class WLM_Shipping_Methods {
         
         // Get method configuration
         $method_id = $method->get_id();
-        $method_config = $this->get_method_by_id($method_id);
+        
+        // Extract base method ID (remove instance ID suffix)
+        $base_method_id = preg_replace('/:.*$/', '', $method_id);
+        
+        $method_config = $this->get_method_by_id($base_method_id);
         
         if (!$method_config) {
             return;
@@ -296,7 +337,7 @@ class WLM_Shipping_Methods {
             return;
         }
 
-        $is_express = WC()->session && WC()->session->get('wlm_express_selected') === $method_id;
+        $is_express = WC()->session && WC()->session->get('wlm_express_selected') === $base_method_id;
 
         echo '<div class="wlm-shipping-window" style="margin-top: 0.5em; font-size: 0.9em; color: #666;">';
         
@@ -306,7 +347,7 @@ class WLM_Shipping_Methods {
             echo esc_html__('Express-Versand gewählt', 'woo-lieferzeiten-manager');
             echo ' – ' . esc_html__('Zustellung:', 'woo-lieferzeiten-manager') . ' ';
             echo '<strong>' . esc_html($window['window_formatted']) . '</strong>';
-            echo ' <button type="button" class="wlm-remove-express" data-method-id="' . esc_attr($method_id) . '" style="margin-left: 0.5em; padding: 0.2em 0.5em; font-size: 0.9em;">';
+            echo ' <button type="button" class="wlm-remove-express" data-method-id="' . esc_attr($base_method_id) . '" style="margin-left: 0.5em; padding: 0.2em 0.5em; font-size: 0.9em;">';
             echo esc_html__('✕ entfernen', 'woo-lieferzeiten-manager');
             echo '</button>';
             echo '</div>';
@@ -325,7 +366,7 @@ class WLM_Shipping_Methods {
                     $express_window = $calculator->calculate_cart_window($method_config, true);
                     
                     echo '<div class="wlm-express-cta" style="margin-top: 0.5em;">';
-                    echo '<button type="button" class="wlm-activate-express" data-method-id="' . esc_attr($method_id) . '" style="padding: 0.4em 0.8em; background: #0073aa; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 0.9em;">';
+                    echo '<button type="button" class="wlm-activate-express" data-method-id="' . esc_attr($base_method_id) . '" style="padding: 0.4em 0.8em; background: #0073aa; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 0.9em;">';
                     echo esc_html__('⚡ Express-Versand', 'woo-lieferzeiten-manager') . ' ';
                     echo '(+' . wc_price($express_cost) . ') – ';
                     echo esc_html__('Zustellung:', 'woo-lieferzeiten-manager') . ' ';
@@ -338,108 +379,6 @@ class WLM_Shipping_Methods {
         
         echo '</div>';
     }
-
-    /**
-     * Ensure methods are available in shipping zones
-     */
-    public function ensure_methods_in_zones() {
-        // Make methods available globally (like Conditional Shipping)
-        // They will appear in all zones automatically
-        
-        $configured_methods = $this->get_configured_methods();
-        
-        if (empty($configured_methods)) {
-            return;
-        }
-        
-        // Get all shipping zones
-        $zones = WC_Shipping_Zones::get_zones();
-        
-        // Add "Rest of the World" zone
-        $zones[] = array(
-            'id' => 0,
-            'zone_name' => __('Rest of the World', 'woocommerce')
-        );
-        
-        foreach ($zones as $zone_data) {
-            $zone_id = $zone_data['id'] ?? $zone_data['zone_id'] ?? 0;
-            $zone = WC_Shipping_Zones::get_zone($zone_id);
-            
-            if (!$zone) {
-                continue;
-            }
-            
-            // Get existing shipping methods in this zone
-            $existing_methods = $zone->get_shipping_methods();
-            $existing_method_ids = array();
-            
-            foreach ($existing_methods as $method) {
-                $existing_method_ids[] = $method->id;
-            }
-            
-            // Add our methods if not already present
-            foreach ($configured_methods as $method_config) {
-                $method_id = $method_config['id'];
-                
-                // Skip if already in zone
-                if (in_array($method_id, $existing_method_ids)) {
-                    continue;
-                }
-                
-                // Add method to zone
-                $zone->add_shipping_method($method_id);
-            }
-        }
-    }
-    
-    /**
-     * Preserve our global rates even if they don't match the zone
-     *
-     * @param array $rates Shipping rates.
-     * @param array $package Shipping package.
-     * @return array Shipping rates.
-     */
-    public function preserve_global_rates($rates, $package) {
-        // Get our configured methods
-        $configured_methods = $this->get_configured_methods();
-        
-        // Check if any of our rates were removed
-        foreach ($configured_methods as $method) {
-            if (empty($method['enabled'])) {
-                continue;
-            }
-            
-            $method_id = $method['id'];
-            
-            // If our rate is not in the rates array, it was filtered out
-            if (!isset($rates[$method_id])) {
-                // Check if conditions are met
-                $conditions_met = $this->check_method_conditions($method, $package);
-                
-                if ($conditions_met) {
-                    // Re-add the rate
-                    $cost = $this->calculate_method_cost($method, $package);
-                    $label = $method['title'] ?? $method['name'] ?? 'Versandart';
-                    
-                    $rate = new WC_Shipping_Rate(
-                        $method['id'],
-                        $label,
-                        $cost,
-                        array()
-                    );
-                    
-                    $rate->add_meta_data('wlm_global', true);
-                    $rate->add_meta_data('wlm_method_config', $method);
-                    
-                    $rates[$method_id] = $rate;
-                    
-                    error_log('WLM: Re-added filtered rate: ' . $method_id);
-                }
-            }
-        }
-        
-        return $rates;
-    }
     
     /**
      * Debug: Log final shipping rates
@@ -451,9 +390,13 @@ class WLM_Shipping_Methods {
     public function debug_final_rates($rates, $package) {
         error_log('WLM: === FINAL RATES (Priority 999) ===');
         error_log('WLM: Total rates: ' . count($rates));
+        
         foreach ($rates as $rate_id => $rate) {
             error_log('WLM: Rate ID: ' . $rate_id . ' - Label: ' . $rate->get_label());
         }
+        
         return $rates;
     }
 }
+
+
