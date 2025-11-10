@@ -46,12 +46,19 @@ class WLM_Frontend {
      */
     public function enqueue_scripts() {
         if (is_product() || is_cart() || is_checkout()) {
-            wp_enqueue_style(
-                'wlm-frontend',
-                WLM_PLUGIN_URL . 'assets/css/frontend.css',
-                array(),
-                WLM_VERSION
-            );
+        wp_enqueue_style(
+            'wlm-frontend-blocks',
+            WLM_PLUGIN_URL . 'assets/css/frontend-blocks.css',
+            array(),
+            WLM_VERSION
+        );
+        
+        wp_enqueue_style(
+            'wlm-frontend-shipping',
+            WLM_PLUGIN_URL . 'assets/css/frontend-shipping.css',
+            array(),
+            WLM_VERSION
+        );
             
             // Enqueue blocks-specific styles for checkout
             if (is_checkout() || is_cart()) {
@@ -296,8 +303,6 @@ class WLM_Frontend {
      * @return array Modified rates.
      */
     public function add_delivery_info_to_rates($rates, $package) {
-        // DO NOT modify labels - keep them clean for ERP/payment systems
-        // Instead, add delivery info as meta data (WooCommerce renders it automatically)
         foreach ($rates as $rate_id => $rate) {
             $method_id = $rate->get_method_id();
             
@@ -305,12 +310,14 @@ class WLM_Frontend {
             $delivery_info = do_shortcode('[wlm_order_window method_id="' . esc_attr($method_id) . '"]');
             $express_info = do_shortcode('[wlm_express_toggle method_id="' . esc_attr($method_id) . '"]');
             
-            // Add as meta data - WooCommerce will render this in description
-            if (!empty($delivery_info)) {
-                $rate->add_meta_data('wlm_delivery', $delivery_info, false);
-            }
-            if (!empty($express_info)) {
-                $rate->add_meta_data('wlm_express', $express_info, false);
+            // Add to label with wrapper for styling
+            if (!empty($delivery_info) || !empty($express_info)) {
+                $label = $rate->get_label();
+                $label .= '<div class="wlm-shipping-extras">';
+                $label .= $delivery_info;
+                $label .= $express_info;
+                $label .= '</div>';
+                $rate->set_label($label);
             }
         }
         
