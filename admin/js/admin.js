@@ -245,8 +245,8 @@
         getShippingMethodTemplate: function(index, id) {
             // Get all available attributes
             var attributesHtml = '';
-            if (typeof wlm_admin !== 'undefined' && wlm_admin.attributes) {
-                $.each(wlm_admin.attributes, function(key, label) {
+            if (typeof wlm_admin_params !== 'undefined' && wlm_admin_params.attributes) {
+                $.each(wlm_admin_params.attributes, function(key, label) {
                     attributesHtml += '<option value="' + key + '">' + label + '</option>';
                 });
             }
@@ -517,7 +517,7 @@
                 data: {
                     action: 'wlm_get_attribute_values',
                     attribute: attribute,
-                    nonce: wlm_admin.nonce
+                    nonce: wlm_admin_params.nonce
                 },
                 success: function(response) {
                     if (response.success && response.data.length > 0) {
