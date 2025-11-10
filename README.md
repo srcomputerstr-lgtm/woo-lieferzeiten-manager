@@ -251,6 +251,15 @@ GPL v2 oder höher
 
 ## Changelog
 
+### Version 1.3.7 🐞
+- 🐞 **CRITICAL HOTFIX**: Gesamten eval-Code entfernt
+  - Parse Error in Zeile 177 war immer noch vorhanden
+  - Ursache: Alte `register_shipping_method_class()` Methode mit eval-Code wurde nicht entfernt
+  - Gelöst: Gesamte Methode (130 Zeilen) komplett gelöscht
+  - Alte WC_Shipping_Method Registrierung ist jetzt komplett entfernt
+  - Plugin nutzt jetzt ausschließlich `woocommerce_package_rates` Filter
+  - Plugin sollte jetzt funktionieren!
+
 ### Version 1.3.6 🐞
 - 🐞 **CRITICAL HOTFIX**: Parse Error behoben
   - PHP Parse Error in Zeile 177 und 54 von `class-wlm-shipping-methods.php`
