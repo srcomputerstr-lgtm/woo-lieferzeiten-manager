@@ -106,9 +106,20 @@ class WLM_Express {
         if (empty($method_id)) {
             wp_send_json_error(array('message' => __('Ungültige Versandart', 'woo-lieferzeiten-manager')));
         }
-
-        if (!$this->is_express_available()) {
-            wp_send_json_error(array('message' => __('Express ist derzeit nicht verfügbar', 'woo-lieferzeiten-manager')));
+        
+        // Get method configuration
+        $shipping_methods = WLM_Core::instance()->shipping_methods;
+        $method_config = $shipping_methods->get_method_by_id($method_id);
+        
+        if (!$method_config || empty($method_config['express_enabled'])) {
+            wp_send_json_error(array('message' => __('Express für diese Versandart nicht verfügbar', 'woo-lieferzeiten-manager')));
+        }
+        
+        $cutoff_time = $method_config['express_cutoff'] ?? '12:00';
+        $calculator = WLM_Core::instance()->calculator;
+        
+        if (!$calculator->is_express_available($cutoff_time)) {
+            wp_send_json_error(array('message' => __('Express ist derzeit nicht verfügbar (Cutoff-Zeit überschritten)', 'woo-lieferzeiten-manager')));
         }
 
         // Store express selection in session
