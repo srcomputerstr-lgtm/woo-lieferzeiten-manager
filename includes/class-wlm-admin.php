@@ -225,33 +225,6 @@ class WLM_Admin {
         // Determine if we're in WooCommerce settings or standalone page
         $is_wc_settings = isset($_GET['page']) && $_GET['page'] === 'wc-settings';
         
-        // Handle form submission for WooCommerce settings
-        if ($is_wc_settings && isset($_POST['save']) && $current_section === 'wlm') {
-            check_admin_referer('wlm-settings');
-            
-            if (isset($_POST['wlm_settings'])) {
-                update_option('wlm_settings', $_POST['wlm_settings']);
-            }
-            if (isset($_POST['wlm_shipping_methods'])) {
-                update_option('wlm_shipping_methods', $_POST['wlm_shipping_methods']);
-            }
-            if (isset($_POST['wlm_surcharges'])) {
-                update_option('wlm_surcharges', $_POST['wlm_surcharges']);
-            }
-            
-            // Get current tab
-            $current_tab = isset($_GET['wlm_tab']) ? sanitize_text_field($_GET['wlm_tab']) : 'times';
-            
-            // Redirect to avoid resubmission
-            wp_safe_redirect(admin_url('admin.php?page=wc-settings&tab=shipping&section=wlm&wlm_tab=' . $current_tab . '&saved=1'));
-            exit;
-        }
-        
-        // Show success message
-        if (isset($_GET['saved'])) {
-            echo '<div class="updated"><p>' . esc_html__('Einstellungen gespeichert.', 'woo-lieferzeiten-manager') . '</p></div>';
-        }
-        
         // Get active tab (use wlm_tab for WooCommerce settings, tab for standalone)
         if ($is_wc_settings && isset($_GET['wlm_tab'])) {
             $active_tab = sanitize_text_field($_GET['wlm_tab']);
@@ -279,13 +252,11 @@ class WLM_Admin {
                 </a>
             </h2>
 
-            <form method="post" action="<?php echo $is_wc_settings ? '' : 'options.php'; ?>">
-            <?php
-            if ($is_wc_settings) {
-                wp_nonce_field('wlm-settings');
-            } else {
+            <?php if (!$is_wc_settings): ?>
+            <form method="post" action="options.php">
+            <?php 
                 settings_fields('wlm_settings_group');
-            }
+            endif;
             
             switch ($active_tab) {
                 case 'times':
@@ -299,16 +270,15 @@ class WLM_Admin {
                     break;
             }
             
-            // Show submit button
-            if ($is_wc_settings) {
-                echo '<p class="submit">';
-                echo '<input type="submit" name="save" class="button-primary woocommerce-save-button" value="' . esc_attr__('Änderungen speichern', 'woo-lieferzeiten-manager') . '" />';
-                echo '</p>';
-            } else {
+            // Show submit button only for standalone page
+            if (!$is_wc_settings) {
                 submit_button();
             }
+            
+            if (!$is_wc_settings):
             ?>
             </form>
+            <?php endif; ?>
         </div>
         <?php
     }
