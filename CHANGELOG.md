@@ -139,3 +139,24 @@ Dieses Projekt folgt [Semantic Versioning](https://semver.org/):
 - [GitHub Repository](https://github.com/srcomputerstr-lgtm/woo-lieferzeiten-manager)
 - [Testing Guide](TESTING.md)
 - [README](README.md)
+
+## [1.5.1] - 2025-11-10
+
+### Added
+- `is_express_available()` method in Calculator class
+- Checks if current time is before express cutoff time
+- Required for express button display logic
+
+### Fixed
+- Express button not showing in frontend (missing method)
+
+### Confirmed
+- ✅ All frontend features are fully implemented and working
+- ✅ Delivery time window display functional
+- ✅ Express activation/deactivation functional
+- ✅ AJAX handlers working correctly
+
+### Known Issues
+- ⚠️ Attribute conditions still have data structure issues (planned for v1.6.0)
+
+---
