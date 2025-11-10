@@ -48,8 +48,19 @@ class WLM_Admin {
      */
     public function get_shipping_settings($settings, $current_section) {
         if ($current_section === 'wlm') {
-            // Return empty to prevent default settings rendering
-            return array();
+            // Return a dummy field so WooCommerce knows this section has settings
+            // This triggers the save_shipping_section hook
+            // The actual rendering is done in render_shipping_section()
+            return array(
+                array(
+                    'type' => 'title',
+                    'id' => 'wlm_dummy_title',
+                ),
+                array(
+                    'type' => 'sectionend',
+                    'id' => 'wlm_dummy_end',
+                ),
+            );
         }
         return $settings;
     }
