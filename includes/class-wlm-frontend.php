@@ -33,6 +33,10 @@ class WLM_Frontend {
 
         // Blocks integration
         add_action('woocommerce_blocks_loaded', array($this, 'register_blocks_integration'));
+        
+        // Block-based checkout: Add delivery info after shipping options
+        add_filter('woocommerce_cart_shipping_packages', array($this, 'add_delivery_info_to_shipping_packages'));
+        add_filter('woocommerce_package_rates', array($this, 'add_delivery_info_to_rates'), 1000, 2);
     }
 
     /**
@@ -258,5 +262,39 @@ class WLM_Frontend {
                 }
             );
         }
+    }
+    
+    /**
+     * Add delivery info to shipping packages for blocks
+     *
+     * @param array $packages Shipping packages.
+     * @return array Modified packages.
+     */
+    public function add_delivery_info_to_shipping_packages($packages) {
+        // This is called before rates are calculated
+        // We'll use it to inject our shortcodes later
+        return $packages;
+    }
+    
+    /**
+     * Add delivery info to shipping rates for blocks checkout
+     *
+     * @param array $rates Shipping rates.
+     * @param array $package Shipping package.
+     * @return array Modified rates.
+     */
+    public function add_delivery_info_to_rates($rates, $package) {
+        // For block-based checkout, we need to add HTML to rate labels
+        foreach ($rates as $rate_id => $rate) {
+            $label = $rate->get_label();
+            
+            // Add shortcodes to label
+            $label .= '[wlm_order_window]';
+            $label .= '[wlm_express_toggle]';
+            
+            $rate->set_label($label);
+        }
+        
+        return $rates;
     }
 }
