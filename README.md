@@ -251,6 +251,17 @@ GPL v2 oder höher
 
 ## Changelog
 
+### Version 1.4.6 🐞
+- 🐞 **CRITICAL FIX**: Versandarten werden jetzt im Warenkorb angezeigt!
+  - Problem: `WC_Shipping_Rate` wurde mit ungültigem `method_id` Parameter erstellt
+  - WooCommerce erwartete eine registrierte Shipping Method, wir übergaben unsere eigene ID
+  - Lösung: `method_id` Parameter entfernt (5. Parameter von `WC_Shipping_Rate`)
+  - Rates sind jetzt gültig und werden angezeigt!
+- 🐞 **FIX**: HTML aus Shipping Label entfernt
+  - Problem: WooCommerce escaped HTML in Labels
+  - Lösung: Lieferzeit wird über `woocommerce_after_shipping_rate` Hook angezeigt
+  - Saubere Trennung: Label = Versandart-Name, Hook = Lieferzeit
+
 ### Version 1.4.5 🐞
 - 🐞 **CRITICAL FIX**: PHP-seitige Normalisierung für attribute_conditions!
   - Problem: JavaScript-Änderungen werden durch WordPress-Cache nicht geladen
