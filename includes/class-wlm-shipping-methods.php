@@ -14,26 +14,86 @@ class WLM_Shipping_Methods {
      * Constructor
      */
     public function __construct() {
-        // Register all configured shipping methods
-        add_action('woocommerce_shipping_init', array($this, 'init_shipping_methods'));
-        add_filter('woocommerce_shipping_methods', array($this, 'add_shipping_methods'));
+        // Add shipping rates directly to packages (bypass zones)
+        add_filter('woocommerce_package_rates', array($this, 'add_shipping_rates'), 10, 2);
 
         // Add delivery window to shipping rates
         add_action('woocommerce_after_shipping_rate', array($this, 'display_delivery_window'), 10, 2);
-        
-        // Add to shipping zones automatically
-        add_action('woocommerce_load_shipping_methods', array($this, 'ensure_methods_in_zones'));
     }
 
     /**
-     * Initialize all configured shipping methods
+     * Add shipping rates directly to package (bypass zones)
+     *
+     * @param array $rates Existing shipping rates.
+     * @param array $package Shipping package.
+     * @return array Modified shipping rates.
      */
-    public function init_shipping_methods() {
+    public function add_shipping_rates($rates, $package) {
         $configured_methods = $this->get_configured_methods();
         
         foreach ($configured_methods as $method) {
-            $this->register_shipping_method_class($method);
+            // Check if method is enabled
+            if (empty($method['enabled'])) {
+                continue;
+            }
+            
+            // Check conditions
+            if (!$this->check_method_conditions($method, $package)) {
+                continue;
+            }
+            
+            // Calculate cost
+            $cost = $this->calculate_method_cost($method, $package);
+            
+            // Get delivery window
+            $label = $method['title'] ?? $method['name'] ?? 'Versandart';
+            $calculator = WLM_Core::instance()->calculator;
+            $window = $calculator->calculate_cart_window($method);
+            
+            if (!empty($window) && !empty($window['window_formatted'])) {
+                $label .= "<br><span style='font-size: 0.9em; color: #666;'>Lieferung: <strong style='color: #2c3e50;'>" . esc_html($window['window_formatted']) . "</strong></span>";
+            }
+            
+            // Create rate
+            $rate = new WC_Shipping_Rate(
+                $method['id'],
+                $label,
+                $cost,
+                array(),
+                $method['id']
+            );
+            
+            // Add rate to rates array
+            $rates[$method['id']] = $rate;
         }
+        
+        return $rates;
+    }
+    
+    /**
+     * Calculate cost for a method
+     *
+     * @param array $method Method configuration.
+     * @param array $package Shipping package.
+     * @return float Cost.
+     */
+    private function calculate_method_cost($method, $package) {
+        $cost = floatval($method['cost'] ?? 0);
+        $cost_type = $method['cost_type'] ?? 'flat';
+        
+        if ($cost_type === 'by_weight') {
+            $total_weight = 0;
+            foreach ($package['contents'] as $item) {
+                $product = $item['data'];
+                $total_weight += $product->get_weight() * $item['quantity'];
+            }
+            $cost = $cost * $total_weight;
+        } elseif ($cost_type === 'by_qty') {
+            $total_qty = array_sum(wp_list_pluck($package['contents'], 'quantity'));
+            $cost = $cost * $total_qty;
+        }
+        
+        return $cost;
     }
 
     /**
@@ -166,27 +226,6 @@ class WLM_Shipping_Methods {
             }
         }
         ');
-    }
-
-    /**
-     * Add all configured shipping methods to WooCommerce
-     *
-     * @param array $methods Existing shipping methods.
-     * @return array Modified shipping methods.
-     */
-    public function add_shipping_methods($methods) {
-        $configured_methods = $this->get_configured_methods();
-        
-        foreach ($configured_methods as $method) {
-            $method_id = $method['id'];
-            $class_name = 'WLM_Shipping_Method_' . str_replace('-', '_', $method_id);
-            
-            if (class_exists($class_name)) {
-                $methods[$method_id] = $class_name;
-            }
-        }
-        
-        return $methods;
     }
 
     /**
