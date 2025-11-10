@@ -67,13 +67,18 @@ class WLM_Admin {
     
     /**
      * Save MEGA Versandmanager section
+     * This is called by WooCommerce when the settings are saved
      */
     public function save_shipping_section() {
         global $current_section;
         
-        if ($current_section === 'wlm' && isset($_POST['wlm_settings'])) {
-            // Settings are saved via register_settings
-            // Just trigger the save action
+        if ($current_section === 'wlm') {
+            // Check nonce - WooCommerce uses its own nonce
+            if (!isset($_POST['_wpnonce']) || !wp_verify_nonce($_POST['_wpnonce'], 'woocommerce-settings')) {
+                return;
+            }
+            
+            // Save settings
             if (isset($_POST['wlm_settings'])) {
                 update_option('wlm_settings', $_POST['wlm_settings']);
             }
@@ -83,6 +88,9 @@ class WLM_Admin {
             if (isset($_POST['wlm_surcharges'])) {
                 update_option('wlm_surcharges', $_POST['wlm_surcharges']);
             }
+            
+            // Force shipping methods to re-register
+            do_action('woocommerce_load_shipping_methods');
         }
     }
 
@@ -226,30 +234,6 @@ class WLM_Admin {
             $active_tab = 'times';
         }
         
-        // Handle form submission for WooCommerce settings
-        if ($is_wc_settings && isset($_POST['save']) && $current_section === 'wlm') {
-            check_admin_referer('wlm-settings');
-            
-            if (isset($_POST['wlm_settings'])) {
-                update_option('wlm_settings', $_POST['wlm_settings']);
-            }
-            if (isset($_POST['wlm_shipping_methods'])) {
-                update_option('wlm_shipping_methods', $_POST['wlm_shipping_methods']);
-            }
-            if (isset($_POST['wlm_surcharges'])) {
-                update_option('wlm_surcharges', $_POST['wlm_surcharges']);
-            }
-            
-            // Redirect to avoid resubmission
-            wp_safe_redirect(admin_url('admin.php?page=wc-settings&tab=shipping&section=wlm&saved=1'));
-            exit;
-        }
-        
-        // Show success message
-        if (isset($_GET['saved'])) {
-            echo '<div class="updated"><p>' . esc_html__('Einstellungen gespeichert.', 'woo-lieferzeiten-manager') . '</p></div>';
-        }
-        
         ?>
         <div class="wrap wlm-settings-wrap">
             <?php if (!$is_wc_settings): ?>
@@ -268,38 +252,31 @@ class WLM_Admin {
                 </a>
             </h2>
 
-            <form method="post" action="<?php echo $is_wc_settings ? '' : 'options.php'; ?>">
-                <?php
-                if ($is_wc_settings) {
-                    wp_nonce_field('wlm-settings');
-                } else {
-                    settings_fields('wlm_settings_group');
-                }
-                
-                switch ($active_tab) {
-                    case 'times':
-                        $this->render_times_tab();
-                        break;
-                    case 'shipping':
-                        $this->render_shipping_tab();
-                        break;
-                    case 'surcharges':
-                        $this->render_surcharges_tab();
-                        break;
-                }
-                
-                // Show submit button
-                if ($is_wc_settings) {
-                    // For WooCommerce settings, add custom save button inside form
-                    echo '<p class="submit">';
-                    echo '<input type="submit" name="save" class="button-primary woocommerce-save-button" value="' . esc_attr__('Änderungen speichern', 'woo-lieferzeiten-manager') . '" />';
-                    echo '</p>';
-                } else {
-                    // For standalone page, use standard submit button
-                    submit_button();
-                }
-                ?>
-            </form>
+            <?php
+            // In WooCommerce settings, we don't use a form tag - WooCommerce provides it
+            if (!$is_wc_settings) {
+                echo '<form method="post" action="options.php">';
+                settings_fields('wlm_settings_group');
+            }
+            
+            switch ($active_tab) {
+                case 'times':
+                    $this->render_times_tab();
+                    break;
+                case 'shipping':
+                    $this->render_shipping_tab();
+                    break;
+                case 'surcharges':
+                    $this->render_surcharges_tab();
+                    break;
+            }
+            
+            // Show submit button only for standalone page
+            if (!$is_wc_settings) {
+                submit_button();
+                echo '</form>';
+            }
+            ?>
         </div>
         <?php
     }

@@ -107,16 +107,8 @@ class WLM_Shipping_Methods {
                 
                 $cost = $this->calculate_cost($package);
                 
-                // Calculate delivery window
+                // Use title only - delivery window is displayed via woocommerce_after_shipping_rate hook
                 $label = $this->title;
-                if (!empty($this->method_config)) {
-                    $calculator = WLM_Core::instance()->calculator;
-                    $window = $calculator->calculate_cart_window($this->method_config);
-                    
-                    if (!empty($window) && !empty($window["window_formatted"])) {
-                        $label .= "<br><small style=\"font-size: 0.9em; color: #666;\">📅 " . esc_html($window["window_formatted"]) . "</small>";
-                    }
-                }
                 
                 $rate = array(
                     "id" => $this->id,
@@ -369,22 +361,22 @@ class WLM_Shipping_Methods {
 
         $is_express = WC()->session && WC()->session->get('wlm_express_selected') === $method_id;
 
-        echo '<div class="wlm-shipping-window">';
+        echo '<div class="wlm-shipping-window" style="margin-top: 0.5em; font-size: 0.9em; color: #666;">';
         
         if ($is_express) {
-            echo '<div class="wlm-express-active">';
+            echo '<div class="wlm-express-active" style="color: #2c3e50;">';
             echo '<span class="wlm-checkmark">✓</span> ';
             echo esc_html__('Express-Versand gewählt', 'woo-lieferzeiten-manager');
             echo ' – ' . esc_html__('Zustellung:', 'woo-lieferzeiten-manager') . ' ';
             echo '<strong>' . esc_html($window['window_formatted']) . '</strong>';
-            echo ' <button type="button" class="wlm-remove-express" data-method-id="' . esc_attr($method_id) . '">';
+            echo ' <button type="button" class="wlm-remove-express" data-method-id="' . esc_attr($method_id) . '" style="margin-left: 0.5em; padding: 0.2em 0.5em; font-size: 0.9em;">';
             echo esc_html__('✕ entfernen', 'woo-lieferzeiten-manager');
             echo '</button>';
             echo '</div>';
         } else {
             echo '<div class="wlm-delivery-estimate">';
-            echo '🚛 ' . esc_html__('Voraussichtliche Zustellung:', 'woo-lieferzeiten-manager') . ' ';
-            echo '<strong>' . esc_html($window['window_formatted']) . '</strong>';
+            echo esc_html__('Lieferung:', 'woo-lieferzeiten-manager') . ' ';
+            echo '<strong style="color: #2c3e50;">' . esc_html($window['window_formatted']) . '</strong>';
             echo '</div>';
 
             // Check if express is available
@@ -395,8 +387,8 @@ class WLM_Shipping_Methods {
                     $express_cost = floatval($method_config['express_cost'] ?? 0);
                     $express_window = $calculator->calculate_cart_window($method_config, true);
                     
-                    echo '<div class="wlm-express-cta">';
-                    echo '<button type="button" class="wlm-activate-express" data-method-id="' . esc_attr($method_id) . '">';
+                    echo '<div class="wlm-express-cta" style="margin-top: 0.5em;">';
+                    echo '<button type="button" class="wlm-activate-express" data-method-id="' . esc_attr($method_id) . '" style="padding: 0.4em 0.8em; background: #0073aa; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 0.9em;">';
                     echo esc_html__('⚡ Express-Versand', 'woo-lieferzeiten-manager') . ' ';
                     echo '(+' . wc_price($express_cost) . ') – ';
                     echo esc_html__('Zustellung:', 'woo-lieferzeiten-manager') . ' ';
