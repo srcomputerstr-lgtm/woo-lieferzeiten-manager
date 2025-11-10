@@ -251,6 +251,24 @@ GPL v2 oder höher
 
 ## Changelog
 
+### Version 1.3.5 🚀
+- 🚀 **MAJOR CHANGE**: Versandarten laufen jetzt parallel zu WooCommerce (wie Conditional Shipping)
+  - Versandarten werden **nicht mehr** in Versandzonen angezeigt
+  - Keine manuelle Aktivierung in Zonen mehr nötig
+  - Versandarten werden direkt über `woocommerce_package_rates` Filter hinzugefügt
+  - Funktionieren global, unabhängig von Versandzonen
+  - Alte WC_Shipping_Method Registrierung entfernt
+- ✅ **BACKEND FIX**: Speichern funktioniert jetzt zuverlässig
+  - Eigenes Formular mit manuellem Handling
+  - Korrekter Nonce: `wlm-settings`
+  - Redirect nach Speichern mit Success-Message
+  - Daten werden korrekt in Optionen gespeichert
+- 🎨 **FRONTEND FIX**: Lieferzeit wird wieder angezeigt
+  - Lieferzeit im Label mit HTML-Filter
+  - Format: "Lieferung: **Mi, 12.11. – Fr, 14.11.**"
+  - Kleinere Schrift, graue Farbe
+  - Filter `woocommerce_cart_shipping_method_full_label` erlaubt HTML
+
 ### Version 1.3.4 ✅
 - ✅ **BACKEND FIX**: Speichern funktioniert jetzt endlich!
   - Kein eigenes Formular mehr in WooCommerce-Settings
