@@ -251,6 +251,16 @@ GPL v2 oder höher
 
 ## Changelog
 
+### Version 1.4.1 🐞
+- 🐞 **HOTFIX**: JavaScript-Syntax-Fehler behoben
+  - Fehlendes Komma nach `saveSettings` Methode
+  - Verursachte: "Uncaught SyntaxError: missing } after property list"
+  - Gelöst: Komma hinzugefügt
+- 🐞 **HOTFIX**: Doppelten Button entfernt
+  - WooCommerce fügte automatisch einen "Save changes" Button hinzu
+  - Gelöst: CSS hinzugefügt um WooCommerce's Button zu verstecken
+  - Nur noch unser AJAX-Button ist sichtbar
+
 ### Version 1.4.0 🚀
 - 🚀 **MAJOR UPDATE**: AJAX-basiertes Speichern implementiert!
   - Problem: WooCommerce Settings API funktionierte nicht zuverlässig
