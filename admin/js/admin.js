@@ -147,7 +147,7 @@
                     $spinner.hide();
                 }
             });
-        }
+        },
 
         /**
          * Initialize sortable
