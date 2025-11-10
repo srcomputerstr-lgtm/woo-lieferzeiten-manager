@@ -232,3 +232,35 @@ Dieses Projekt folgt [Semantic Versioning](https://semver.org/):
 - JavaScript extracts delivery info from label and injects into description div
 
 ---
+
+## [1.5.5] - 2025-11-10
+
+### Changed
+- ✅ **CRITICAL:** Shipping rate labels now remain clean and static
+- ✅ **CRITICAL:** No dynamic content in labels anymore (important for ERP/payment systems)
+- ✅ Delivery info is fetched via AJAX and rendered in description div
+- ✅ Labels always show consistent names (e.g., "Paketversand S")
+
+### Added
+- New AJAX endpoint: `ajax_get_shipping_delivery_info()`
+- JavaScript method: `fetchAndRenderDeliveryInfo()`
+- JavaScript method: `loadDeliveryInfoForShippingMethods()`
+
+### Improved
+- Better separation of concerns (labels vs. delivery info)
+- Cleaner DOM structure
+- Better performance (AJAX on demand instead of pre-rendering)
+- ERP and payment provider compatibility
+
+### Removed
+- Label injection of delivery info
+- Shortcode rendering in labels
+- `wlm-delivery-info-wrapper` in labels
+
+### Technical Details
+- `add_delivery_info_to_rates()` no longer modifies labels
+- JavaScript extracts method ID from radio input value
+- AJAX call returns delivery window + express availability
+- HTML is rendered directly into target element (description div or container)
+
+---
