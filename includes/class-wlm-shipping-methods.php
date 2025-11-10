@@ -67,6 +67,10 @@ class WLM_Shipping_Methods {
             return;
         }
         
+        // Prepare values for the dynamic class
+        $method_name = addslashes($method_config['name'] ?? 'WLM Versandart');
+        $method_title = isset($method_config['title']) ? addslashes($method_config['title']) : (isset($method_config['name']) ? addslashes($method_config['name']) : 'Versandart');
+        
         // Create the class dynamically
         $code = '
         class ' . $class_name . ' extends WC_Shipping_Method {
@@ -76,9 +80,9 @@ class WLM_Shipping_Methods {
             public function __construct($instance_id = 0) {
                 $this->id = "' . addslashes($method_id) . '";
                 $this->instance_id = absint($instance_id);
-                $this->method_title = "' . addslashes($method_config['name'] ?? 'WLM Versandart') . '";
+                $this->method_title = "' . $method_name . '";
                 $this->method_description = "Lieferzeiten Manager Versandart";
-                $this->title = "' . addslashes($method_config['title'] ?? $method_config['name'] ?? 'Versandart') . '";
+                $this->title = "' . $method_title . '";
                 $this->enabled = "yes";
                 
                 $this->supports = array(
