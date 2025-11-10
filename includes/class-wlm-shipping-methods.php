@@ -31,14 +31,24 @@ class WLM_Shipping_Methods {
     public function add_shipping_rates($rates, $package) {
         $configured_methods = $this->get_configured_methods();
         
+        // DEBUG
+        error_log('WLM: add_shipping_rates called');
+        error_log('WLM: Configured methods: ' . print_r($configured_methods, true));
+        
         foreach ($configured_methods as $method) {
             // Check if method is enabled
+            error_log('WLM: Checking method: ' . ($method['name'] ?? 'unknown'));
+            error_log('WLM: Method enabled: ' . var_export($method['enabled'] ?? false, true));
             if (empty($method['enabled'])) {
+                error_log('WLM: Method disabled, skipping');
                 continue;
             }
             
             // Check conditions
-            if (!$this->check_method_conditions($method, $package)) {
+            $conditions_met = $this->check_method_conditions($method, $package);
+            error_log('WLM: Conditions met: ' . var_export($conditions_met, true));
+            if (!$conditions_met) {
+                error_log('WLM: Conditions not met, skipping');
                 continue;
             }
             
@@ -64,8 +74,11 @@ class WLM_Shipping_Methods {
             );
             
             // Add rate to rates array
+            error_log('WLM: Adding rate: ' . $method['id'] . ' - ' . $label);
             $rates[$method['id']] = $rate;
         }
+        
+        error_log('WLM: Total rates after adding: ' . count($rates));
         
         return $rates;
     }
