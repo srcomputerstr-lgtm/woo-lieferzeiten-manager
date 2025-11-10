@@ -50,6 +50,16 @@ class WLM_Frontend {
                 array(),
                 WLM_VERSION
             );
+            
+            // Enqueue blocks-specific styles for checkout
+            if (is_checkout() || is_cart()) {
+                wp_enqueue_style(
+                    'wlm-frontend-blocks',
+                    WLM_PLUGIN_URL . 'assets/css/frontend-blocks.css',
+                    array('wlm-frontend'),
+                    WLM_VERSION
+                );
+            }
 
             wp_enqueue_script(
                 'wlm-frontend',
@@ -284,16 +294,16 @@ class WLM_Frontend {
      * @return array Modified rates.
      */
     public function add_delivery_info_to_rates($rates, $package) {
-        // For block-based checkout, we need to add HTML to rate labels
+        // For block-based checkout, we add HTML to labels
+        // JavaScript will move it to a better position
         foreach ($rates as $rate_id => $rate) {
             $label = $rate->get_label();
             
-            // Add shortcodes to label
-            $label .= '[wlm_order_window]';
-            $label .= '[wlm_express_toggle]';
-            
-            // Process shortcodes
-            $label = do_shortcode($label);
+            // Add shortcodes wrapped in identifiable divs
+            $label .= '<div class="wlm-delivery-info-wrapper">';
+            $label .= do_shortcode('[wlm_order_window]');
+            $label .= do_shortcode('[wlm_express_toggle]');
+            $label .= '</div>';
             
             $rate->set_label($label);
         }

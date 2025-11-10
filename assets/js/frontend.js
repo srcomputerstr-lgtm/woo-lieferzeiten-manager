@@ -34,6 +34,10 @@
 
             // Cart/checkout updates
             $(document.body).on('updated_cart_totals updated_checkout', this.onCartUpdate.bind(this));
+            
+            // Move delivery info below shipping labels for better styling
+            this.moveDeliveryInfoBelowLabels();
+            $(document.body).on('updated_cart_totals updated_checkout', this.moveDeliveryInfoBelowLabels.bind(this));
         },
 
         /**
@@ -246,12 +250,7 @@
                     var deliveryTimeHtml = deliveryTimeMatch[1];
                     var $deliveryTime = $('<div class="wlm-delivery-time" style="font-size: 0.9em; color: #666; margin-top: 5px;">' + deliveryTimeHtml + '</div>');
                     $label.closest('li').append($deliveryTime);
-                }
-            });
-        }
-    };
-
-    // Initialize on document ready
+                }\n            });\n        },\n        \n        /**\n         * Move delivery info wrapper below shipping labels for better styling\n         */\n        moveDeliveryInfoBelowLabels: function() {\n            // Wait for DOM to be ready\n            setTimeout(function() {\n                // Find all shipping rate labels with delivery info\n                $('.wc-block-components-radio-control__label, .woocommerce-shipping-methods label').each(function() {\n                    var $label = $(this);\n                    var $wrapper = $label.find('.wlm-delivery-info-wrapper');\n                    \n                    if ($wrapper.length > 0) {\n                        // Extract wrapper from label\n                        var $extracted = $wrapper.detach();\n                        \n                        // Find parent container\n                        var $parent = $label.closest('.wc-block-components-radio-control-accordion-option, li');\n                        \n                        if ($parent.length > 0) {\n                            // Remove any existing delivery info\n                            $parent.find('.wlm-delivery-info-container').remove();\n                            \n                            // Create new container with better styling\n                            var $container = $('<div class="wlm-delivery-info-container"></div>');\n                            $container.html($extracted.html());\n                            \n                            // Append below label\n                            $parent.append($container);\n                        }\n                    }\n                });\n            }, 100);\n        }\n    };   // Initialize on document ready
     $(document).ready(function() {
         WLM_Frontend.init();
         
