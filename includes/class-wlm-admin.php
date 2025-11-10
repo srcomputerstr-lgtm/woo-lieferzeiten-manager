@@ -98,6 +98,9 @@ class WLM_Admin {
             }
             if (isset($_POST['wlm_shipping_methods'])) {
                 update_option('wlm_shipping_methods', $_POST['wlm_shipping_methods']);
+                
+                // Update zones after saving shipping methods
+                $this->update_zones_after_save();
             }
             if (isset($_POST['wlm_surcharges'])) {
                 update_option('wlm_surcharges', $_POST['wlm_surcharges']);
@@ -409,5 +412,60 @@ class WLM_Admin {
         
         error_log('=== WLM AJAX SAVE END ===');
         wp_send_json_success('Settings saved');
+    }
+    
+    /**
+     * Update shipping zones after saving methods
+     * Ensures all configured methods are added to all zones
+     */
+    private function update_zones_after_save() {
+        // Get configured methods
+        $configured_methods = get_option('wlm_shipping_methods', array());
+        
+        if (empty($configured_methods)) {
+            return;
+        }
+        
+        // Get all shipping zones
+        $zones = WC_Shipping_Zones::get_zones();
+        
+        // Add "Rest of the World" zone
+        $zones[] = array('id' => 0);
+        
+        foreach ($zones as $zone_data) {
+            $zone_id = $zone_data['id'] ?? $zone_data['zone_id'] ?? 0;
+            $zone = WC_Shipping_Zones::get_zone($zone_id);
+            
+            if (!$zone) {
+                continue;
+            }
+            
+            // Get existing shipping methods in this zone
+            $existing_methods = $zone->get_shipping_methods();
+            $existing_method_ids = array();
+            
+            foreach ($existing_methods as $method) {
+                $existing_method_ids[] = $method->id;
+            }
+            
+            // Add our methods if not already present
+            foreach ($configured_methods as $method_config) {
+                if (empty($method_config['enabled'])) {
+                    continue;
+                }
+                
+                $method_id = $method_config['id'];
+                
+                // Skip if already in zone
+                if (in_array($method_id, $existing_method_ids)) {
+                    continue;
+                }
+                
+                // Add method to zone
+                $zone->add_shipping_method($method_id);
+                
+                error_log('WLM: Added method ' . $method_id . ' to zone ' . $zone_id);
+            }
+        }
     }
 }
