@@ -107,8 +107,16 @@ class WLM_Shipping_Methods {
                 
                 $cost = $this->calculate_cost($package);
                 
-                // Use title only - delivery window is displayed via woocommerce_after_shipping_rate hook
+                // Add delivery window to label
                 $label = $this->title;
+                if (!empty($this->method_config)) {
+                    $calculator = WLM_Core::instance()->calculator;
+                    $window = $calculator->calculate_cart_window($this->method_config);
+                    
+                    if (!empty($window) && !empty($window["window_formatted"])) {
+                        $label .= "<br><span style='font-size: 0.9em; color: #666;'>Lieferung: <strong style='color: #2c3e50;'>" . esc_html($window["window_formatted"]) . "</strong></span>";
+                    }
+                }
                 
                 $rate = array(
                     "id" => $this->id,

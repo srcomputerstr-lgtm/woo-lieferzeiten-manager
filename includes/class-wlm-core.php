@@ -106,6 +106,26 @@ class WLM_Core {
     private function init_hooks() {
         // Add cron job action
         add_action('wlm_daily_availability_update', array($this, 'update_product_availability'));
+        
+        // Allow HTML in shipping method labels
+        add_filter('woocommerce_cart_shipping_method_full_label', array($this, 'allow_html_in_shipping_label'), 10, 2);
+    }
+    
+    /**
+     * Allow HTML in shipping method labels
+     *
+     * @param string $label Shipping method label.
+     * @param WC_Shipping_Rate $method Shipping method.
+     * @return string
+     */
+    public function allow_html_in_shipping_label($label, $method) {
+        // Check if this is one of our methods
+        $method_id = $method->get_id();
+        if (strpos($method_id, 'wlm_method_') === 0) {
+            // Return label as-is (with HTML)
+            return $label;
+        }
+        return $label;
     }
 
     /**
