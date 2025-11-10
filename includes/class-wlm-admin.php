@@ -326,39 +326,53 @@ class WLM_Admin {
      * AJAX handler for saving settings
      */
     public function ajax_save_settings() {
+        // DEBUG
+        error_log('=== WLM AJAX SAVE START ===');
+        error_log('$_POST keys: ' . print_r(array_keys($_POST), true));
+        
         // Verify nonce
         if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'wlm-admin-nonce')) {
+            error_log('AJAX SAVE: Nonce verification failed');
             wp_send_json_error('Invalid nonce');
             return;
         }
         
         // Check permissions
         if (!current_user_can('manage_woocommerce')) {
+            error_log('AJAX SAVE: Permission check failed');
             wp_send_json_error('Insufficient permissions');
             return;
         }
         
         // Get data
         $data = isset($_POST['data']) ? $_POST['data'] : array();
+        error_log('Data received: ' . print_r($data, true));
         
         // Save settings
         if (isset($data['wlm_settings'])) {
+            error_log('Saving wlm_settings: ' . print_r($data['wlm_settings'], true));
             update_option('wlm_settings', $data['wlm_settings']);
+            error_log('After save, wlm_settings from DB: ' . print_r(get_option('wlm_settings'), true));
         }
         
         // Save shipping methods
         if (isset($data['wlm_shipping_methods'])) {
+            error_log('Saving wlm_shipping_methods: ' . print_r($data['wlm_shipping_methods'], true));
             update_option('wlm_shipping_methods', $data['wlm_shipping_methods']);
+            error_log('After save, wlm_shipping_methods from DB: ' . print_r(get_option('wlm_shipping_methods'), true));
         }
         
         // Save surcharges
         if (isset($data['wlm_surcharges'])) {
+            error_log('Saving wlm_surcharges: ' . print_r($data['wlm_surcharges'], true));
             update_option('wlm_surcharges', $data['wlm_surcharges']);
+            error_log('After save, wlm_surcharges from DB: ' . print_r(get_option('wlm_surcharges'), true));
         }
         
         // Force shipping methods to re-register
         do_action('woocommerce_load_shipping_methods');
         
+        error_log('=== WLM AJAX SAVE END ===');
         wp_send_json_success('Settings saved');
     }
 }
