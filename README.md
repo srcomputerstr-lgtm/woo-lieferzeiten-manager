@@ -251,6 +251,19 @@ GPL v2 oder höher
 
 ## Changelog
 
+### Version 1.4.4 🐞
+- 🐞 **CRITICAL FIX**: Attribute Conditions werden jetzt korrekt gespeichert!
+  - Problem: Verschachtelte Arrays wurden nicht korrekt gesammelt
+  - Ursache: JavaScript-Regex matcht nur eine Ebene tief
+  - Lösung: Neue Logik für verschachtelte Array-Notation
+  - `attribute_conditions[0][attribute]` wird jetzt als `Array([0] => Array([attribute] => value))` gespeichert
+- 🐞 **FIX**: JavaScript-Fehler `wlm_admin is not defined` behoben
+  - Alle `wlm_admin` zu `wlm_admin_params` geändert
+- 🔧 **DEBUG**: Umfangreiches Logging für Warenkorb-Versandarten
+  - Priority auf 100 erhöht (nach anderen Plugins)
+  - Finales Rate-Logging bei Priority 999
+  - Hilft zu debuggen, warum Versandarten nicht erscheinen
+
 ### Version 1.4.3 🐞
 - 🐞 **CRITICAL FIX**: Versandarten und Zuschläge werden jetzt korrekt gespeichert!
   - Problem: JavaScript sammelte keine Daten (leere Arrays)
