@@ -160,3 +160,25 @@ Dieses Projekt folgt [Semantic Versioning](https://semver.org/):
 - ⚠️ Attribute conditions still have data structure issues (planned for v1.6.0)
 
 ---
+
+## [1.5.2] - 2025-11-10
+
+### Added
+- `wlm_order_window` shortcode for block-based checkout
+- `wlm_express_toggle` shortcode for block-based checkout
+- Shortcode processing in shipping rate labels for blocks
+
+### Fixed
+- ✅ **CRITICAL:** Delivery time windows not showing in block-based checkout
+- ✅ **CRITICAL:** Express options not showing in block-based checkout
+- Shortcodes appearing as text instead of rendered HTML
+
+### Technical Changes
+- Added `add_delivery_info_to_rates()` method in Frontend class
+- Shortcodes are now injected into shipping rate labels
+- `do_shortcode()` processing ensures proper rendering
+
+### Known Issues
+- ⚠️ Attribute conditions still have data structure issues (planned for v1.6.0)
+
+---
