@@ -22,6 +22,9 @@ class WLM_Express {
 
         // Add express to cart fragments
         add_filter('woocommerce_update_order_review_fragments', array($this, 'add_express_fragments'));
+        
+        // Add express fee to cart
+        add_action('woocommerce_cart_calculate_fees', array($this, 'add_express_fee'));
     }
 
     /**
@@ -34,23 +37,8 @@ class WLM_Express {
             return false;
         }
 
-        // Check if all products are in stock
-        foreach (WC()->cart->get_cart() as $cart_item) {
-            $product = $cart_item['data'];
-            if ($product->get_stock_status() !== 'instock') {
-                return false;
-            }
-        }
-
-        // Check cutoff time
-        $settings = WLM_Core::instance()->get_settings();
-        $cutoff_time = $settings['cutoff_time'] ?? '14:00';
-        $current_time = current_time('H:i');
-
-        if ($current_time > $cutoff_time) {
-            return false;
-        }
-
+        // Express is always available (cutoff time is checked per shipping method)
+        // Stock status is not a blocker for express
         return true;
     }
 
@@ -194,7 +182,7 @@ class WLM_Express {
     /**
      * Add express fee to cart
      */
-    public function add_express_fee_to_cart() {
+    public function add_express_fee() {
         if (!WC()->cart) {
             return;
         }
