@@ -251,6 +251,23 @@ GPL v2 oder höher
 
 ## Changelog
 
+### Version 1.3.8 ✅
+- ✅ **BACKEND FIX**: Speichern funktioniert jetzt endgültig!
+  - Kein eigenes `<form>` Tag mehr in WooCommerce Settings
+  - Kein eigener Nonce mehr (`wlm-settings` entfernt)
+  - Kein eigener Button mehr (nur WooCommerce's Button)
+  - Kein eigenes Speichern in `render_settings_page()` mehr
+  - Speichern erfolgt ausschließlich über `save_shipping_section()` Hook
+  - WooCommerce's Nonce wird korrekt geprüft: `woocommerce-settings`
+  - **Nur noch EIN Button** - keine doppelten Buttons mehr!
+  - **Kein "Link ist abgelaufen" Fehler** mehr!
+  - **Speichern funktioniert** zuverlässig!
+- 🎨 **FRONTEND IMPROVEMENT**: Lieferzeit wird jetzt UNTER dem Label angezeigt
+  - JavaScript extrahiert Lieferzeit aus Label
+  - Verschiebt sie unter das Label
+  - Saubere Darstellung ohne Vermischung
+  - Funktioniert auch nach AJAX-Updates (Cart/Checkout)
+
 ### Version 1.3.7 🐞
 - 🐞 **CRITICAL HOTFIX**: Gesamten eval-Code entfernt
   - Parse Error in Zeile 177 war immer noch vorhanden
