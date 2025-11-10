@@ -210,3 +210,25 @@ Dieses Projekt folgt [Semantic Versioning](https://semver.org/):
 - Wrapped delivery info in `.wlm-delivery-info-wrapper` for JS manipulation
 
 ---
+
+## [1.5.4] - 2025-11-10
+
+### Fixed
+- ✅ **CRITICAL:** Delivery windows now appear in proper `wc-block-components-totals-item__description` div
+- ✅ **CRITICAL:** Express button click handler now works correctly
+- ✅ Express AJAX handler gets cutoff time from method configuration
+- ✅ Express availability check uses proper cutoff parameter
+
+### Improved
+- Delivery info is moved from label to description div by JavaScript
+- Better error messages for express activation failures
+- Support for both WooCommerce Blocks and Classic Checkout
+- Cleaner DOM structure in checkout
+
+### Technical Changes
+- Rewrote `moveDeliveryInfoBelowLabels()` to target `.wc-block-components-totals-item__description`
+- Added method config lookup in `ajax_activate_express()`
+- Pass `cutoff_time` parameter to `is_express_available()`
+- JavaScript extracts delivery info from label and injects into description div
+
+---
