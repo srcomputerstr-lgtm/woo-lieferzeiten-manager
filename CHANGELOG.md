@@ -264,3 +264,36 @@ Dieses Projekt folgt [Semantic Versioning](https://semver.org/):
 - HTML is rendered directly into target element (description div or container)
 
 ---
+
+## [1.5.6] - 2025-11-10
+
+### Fixed
+- ✅ **CRITICAL:** Simplified delivery info rendering - back to proven label injection approach
+- ✅ **CRITICAL:** Express button now only shows for methods with express enabled
+- ✅ **CRITICAL:** Each method shows its own delivery window (not shared)
+
+### Added
+- New `frontend-shipping.css` for minimalist, responsive design
+- Wrapper div `.wlm-shipping-extras` for better styling control
+- `method_id` parameter support in shortcodes
+- Professional CSS styling with gradients, hover effects, responsive design
+
+### Changed
+- Removed complex AJAX/meta-data approaches that didn't work reliably
+- Shortcodes now accept `method_id` parameter for method-specific rendering
+- Delivery window calculated with correct method configuration
+- `order_window_shortcode()` uses `calculate_cart_window($method_config, false)`
+- `express_toggle_shortcode()` checks `$method_config['express_enabled']`
+
+### Technical Details
+- `add_delivery_info_to_rates()` passes `method_id` to shortcodes
+- Shortcodes render with method-specific configuration
+- Express only appears when `express_enabled` is true for that method
+- Labels contain delivery info (styled with CSS for clean appearance)
+- Responsive design for mobile devices
+- Uses `!important` in CSS to override theme styles
+
+### Known Issues
+- ⚠️ Labels contain dynamic content (not ideal for ERP systems, but works reliably)
+- ⚠️ Attribute conditions still have data structure issues (planned for v1.6.0)
+
