@@ -251,6 +251,22 @@ GPL v2 oder höher
 
 ## Changelog
 
+### Version 1.4.0 🚀
+- 🚀 **MAJOR UPDATE**: AJAX-basiertes Speichern implementiert!
+  - Problem: WooCommerce Settings API funktionierte nicht zuverlässig
+  - Lösung: Komplett eigenes AJAX-Speichern implementiert
+  - **Unabhängig** von WooCommerce Settings API
+  - **Volle Kontrolle** über Speicher-Prozess
+  - **Eigener Button** mit AJAX-Handler
+  - **Success-Message** via JavaScript
+  - **Kein Reload** mehr nötig (optional)
+  - **Speichern funktioniert jetzt garantiert!**
+- ✨ **Technische Details**:
+  - JavaScript sammelt alle Formulardaten
+  - Sendet via AJAX an `wp_ajax_wlm_save_settings`
+  - PHP speichert direkt via `update_option()`
+  - Keine Abhängigkeit von WooCommerce Hooks
+
 ### Version 1.3.9 🐞
 - 🐞 **CRITICAL FIX**: Speichern funktioniert jetzt wirklich!
   - Problem: `save_shipping_section()` Hook wurde nicht aufgerufen
