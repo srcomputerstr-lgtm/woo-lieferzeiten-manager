@@ -251,6 +251,18 @@ GPL v2 oder höher
 
 ## Changelog
 
+### Version 1.4.2 🐞
+- 🐞 **CRITICAL FIX**: AJAX-Speichern funktioniert jetzt wirklich!
+  - Problem: Daten wurden nicht an PHP übergeben
+  - Ursache: jQuery serialisiert verschachtelte Arrays nicht korrekt
+  - Lösung: Daten als JSON-String senden und in PHP dekodieren
+  - JavaScript: `data: JSON.stringify(formData)`
+  - PHP: `json_decode(stripslashes($_POST['data']), true)`
+- 🔍 **Debug-Logging hinzugefügt**:
+  - JavaScript: `console.log('Collected formData:', formData)`
+  - PHP: Detailliertes Logging in `ajax_save_settings()`
+  - Hilft bei zukünftigen Problemen
+
 ### Version 1.4.1 🐞
 - 🐞 **HOTFIX**: JavaScript-Syntax-Fehler behoben
   - Fehlendes Komma nach `saveSettings` Methode
