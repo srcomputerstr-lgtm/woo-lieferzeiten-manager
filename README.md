@@ -251,6 +251,15 @@ GPL v2 oder höher
 
 ## Changelog
 
+### Version 1.3.9 🐞
+- 🐞 **CRITICAL FIX**: Speichern funktioniert jetzt wirklich!
+  - Problem: `save_shipping_section()` Hook wurde nicht aufgerufen
+  - Ursache: `get_shipping_settings()` gab leeres Array zurück
+  - WooCommerce dachte: "Diese Section hat keine Settings" → kein Save-Hook
+  - Gelöst: Dummy-Settings hinzugefügt (title + sectionend)
+  - Jetzt weiß WooCommerce: "Diese Section hat Settings" → Save-Hook wird aufgerufen
+  - **Speichern funktioniert jetzt endgültig!**
+
 ### Version 1.3.8 ✅
 - ✅ **BACKEND FIX**: Speichern funktioniert jetzt endgültig!
   - Kein eigenes `<form>` Tag mehr in WooCommerce Settings
