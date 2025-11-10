@@ -79,13 +79,39 @@
                 var method = {};
                 $(this).find('[name^="wlm_shipping_methods"]').each(function() {
                     var name = $(this).attr('name');
+                    var value = $(this).is(':checkbox') ? $(this).is(':checked') : $(this).val();
+                    
+                    // Parse nested array notation: wlm_shipping_methods[0][key] or wlm_shipping_methods[0][key][0][subkey]
                     var match = name.match(/wlm_shipping_methods\[\d+\]\[(.+)\]/);
                     if (match) {
-                        var key = match[1];
-                        if ($(this).is(':checkbox')) {
-                            method[key] = $(this).is(':checked');
+                        var path = match[1];
+                        
+                        // Handle nested arrays like attribute_conditions[0][attribute]
+                        var nestedMatch = path.match(/^([^\[]+)(\[.+\])$/);
+                        if (nestedMatch) {
+                            var baseKey = nestedMatch[1];
+                            var nestedPath = nestedMatch[2];
+                            
+                            // Initialize base array if needed
+                            if (!method[baseKey]) {
+                                method[baseKey] = [];
+                            }
+                            
+                            // Parse nested indices and keys
+                            var parts = nestedPath.match(/\[(\d+)\]\[([^\]]+)\]/);                            if (parts) {
+                                var index = parseInt(parts[1]);
+                                var key = parts[2];
+                                
+                                // Initialize nested object if needed
+                                if (!method[baseKey][index]) {
+                                    method[baseKey][index] = {};
+                                }
+                                
+                                method[baseKey][index][key] = value;
+                            }
                         } else {
-                            method[key] = $(this).val();
+                            // Simple key
+                            method[path] = value;
                         }
                     }
                 });
