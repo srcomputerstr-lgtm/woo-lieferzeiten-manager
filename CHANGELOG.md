@@ -182,3 +182,31 @@ Dieses Projekt folgt [Semantic Versioning](https://semver.org/):
 - ⚠️ Attribute conditions still have data structure issues (planned for v1.6.0)
 
 ---
+
+## [1.5.3] - 2025-11-10
+
+### Fixed
+- ✅ **CRITICAL:** Express activation now works - removed stock status requirement
+- ✅ **CRITICAL:** "Express ist derzeit nicht verfügbar" error resolved
+- ✅ Express now appears as separate cart fee instead of modifying shipping cost
+- ✅ Delivery windows now appear below shipping labels, not inline
+
+### Added
+- `frontend-blocks.css` with minimalist, professional styling
+- `moveDeliveryInfoBelowLabels()` JavaScript method
+- Express fee is added to cart totals automatically
+- Responsive design for mobile devices
+
+### Improved
+- Delivery window styling - clean, readable, professional
+- Express button styling - gradient background, hover effects
+- Better spacing and layout in block-based checkout
+- JavaScript moves delivery info to better position
+
+### Technical Changes
+- Simplified `is_express_available()` - always returns true (cutoff checked per method)
+- Renamed `add_express_fee_to_cart()` to `add_express_fee()`
+- Hooked `add_express_fee()` to `woocommerce_cart_calculate_fees`
+- Wrapped delivery info in `.wlm-delivery-info-wrapper` for JS manipulation
+
+---
