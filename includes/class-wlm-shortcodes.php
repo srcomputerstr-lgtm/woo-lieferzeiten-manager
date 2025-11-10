@@ -309,13 +309,49 @@ class WLM_Shortcodes {
      * @param array $atts Shortcode attributes.
      * @return string
      */
+
+    /**
+     * Order window shortcode for blocks checkout
+     * 
+     * Usage: [wlm_order_window] or [wlm_order_window method_id="wlm_method_123"]
+     *
+     * @param array $atts Shortcode attributes.
+     * @return string
+     */
     public function order_window_shortcode($atts) {
+        $atts = shortcode_atts(array(
+            'method_id' => null,
+        ), $atts);
+        
         if (!WC()->cart) {
             return '';
         }
         
+        // Get method ID
+        if (!empty($atts['method_id'])) {
+            $base_method_id = $atts['method_id'];
+        } else {
+            // Fallback: Get selected shipping method
+            $chosen_methods = WC()->session->get('chosen_shipping_methods');
+            if (empty($chosen_methods)) {
+                return '';
+            }
+            
+            $chosen_method_id = $chosen_methods[0];
+            $base_method_id = preg_replace('/:.*$/', '', $chosen_method_id);
+        }
+        
+        // Get method configuration
+        $shipping_methods = WLM_Core::instance()->shipping_methods;
+        $method_config = $shipping_methods->get_method_by_id($base_method_id);
+        
+        if (!$method_config) {
+            return '';
+        }
+        
+        // Calculate delivery window for this specific method
         $calculator = WLM_Core::instance()->calculator;
-        $window = $calculator->calculate_cart_window();
+        $window = $calculator->calculate_cart_window($method_config, false);
         
         if (empty($window)) {
             return '';
@@ -336,72 +372,78 @@ class WLM_Shortcodes {
     /**
      * Express toggle shortcode for blocks checkout
      * 
-     * Usage: [wlm_express_toggle]
+     * Usage: [wlm_express_toggle] or [wlm_express_toggle method_id="wlm_method_123"]
      *
      * @param array $atts Shortcode attributes.
      * @return string
      */
     public function express_toggle_shortcode($atts) {
+        $atts = shortcode_atts(array(
+            'method_id' => null,
+        ), $atts);
+        
         if (!WC()->cart) {
             return '';
         }
         
-        // Get selected shipping method
-        $chosen_methods = WC()->session->get('chosen_shipping_methods');
-        if (empty($chosen_methods)) {
-            return '';
+        // Get method ID
+        if (!empty($atts['method_id'])) {
+            $base_method_id = $atts['method_id'];
+        } else {
+            // Fallback: Get selected shipping method
+            $chosen_methods = WC()->session->get('chosen_shipping_methods');
+            if (empty($chosen_methods)) {
+                return '';
+            }
+            
+            $chosen_method_id = $chosen_methods[0];
+            $base_method_id = preg_replace('/:.*$/', '', $chosen_method_id);
         }
-        
-        $chosen_method_id = $chosen_methods[0];
-        
-        // Extract base method ID (remove instance ID suffix)
-        $base_method_id = preg_replace('/:.*$/', '', $chosen_method_id);
         
         // Get method configuration
         $shipping_methods = WLM_Core::instance()->shipping_methods;
         $method_config = $shipping_methods->get_method_by_id($base_method_id);
         
+        // Check if express is enabled for THIS method
         if (!$method_config || empty($method_config['express_enabled'])) {
-            return '';
+            return ''; // No express for this method
         }
         
         $calculator = WLM_Core::instance()->calculator;
         $express_available = $calculator->is_express_available($method_config['express_cutoff'] ?? '12:00');
         
         if (!$express_available) {
-            return '';
+            return ''; // Express not available (cutoff time passed)
         }
         
         $is_express = WC()->session && WC()->session->get('wlm_express_selected') === $base_method_id;
-        $express_cost = floatval($method_config['express_cost'] ?? 0);
         $express_window = $calculator->calculate_cart_window($method_config, true);
+        $express_cost = floatval($method_config['express_cost'] ?? 0);
         
         ob_start();
         ?>
-        <div class="wlm-express-section" style="margin-top: 1em; padding: 0.75em; background: #f0f8ff; border: 1px solid #0073aa; border-radius: 4px;">
+        <div class="wlm-express-section" style="margin-top: 0.5em;">
             <?php if ($is_express): ?>
-                <div class="wlm-express-active" style="color: #2c3e50;">
-                    <span class="wlm-checkmark" style="color: #46b450; font-weight: bold;">✓</span> 
-                    <strong><?php echo esc_html__('Express-Versand gewählt', 'woo-lieferzeiten-manager'); ?></strong><br>
-                    <span style="font-size: 0.9em;">
-                        <?php echo esc_html__('Zustellung:', 'woo-lieferzeiten-manager'); ?> 
+                <div class="wlm-express-active" style="padding: 0.75em; background: #e8f5e9; border-radius: 4px; border-left: 4px solid #4caf50;">
+                    <span class="wlm-checkmark" style="color: #4caf50; font-weight: bold;">✓</span>
+                    <strong style="color: #2e7d32;"><?php echo esc_html__('Express-Versand gewählt', 'woo-lieferzeiten-manager'); ?></strong><br>
+                    <span style="font-size: 0.9em; color: #666;">
+                        <?php echo esc_html__('Zustellung:', 'woo-lieferzeiten-manager'); ?>
                         <strong><?php echo esc_html($express_window['window_formatted']); ?></strong>
                     </span>
                     <button type="button" class="wlm-remove-express" data-method-id="<?php echo esc_attr($base_method_id); ?>" 
-                            style="margin-left: 0.5em; padding: 0.3em 0.6em; font-size: 0.85em; background: #dc3232; color: white; border: none; border-radius: 3px; cursor: pointer;">
-                        <?php echo esc_html__('✕ entfernen', 'woo-lieferzeiten-manager'); ?>
+                            style="margin-left: 10px; padding: 0.25em 0.5em; background: #f44336; color: white; border: none; border-radius: 3px; cursor: pointer;">
+                        ✕ <?php echo esc_html__('entfernen', 'woo-lieferzeiten-manager'); ?>
                     </button>
                 </div>
             <?php else: ?>
-                <div class="wlm-express-cta">
-                    <button type="button" class="wlm-activate-express" data-method-id="<?php echo esc_attr($base_method_id); ?>" 
-                            style="width: 100%; padding: 0.6em 1em; background: #0073aa; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 0.95em; font-weight: 500;">
-                        <?php echo esc_html__('⚡ Express-Versand', 'woo-lieferzeiten-manager'); ?> 
-                        (+<?php echo wc_price($express_cost); ?>) – 
-                        <?php echo esc_html__('Zustellung:', 'woo-lieferzeiten-manager'); ?> 
-                        <strong><?php echo esc_html($express_window['window_formatted']); ?></strong>
-                    </button>
-                </div>
+                <button type="button" class="wlm-activate-express" data-method-id="<?php echo esc_attr($base_method_id); ?>" 
+                        style="width: 100%; padding: 0.75em; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; text-align: left;">
+                    ⚡ <?php echo esc_html__('Express-Versand', 'woo-lieferzeiten-manager'); ?> 
+                    (<?php echo wc_price($express_cost); ?>) – 
+                    <?php echo esc_html__('Zustellung:', 'woo-lieferzeiten-manager'); ?> 
+                    <strong><?php echo esc_html($express_window['window_formatted']); ?></strong>
+                </button>
             <?php endif; ?>
         </div>
         <?php

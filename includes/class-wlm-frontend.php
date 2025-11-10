@@ -301,9 +301,9 @@ class WLM_Frontend {
         foreach ($rates as $rate_id => $rate) {
             $method_id = $rate->get_method_id();
             
-            // Render shortcodes
-            $delivery_info = do_shortcode('[wlm_order_window]');
-            $express_info = do_shortcode('[wlm_express_toggle]');
+            // Render shortcodes with method_id parameter
+            $delivery_info = do_shortcode('[wlm_order_window method_id="' . esc_attr($method_id) . '"]');
+            $express_info = do_shortcode('[wlm_express_toggle method_id="' . esc_attr($method_id) . '"]');
             
             // Add as meta data - WooCommerce will render this in description
             if (!empty($delivery_info)) {
