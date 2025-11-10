@@ -251,6 +251,15 @@ GPL v2 oder höher
 
 ## Changelog
 
+### Version 1.3.2 🐛
+- 🐛 **FIX**: Doppelten "Speichern"-Button entfernt
+  - WooCommerce-Einstellungsseite zeigt nur noch einen Speichern-Button
+  - Verhindert Verwirrung welcher Button der richtige ist
+  - submit_button() wird nur für standalone Seite angezeigt
+- 📝 **Improvement**: Klarere Button-Struktur
+  - WooCommerce verwendet seinen eigenen Speichern-Button
+  - Formular funktioniert jetzt korrekt
+
 ### Version 1.3.1 🐛
 - 🐛 **CRITICAL FIX**: Speicherproblem im Backend behoben
   - Formular-Action für WooCommerce-Einstellungen korrigiert

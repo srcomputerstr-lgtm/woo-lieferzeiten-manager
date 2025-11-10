@@ -288,7 +288,11 @@ class WLM_Admin {
                         break;
                 }
                 
-                submit_button();
+                // Only show submit button for standalone page
+                // WooCommerce settings page has its own save button
+                if (!$is_wc_settings) {
+                    submit_button();
+                }
                 ?>
             </form>
         </div>
