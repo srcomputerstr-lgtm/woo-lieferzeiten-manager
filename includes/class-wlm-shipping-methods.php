@@ -18,6 +18,10 @@ class WLM_Shipping_Methods {
         // Use high priority to ensure our rates are added after other plugins
         add_filter('woocommerce_package_rates', array($this, 'add_shipping_rates'), 100, 2);
         
+        // Prevent WooCommerce from filtering our rates based on zones
+        // This must run AFTER zone filtering (priority > 10)
+        add_filter('woocommerce_package_rates', array($this, 'preserve_global_rates'), 500, 2);
+        
         // Debug: Log final rates
         add_filter('woocommerce_package_rates', array($this, 'debug_final_rates'), 999, 2);
 
@@ -71,6 +75,10 @@ class WLM_Shipping_Methods {
                 $cost,          // Cost
                 array()         // Taxes (empty for now)
             );
+            
+            // Add meta data to make rate globally available (bypass zone restrictions)
+            $rate->add_meta_data('wlm_global', true);
+            $rate->add_meta_data('wlm_method_config', $method);
             
             // Add rate to rates array
             error_log('WLM: Adding rate: ' . $method['id'] . ' - ' . $label);
@@ -382,6 +390,55 @@ class WLM_Shipping_Methods {
                 $zone->add_shipping_method($method_id);
             }
         }
+    }
+    
+    /**
+     * Preserve our global rates even if they don't match the zone
+     *
+     * @param array $rates Shipping rates.
+     * @param array $package Shipping package.
+     * @return array Shipping rates.
+     */
+    public function preserve_global_rates($rates, $package) {
+        // Get our configured methods
+        $configured_methods = $this->get_configured_methods();
+        
+        // Check if any of our rates were removed
+        foreach ($configured_methods as $method) {
+            if (empty($method['enabled'])) {
+                continue;
+            }
+            
+            $method_id = $method['id'];
+            
+            // If our rate is not in the rates array, it was filtered out
+            if (!isset($rates[$method_id])) {
+                // Check if conditions are met
+                $conditions_met = $this->check_method_conditions($method, $package);
+                
+                if ($conditions_met) {
+                    // Re-add the rate
+                    $cost = $this->calculate_method_cost($method, $package);
+                    $label = $method['title'] ?? $method['name'] ?? 'Versandart';
+                    
+                    $rate = new WC_Shipping_Rate(
+                        $method['id'],
+                        $label,
+                        $cost,
+                        array()
+                    );
+                    
+                    $rate->add_meta_data('wlm_global', true);
+                    $rate->add_meta_data('wlm_method_config', $method);
+                    
+                    $rates[$method_id] = $rate;
+                    
+                    error_log('WLM: Re-added filtered rate: ' . $method_id);
+                }
+            }
+        }
+        
+        return $rates;
     }
     
     /**
