@@ -289,3 +289,13 @@
 .wlm-logic-select {
     font-weight: 500;
 }
+
+/* Hide WooCommerce's default save button in our section */
+.woocommerce_page_wc-settings .wlm-settings-wrap ~ p.submit {
+    display: none !important;
+}
+
+/* Also hide WooCommerce's save button that appears after our content */
+#mainform > p.submit:not(.wlm-settings-wrap p.submit) {
+    display: none !important;
+}
