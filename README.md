@@ -251,6 +251,13 @@ GPL v2 oder höher
 
 ## Changelog
 
+### Version 1.4.5 🐞
+- 🐞 **CRITICAL FIX**: PHP-seitige Normalisierung für attribute_conditions!
+  - Problem: JavaScript-Änderungen werden durch WordPress-Cache nicht geladen
+  - Lösung: PHP parsed und korrigiert falsch strukturierte Daten beim Speichern
+  - `attribute_conditions[0][attribute]` wird automatisch zu `Array([0] => Array([attribute] => value))` konvertiert
+  - Funktioniert sofort, ohne auf Cache-Invalidierung zu warten!
+
 ### Version 1.4.4 🐞
 - 🐞 **CRITICAL FIX**: Attribute Conditions werden jetzt korrekt gespeichert!
   - Problem: Verschachtelte Arrays wurden nicht korrekt gesammelt
