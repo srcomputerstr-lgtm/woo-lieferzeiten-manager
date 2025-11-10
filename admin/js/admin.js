@@ -115,6 +115,9 @@
                 }
             });
             
+            // DEBUG: Log collected data
+            console.log('Collected formData:', formData);
+            
             // Show spinner
             $button.prop('disabled', true);
             $spinner.show();
@@ -123,10 +126,11 @@
             $.ajax({
                 url: ajaxurl,
                 type: 'POST',
+                dataType: 'json',
                 data: {
                     action: 'wlm_save_settings',
                     nonce: wlm_admin_params.nonce,
-                    data: formData
+                    data: JSON.stringify(formData)
                 },
                 success: function(response) {
                     if (response.success) {

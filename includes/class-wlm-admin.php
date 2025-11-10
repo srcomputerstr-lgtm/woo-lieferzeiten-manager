@@ -344,9 +344,15 @@ class WLM_Admin {
             return;
         }
         
-        // Get data
-        $data = isset($_POST['data']) ? $_POST['data'] : array();
-        error_log('Data received: ' . print_r($data, true));
+        // Get data (JSON string from JavaScript)
+        $data_json = isset($_POST['data']) ? $_POST['data'] : '';
+        error_log('Data JSON received: ' . $data_json);
+        
+        $data = json_decode(stripslashes($data_json), true);
+        if (!$data) {
+            $data = array();
+        }
+        error_log('Data decoded: ' . print_r($data, true));
         
         // Save settings
         if (isset($data['wlm_settings'])) {
