@@ -367,30 +367,50 @@ class WLM_Admin {
         // Save shipping methods
         if (isset($data['wlm_shipping_methods'])) {
             // Normalize data: Fix attribute_conditions if it's in wrong format
-            foreach ($data['wlm_shipping_methods'] as &$method) {
+            foreach ($data['wlm_shipping_methods'] as $method_index => &$method) {
                 // Check if attribute_conditions has wrong format
                 // Wrong: ["attribute_conditions[0][attribute]"] => "value"
-                // Right: ["attribute_conditions"] => [["attribute" => "value"]]
+                // Right: ["attribute_conditions"] => [["attribute" => "value", "value" => "val", "operator" => "="]]
                 $conditions = array();
+                $keys_to_remove = array();
+                
                 foreach ($method as $key => $value) {
-                    // Match pattern: attribute_conditions[0][attribute] or attribute_conditions[0][value]
+                    // Match pattern: attribute_conditions[0][attribute], attribute_conditions[0][value], attribute_conditions[0][operator]
                     if (preg_match('/^attribute_conditions\[(\d+)\]\[(\w+)\]$/', $key, $matches)) {
                         $index = (int)$matches[1];
                         $field = $matches[2];
                         
                         if (!isset($conditions[$index])) {
-                            $conditions[$index] = array();
+                            $conditions[$index] = array(
+                                'attribute' => '',
+                                'operator' => '=',
+                                'value' => ''
+                            );
                         }
                         $conditions[$index][$field] = $value;
                         
-                        // Remove the wrong key
-                        unset($method[$key]);
+                        // Mark for removal
+                        $keys_to_remove[] = $key;
                     }
+                }
+                
+                // Remove wrong keys
+                foreach ($keys_to_remove as $key) {
+                    unset($method[$key]);
                 }
                 
                 // If we found conditions, add them in correct format
                 if (!empty($conditions)) {
+                    // Filter out empty conditions
+                    $conditions = array_filter($conditions, function($cond) {
+                        return !empty($cond['attribute']) && !empty($cond['value']);
+                    });
+                    
                     $method['attribute_conditions'] = array_values($conditions);
+                    error_log('WLM: Normalized attribute_conditions for method ' . $method_index . ': ' . print_r($method['attribute_conditions'], true));
+                } else if (isset($method['attribute_conditions']) && is_array($method['attribute_conditions'])) {
+                    // Already in correct format, just validate
+                    error_log('WLM: attribute_conditions already in correct format for method ' . $method_index);
                 }
             }
             unset($method); // Break reference

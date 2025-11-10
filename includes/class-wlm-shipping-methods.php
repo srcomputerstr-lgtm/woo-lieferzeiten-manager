@@ -262,8 +262,76 @@ class WLM_Shipping_Methods {
             }
         }
         
-        // Check required attributes
-        if (!empty($method['required_attributes'])) {
+        // Check attribute conditions
+        if (!empty($method['attribute_conditions']) && is_array($method['attribute_conditions'])) {
+            // Get logic operator (AND or OR)
+            $logic_operator = $method['attribute_logic'] ?? 'AND';
+            
+            $condition_results = array();
+            
+            foreach ($method['attribute_conditions'] as $condition) {
+                if (empty($condition['attribute']) || empty($condition['value'])) {
+                    continue;
+                }
+                
+                $attr_name = $condition['attribute'];
+                $attr_value = $condition['value'];
+                $operator = $condition['operator'] ?? '=';
+                
+                $condition_met = false;
+                
+                // Check all products in package
+                foreach ($package['contents'] as $item) {
+                    $product = $item['data'];
+                    $product_attr = $product->get_attribute($attr_name);
+                    
+                    if ($product_attr) {
+                        // Apply operator
+                        switch ($operator) {
+                            case '=':
+                                if (strtolower($product_attr) === strtolower($attr_value)) {
+                                    $condition_met = true;
+                                }
+                                break;
+                            case '!=':
+                                if (strtolower($product_attr) !== strtolower($attr_value)) {
+                                    $condition_met = true;
+                                }
+                                break;
+                            case 'contains':
+                                if (stripos($product_attr, $attr_value) !== false) {
+                                    $condition_met = true;
+                                }
+                                break;
+                        }
+                    }
+                    
+                    if ($condition_met) {
+                        break; // Found matching product
+                    }
+                }
+                
+                $condition_results[] = $condition_met;
+            }
+            
+            // Apply logic operator
+            if (!empty($condition_results)) {
+                if ($logic_operator === 'OR') {
+                    // At least one condition must be true
+                    if (!in_array(true, $condition_results, true)) {
+                        return false;
+                    }
+                } else {
+                    // All conditions must be true (AND)
+                    if (in_array(false, $condition_results, true)) {
+                        return false;
+                    }
+                }
+            }
+        }
+        
+        // Backwards compatibility: Check old required_attributes format
+        if (!empty($method['required_attributes']) && is_string($method['required_attributes'])) {
             $required_attrs = array_filter(array_map('trim', explode("\n", $method['required_attributes'])));
             
             foreach ($required_attrs as $attr_line) {
