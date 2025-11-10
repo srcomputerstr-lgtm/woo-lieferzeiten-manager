@@ -30,6 +30,8 @@ class WLM_Frontend {
         // AJAX handlers
         add_action('wp_ajax_wlm_calc_product_window', array($this, 'ajax_calculate_product_window'));
         add_action('wp_ajax_nopriv_wlm_calc_product_window', array($this, 'ajax_calculate_product_window'));
+        add_action('wp_ajax_wlm_get_shipping_delivery_info', array($this, 'ajax_get_shipping_delivery_info'));
+        add_action('wp_ajax_nopriv_wlm_get_shipping_delivery_info', array($this, 'ajax_get_shipping_delivery_info'));
 
         // Blocks integration
         add_action('woocommerce_blocks_loaded', array($this, 'register_blocks_integration'));
@@ -294,20 +296,67 @@ class WLM_Frontend {
      * @return array Modified rates.
      */
     public function add_delivery_info_to_rates($rates, $package) {
-        // For block-based checkout, we add HTML to labels
-        // JavaScript will move it to a better position
+        // DO NOT modify labels - keep them clean for ERP/payment systems
+        // Instead, add data attributes that JavaScript can use
         foreach ($rates as $rate_id => $rate) {
-            $label = $rate->get_label();
-            
-            // Add shortcodes wrapped in identifiable divs
-            $label .= '<div class="wlm-delivery-info-wrapper">';
-            $label .= do_shortcode('[wlm_order_window]');
-            $label .= do_shortcode('[wlm_express_toggle]');
-            $label .= '</div>';
-            
-            $rate->set_label($label);
+            // Store method ID as meta data for JavaScript to access
+            $method_id = $rate->get_method_id();
+            $rate->add_meta_data('wlm_method_id', $method_id, true);
         }
         
         return $rates;
+    }
+    
+    /**
+     * AJAX handler to get delivery info for a shipping method
+     */
+    public function ajax_get_shipping_delivery_info() {
+        check_ajax_referer('wlm-frontend-nonce', 'nonce');
+        
+        $method_id = isset($_POST['method_id']) ? sanitize_text_field($_POST['method_id']) : '';
+        
+        if (empty($method_id)) {
+            wp_send_json_error(array('message' => 'Invalid method ID'));
+        }
+        
+        // Get method configuration
+        $shipping_methods = WLM_Core::instance()->shipping_methods;
+        $method_config = $shipping_methods->get_method_by_id($method_id);
+        
+        if (!$method_config) {
+            wp_send_json_error(array('message' => 'Method not found'));
+        }
+        
+        // Calculate delivery window
+        $calculator = WLM_Core::instance()->calculator;
+        $window = $calculator->calculate_cart_window($method_config, false);
+        
+        // Check express availability
+        $express_available = false;
+        $express_window = null;
+        $express_cost = 0;
+        
+        if (!empty($method_config['express_enabled'])) {
+            $cutoff_time = $method_config['express_cutoff'] ?? '12:00';
+            $express_available = $calculator->is_express_available($cutoff_time);
+            
+            if ($express_available) {
+                $express_window = $calculator->calculate_cart_window($method_config, true);
+                $express_cost = floatval($method_config['express_cost'] ?? 0);
+            }
+        }
+        
+        // Check if express is currently selected
+        $is_express_selected = WC()->session && WC()->session->get('wlm_express_selected') === $method_id;
+        
+        wp_send_json_success(array(
+            'delivery_window' => $window['window_formatted'] ?? '',
+            'express_available' => $express_available,
+            'express_window' => $express_window['window_formatted'] ?? '',
+            'express_cost' => $express_cost,
+            'express_cost_formatted' => wc_price($express_cost),
+            'is_express_selected' => $is_express_selected,
+            'method_id' => $method_id
+        ));
     }
 }
