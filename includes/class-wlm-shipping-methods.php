@@ -59,22 +59,17 @@ class WLM_Shipping_Methods {
             // Calculate cost
             $cost = $this->calculate_method_cost($method, $package);
             
-            // Get delivery window
+            // Get delivery window (but don't add to label - will be displayed via hook)
             $label = $method['title'] ?? $method['name'] ?? 'Versandart';
-            $calculator = WLM_Core::instance()->calculator;
-            $window = $calculator->calculate_cart_window($method);
-            
-            if (!empty($window) && !empty($window['window_formatted'])) {
-                $label .= '<br><span style="font-size: 0.9em; color: #666;">Lieferung: <strong style="color: #2c3e50;">' . esc_html($window['window_formatted']) . '</strong></span>';
-            }
+            // Note: Delivery time is displayed via woocommerce_after_shipping_rate hook
             
             // Create rate
+            // Note: Don't pass method_id (5th parameter) as we're not a registered WC_Shipping_Method
             $rate = new WC_Shipping_Rate(
-                $method['id'],
-                $label,
-                $cost,
-                array(),
-                $method['id']
+                $method['id'],  // Unique rate ID
+                $label,         // Label to display
+                $cost,          // Cost
+                array()         // Taxes (empty for now)
             );
             
             // Add rate to rates array
