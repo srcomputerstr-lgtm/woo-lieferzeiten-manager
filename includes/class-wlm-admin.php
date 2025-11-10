@@ -363,7 +363,36 @@ class WLM_Admin {
         
         // Save shipping methods
         if (isset($data['wlm_shipping_methods'])) {
-            error_log('Saving wlm_shipping_methods: ' . print_r($data['wlm_shipping_methods'], true));
+            // Normalize data: Fix attribute_conditions if it's in wrong format
+            foreach ($data['wlm_shipping_methods'] as &$method) {
+                // Check if attribute_conditions has wrong format
+                // Wrong: ["attribute_conditions[0][attribute]"] => "value"
+                // Right: ["attribute_conditions"] => [["attribute" => "value"]]
+                $conditions = array();
+                foreach ($method as $key => $value) {
+                    // Match pattern: attribute_conditions[0][attribute] or attribute_conditions[0][value]
+                    if (preg_match('/^attribute_conditions\[(\d+)\]\[(\w+)\]$/', $key, $matches)) {
+                        $index = (int)$matches[1];
+                        $field = $matches[2];
+                        
+                        if (!isset($conditions[$index])) {
+                            $conditions[$index] = array();
+                        }
+                        $conditions[$index][$field] = $value;
+                        
+                        // Remove the wrong key
+                        unset($method[$key]);
+                    }
+                }
+                
+                // If we found conditions, add them in correct format
+                if (!empty($conditions)) {
+                    $method['attribute_conditions'] = array_values($conditions);
+                }
+            }
+            unset($method); // Break reference
+            
+            error_log('Saving wlm_shipping_methods (normalized): ' . print_r($data['wlm_shipping_methods'], true));
             update_option('wlm_shipping_methods', $data['wlm_shipping_methods']);
             error_log('After save, wlm_shipping_methods from DB: ' . print_r(get_option('wlm_shipping_methods'), true));
         }
