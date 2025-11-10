@@ -306,18 +306,21 @@ class WLM_Frontend {
         foreach ($rates as $rate_id => $rate) {
             $method_id = $rate->get_method_id();
             
+            // DO NOT modify label - keep it clean!
+            // Store delivery info as meta data for JavaScript to access
+            
             // Render shortcodes with method_id parameter
             $delivery_info = do_shortcode('[wlm_order_window method_id="' . esc_attr($method_id) . '"]');
             $express_info = do_shortcode('[wlm_express_toggle method_id="' . esc_attr($method_id) . '"]');
             
-            // Add to label with wrapper for styling
+            // Store as meta data
             if (!empty($delivery_info) || !empty($express_info)) {
-                $label = $rate->get_label();
-                $label .= '<div class="wlm-shipping-extras">';
-                $label .= $delivery_info;
-                $label .= $express_info;
-                $label .= '</div>';
-                $rate->set_label($label);
+                $combined = '<div class="wlm-shipping-extras">';
+                $combined .= $delivery_info;
+                $combined .= $express_info;
+                $combined .= '</div>';
+                
+                $rate->add_meta_data('wlm_delivery_info_html', $combined, true);
             }
         }
         

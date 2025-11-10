@@ -205,10 +205,10 @@
                 complete: function() {
                     $button.prop('disabled', false);
                 }
-            });
+             });
         },
-
-        /**
+        
+        /***
          * Handle cart/checkout updates
          */
         onCartUpdate: function() {
@@ -257,28 +257,48 @@
         moveDeliveryInfoToDescriptionDiv: function() {
             var self = this;
             
+            console.log('[WLM] moveDeliveryInfoToDescriptionDiv() called');
+            
             // Wait a bit for DOM to be fully ready (especially after AJAX)
             setTimeout(function() {
+                console.log('[WLM] Searching for shipping items...');
+                
                 // Find all shipping items in WooCommerce Blocks checkout
-                $('.wc-block-components-totals-item').each(function() {
+                var $items = $('.wc-block-components-totals-item');
+                console.log('[WLM] Found ' + $items.length + ' shipping items');
+                
+                $items.each(function(index) {
                     var $item = $(this);
                     var $label = $item.find('.wc-block-components-totals-item__label');
                     var $description = $item.find('.wc-block-components-totals-item__description');
+                    
+                    console.log('[WLM] Item ' + index + ': label=' + $label.length + ', description=' + $description.length);
                     
                     // Check if both elements exist
                     if ($label.length > 0 && $description.length > 0) {
                         // Find .wlm-shipping-extras in label
                         var $extras = $label.find('.wlm-shipping-extras');
                         
+                        console.log('[WLM] Item ' + index + ': Found ' + $extras.length + ' .wlm-shipping-extras elements');
+                        
                         if ($extras.length > 0) {
+                            console.log('[WLM] Item ' + index + ': Moving .wlm-shipping-extras to description div');
+                            
                             // Move it to description div
                             $extras.detach().appendTo($description);
                             
                             // Make description visible
                             $description.show();
+                            
+                            console.log('[WLM] Item ' + index + ': Successfully moved!');
+                        } else {
+                            console.log('[WLM] Item ' + index + ': No .wlm-shipping-extras found in label');
+                            console.log('[WLM] Item ' + index + ': Label HTML:', $label.html());
                         }
                     }
                 });
+                
+                console.log('[WLM] moveDeliveryInfoToDescriptionDiv() finished');
             }, 100);
         }
     };
