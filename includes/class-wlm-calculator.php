@@ -689,4 +689,18 @@ class WLM_Calculator {
         
         return implode(' | ', $parts);
     }
+    
+    /**
+     * Check if express shipping is available based on cutoff time
+     *
+     * @param string $cutoff_time Cutoff time in HH:MM format (default: 12:00).
+     * @return bool True if express is available.
+     */
+    public function is_express_available($cutoff_time = '12:00') {
+        // Get current time
+        $current_time = current_time('H:i');
+        
+        // Compare times
+        return $current_time < $cutoff_time;
+    }
 }
