@@ -75,7 +75,7 @@
             
             // Collect wlm_shipping_methods
             formData.wlm_shipping_methods = [];
-            $('.wlm-shipping-method').each(function() {
+            $('.wlm-shipping-method-item').each(function() {
                 var method = {};
                 $(this).find('[name^="wlm_shipping_methods"]').each(function() {
                     var name = $(this).attr('name');
@@ -96,7 +96,7 @@
             
             // Collect wlm_surcharges
             formData.wlm_surcharges = [];
-            $('.wlm-surcharge').each(function() {
+            $('.wlm-surcharge-item').each(function() {
                 var surcharge = {};
                 $(this).find('[name^="wlm_surcharges"]').each(function() {
                     var name = $(this).attr('name');
