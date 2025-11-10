@@ -15,7 +15,11 @@ class WLM_Shipping_Methods {
      */
     public function __construct() {
         // Add shipping rates directly to packages (bypass zones)
-        add_filter('woocommerce_package_rates', array($this, 'add_shipping_rates'), 10, 2);
+        // Use high priority to ensure our rates are added after other plugins
+        add_filter('woocommerce_package_rates', array($this, 'add_shipping_rates'), 100, 2);
+        
+        // Debug: Log final rates
+        add_filter('woocommerce_package_rates', array($this, 'debug_final_rates'), 999, 2);
 
         // Add delivery window to shipping rates
         add_action('woocommerce_after_shipping_rate', array($this, 'display_delivery_window'), 10, 2);
@@ -383,5 +387,21 @@ class WLM_Shipping_Methods {
                 $zone->add_shipping_method($method_id);
             }
         }
+    }
+    
+    /**
+     * Debug: Log final shipping rates
+     *
+     * @param array $rates Shipping rates.
+     * @param array $package Shipping package.
+     * @return array Shipping rates.
+     */
+    public function debug_final_rates($rates, $package) {
+        error_log('WLM: === FINAL RATES (Priority 999) ===');
+        error_log('WLM: Total rates: ' . count($rates));
+        foreach ($rates as $rate_id => $rate) {
+            error_log('WLM: Rate ID: ' . $rate_id . ' - Label: ' . $rate->get_label());
+        }
+        return $rates;
     }
 }
