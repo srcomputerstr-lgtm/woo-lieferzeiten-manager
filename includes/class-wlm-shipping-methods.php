@@ -107,9 +107,20 @@ class WLM_Shipping_Methods {
                 
                 $cost = $this->calculate_cost($package);
                 
+                // Calculate delivery window
+                $label = $this->title;
+                if (!empty($this->method_config)) {
+                    $calculator = WLM_Core::instance()->calculator;
+                    $window = $calculator->calculate_cart_window($this->method_config);
+                    
+                    if (!empty($window) && !empty($window["window_formatted"])) {
+                        $label .= "<br><small style=\"font-size: 0.9em; color: #666;\">📅 " . esc_html($window["window_formatted"]) . "</small>";
+                    }
+                }
+                
                 $rate = array(
                     "id" => $this->id,
-                    "label" => $this->title,
+                    "label" => $label,
                     "cost" => $cost,
                     "package" => $package
                 );

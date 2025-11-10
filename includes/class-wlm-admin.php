@@ -212,27 +212,69 @@ class WLM_Admin {
      * Render settings page
      */
     public function render_settings_page() {
-        $active_tab = isset($_GET['tab']) ? sanitize_text_field($_GET['tab']) : 'times';
+        global $current_section;
+        
+        // Determine if we're in WooCommerce settings or standalone page
+        $is_wc_settings = isset($_GET['page']) && $_GET['page'] === 'wc-settings';
+        
+        // Get active tab (use wlm_tab for WooCommerce settings, tab for standalone)
+        if ($is_wc_settings && isset($_GET['wlm_tab'])) {
+            $active_tab = sanitize_text_field($_GET['wlm_tab']);
+        } elseif (isset($_GET['tab']) && $_GET['tab'] !== 'shipping') {
+            $active_tab = sanitize_text_field($_GET['tab']);
+        } else {
+            $active_tab = 'times';
+        }
+        
+        // Handle form submission for WooCommerce settings
+        if ($is_wc_settings && isset($_POST['save']) && $current_section === 'wlm') {
+            check_admin_referer('wlm-settings');
+            
+            if (isset($_POST['wlm_settings'])) {
+                update_option('wlm_settings', $_POST['wlm_settings']);
+            }
+            if (isset($_POST['wlm_shipping_methods'])) {
+                update_option('wlm_shipping_methods', $_POST['wlm_shipping_methods']);
+            }
+            if (isset($_POST['wlm_surcharges'])) {
+                update_option('wlm_surcharges', $_POST['wlm_surcharges']);
+            }
+            
+            // Redirect to avoid resubmission
+            wp_safe_redirect(admin_url('admin.php?page=wc-settings&tab=shipping&section=wlm&saved=1'));
+            exit;
+        }
+        
+        // Show success message
+        if (isset($_GET['saved'])) {
+            echo '<div class="updated"><p>' . esc_html__('Einstellungen gespeichert.', 'woo-lieferzeiten-manager') . '</p></div>';
+        }
         
         ?>
         <div class="wrap wlm-settings-wrap">
+            <?php if (!$is_wc_settings): ?>
             <h1><?php esc_html_e('Woo Lieferzeiten Manager', 'woo-lieferzeiten-manager'); ?></h1>
+            <?php endif; ?>
             
             <h2 class="nav-tab-wrapper">
-                <a href="?page=wlm-settings&tab=times" class="nav-tab <?php echo $active_tab === 'times' ? 'nav-tab-active' : ''; ?>">
+                <a href="<?php echo $is_wc_settings ? 'admin.php?page=wc-settings&tab=shipping&section=wlm&wlm_tab=times' : '?page=wlm-settings&tab=times'; ?>" class="nav-tab <?php echo $active_tab === 'times' ? 'nav-tab-active' : ''; ?>">
                     <?php esc_html_e('Zeiten', 'woo-lieferzeiten-manager'); ?>
                 </a>
-                <a href="?page=wlm-settings&tab=shipping" class="nav-tab <?php echo $active_tab === 'shipping' ? 'nav-tab-active' : ''; ?>">
+                <a href="<?php echo $is_wc_settings ? 'admin.php?page=wc-settings&tab=shipping&section=wlm&wlm_tab=shipping' : '?page=wlm-settings&tab=shipping'; ?>" class="nav-tab <?php echo $active_tab === 'shipping' ? 'nav-tab-active' : ''; ?>">
                     <?php esc_html_e('Versandarten', 'woo-lieferzeiten-manager'); ?>
                 </a>
-                <a href="?page=wlm-settings&tab=surcharges" class="nav-tab <?php echo $active_tab === 'surcharges' ? 'nav-tab-active' : ''; ?>">
+                <a href="<?php echo $is_wc_settings ? 'admin.php?page=wc-settings&tab=shipping&section=wlm&wlm_tab=surcharges' : '?page=wlm-settings&tab=surcharges'; ?>" class="nav-tab <?php echo $active_tab === 'surcharges' ? 'nav-tab-active' : ''; ?>">
                     <?php esc_html_e('Zuschläge', 'woo-lieferzeiten-manager'); ?>
                 </a>
             </h2>
 
-            <form method="post" action="options.php">
+            <form method="post" action="<?php echo $is_wc_settings ? '' : 'options.php'; ?>">
                 <?php
-                settings_fields('wlm_settings_group');
+                if ($is_wc_settings) {
+                    wp_nonce_field('wlm-settings');
+                } else {
+                    settings_fields('wlm_settings_group');
+                }
                 
                 switch ($active_tab) {
                     case 'times':

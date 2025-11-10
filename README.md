@@ -251,6 +251,23 @@ GPL v2 oder höher
 
 ## Changelog
 
+### Version 1.3.1 🐛
+- 🐛 **CRITICAL FIX**: Speicherproblem im Backend behoben
+  - Formular-Action für WooCommerce-Einstellungen korrigiert
+  - Speichern funktioniert jetzt korrekt in WooCommerce → Einstellungen → Versand → MEGA Versandmanager
+  - Nonce-Prüfung hinzugefügt
+  - Redirect nach Speichern implementiert
+  - Success-Message wird angezeigt
+- 📅 **FIX**: Lieferzeit-Anzeige im Cart/Checkout
+  - Lieferzeit wird jetzt direkt im Versandarten-Label angezeigt
+  - Format: "Paketversand<br>📅 Mi, 12.11. – Fr, 14.11."
+  - Funktioniert in klassischem und Block-basiertem Cart/Checkout
+  - Grauer Text, kleinere Schrift für bessere Lesbarkeit
+- 🔧 **Improvement**: Tab-Navigation für WooCommerce-Einstellungen
+  - Tabs verwenden wlm_tab Parameter
+  - Korrekte URLs für WooCommerce-Kontext
+  - Funktioniert auch standalone (falls direkt aufgerufen)
+
 ### Version 1.3.0 🚀
 - 🎯 **MAJOR FEATURE**: WooCommerce-Integration als echte Versandmethoden
   - **Backend verschoben**: Jetzt unter WooCommerce → Einstellungen → Versand → MEGA Versandmanager
