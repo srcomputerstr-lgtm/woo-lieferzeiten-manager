@@ -251,6 +251,15 @@ GPL v2 oder höher
 
 ## Changelog
 
+### Version 1.4.3 🐞
+- 🐞 **CRITICAL FIX**: Versandarten und Zuschläge werden jetzt korrekt gespeichert!
+  - Problem: JavaScript sammelte keine Daten (leere Arrays)
+  - Ursache: Falsche CSS-Selektoren
+  - HTML: `.wlm-shipping-method-item` und `.wlm-surcharge-item`
+  - JavaScript suchte nach: `.wlm-shipping-method` und `.wlm-surcharge`
+  - Lösung: CSS-Selektoren korrigiert
+  - Jetzt werden alle Versandarten und Zuschläge korrekt gesammelt und gespeichert
+
 ### Version 1.4.2 🐞
 - 🐞 **CRITICAL FIX**: AJAX-Speichern funktioniert jetzt wirklich!
   - Problem: Daten wurden nicht an PHP übergeben
