@@ -251,6 +251,13 @@ GPL v2 oder höher
 
 ## Changelog
 
+### Version 1.3.3 🐛
+- 🐛 **CRITICAL FIX**: Speichern-Button jetzt innerhalb des Formulars
+  - Button war außerhalb des `<form>` Tags und funktionierte nicht
+  - Jetzt wird ein eigener Button innerhalb des Formulars gerendert
+  - Speichern funktioniert jetzt korrekt
+  - Button ist an der richtigen Position (nach den Tabs)
+
 ### Version 1.3.2 🐛
 - 🐛 **FIX**: Doppelten "Speichern"-Button entfernt
   - WooCommerce-Einstellungsseite zeigt nur noch einen Speichern-Button

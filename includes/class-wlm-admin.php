@@ -288,9 +288,14 @@ class WLM_Admin {
                         break;
                 }
                 
-                // Only show submit button for standalone page
-                // WooCommerce settings page has its own save button
-                if (!$is_wc_settings) {
+                // Show submit button
+                if ($is_wc_settings) {
+                    // For WooCommerce settings, add custom save button inside form
+                    echo '<p class="submit">';
+                    echo '<input type="submit" name="save" class="button-primary woocommerce-save-button" value="' . esc_attr__('Änderungen speichern', 'woo-lieferzeiten-manager') . '" />';
+                    echo '</p>';
+                } else {
+                    // For standalone page, use standard submit button
                     submit_button();
                 }
                 ?>
