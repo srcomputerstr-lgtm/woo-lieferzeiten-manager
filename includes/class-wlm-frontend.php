@@ -292,6 +292,9 @@ class WLM_Frontend {
             $label .= '[wlm_order_window]';
             $label .= '[wlm_express_toggle]';
             
+            // Process shortcodes
+            $label = do_shortcode($label);
+            
             $rate->set_label($label);
         }
         
