@@ -51,7 +51,7 @@ class WLM_Shipping_Methods {
             $window = $calculator->calculate_cart_window($method);
             
             if (!empty($window) && !empty($window['window_formatted'])) {
-                $label .= "<br><span style='font-size: 0.9em; color: #666;'>Lieferung: <strong style='color: #2c3e50;'>" . esc_html($window['window_formatted']) . "</strong></span>";
+                $label .= '<br><span style="font-size: 0.9em; color: #666;">Lieferung: <strong style="color: #2c3e50;">' . esc_html($window['window_formatted']) . '</strong></span>';
             }
             
             // Create rate
@@ -174,7 +174,7 @@ class WLM_Shipping_Methods {
                     $window = $calculator->calculate_cart_window($this->method_config);
                     
                     if (!empty($window) && !empty($window["window_formatted"])) {
-                        $label .= "<br><span style='font-size: 0.9em; color: #666;'>Lieferung: <strong style='color: #2c3e50;'>" . esc_html($window["window_formatted"]) . "</strong></span>";
+                        $label .= '<br><span style="font-size: 0.9em; color: #666;">Lieferung: <strong style="color: #2c3e50;">' . esc_html($window["window_formatted"]) . '</strong></span>';
                     }
                 }
                 
