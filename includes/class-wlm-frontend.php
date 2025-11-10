@@ -297,11 +297,21 @@ class WLM_Frontend {
      */
     public function add_delivery_info_to_rates($rates, $package) {
         // DO NOT modify labels - keep them clean for ERP/payment systems
-        // Instead, add data attributes that JavaScript can use
+        // Instead, add delivery info as meta data (WooCommerce renders it automatically)
         foreach ($rates as $rate_id => $rate) {
-            // Store method ID as meta data for JavaScript to access
             $method_id = $rate->get_method_id();
-            $rate->add_meta_data('wlm_method_id', $method_id, true);
+            
+            // Render shortcodes
+            $delivery_info = do_shortcode('[wlm_order_window]');
+            $express_info = do_shortcode('[wlm_express_toggle]');
+            
+            // Add as meta data - WooCommerce will render this in description
+            if (!empty($delivery_info)) {
+                $rate->add_meta_data('wlm_delivery', $delivery_info, false);
+            }
+            if (!empty($express_info)) {
+                $rate->add_meta_data('wlm_express', $express_info, false);
+            }
         }
         
         return $rates;
