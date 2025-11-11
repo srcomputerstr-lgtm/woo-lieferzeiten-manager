@@ -75,7 +75,7 @@ class WLM_Frontend {
                 wp_enqueue_script(
                     'wlm-blocks-delivery-info',
                     WLM_PLUGIN_URL . 'assets/js/blocks-delivery-info.js',
-                    array('wp-plugins', 'wp-element', 'wp-i18n', 'wc-blocks-checkout'),
+                    array('wp-plugins', 'wp-element', 'wp-i18n', 'wp-data', 'wc-blocks-checkout'),
                     WLM_VERSION,
                     true
                 );

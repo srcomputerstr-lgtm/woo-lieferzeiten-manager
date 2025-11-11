@@ -12,19 +12,38 @@
     const { ExperimentalOrderShippingPackages } = wc.blocksCheckout;
     const { createElement: el, Fragment } = wp.element;
     const { __ } = wp.i18n;
+    const { useSelect } = wp.data;
     
     /**
      * Delivery Info Component
      * Renders delivery window and express option for selected shipping method
      */
-    const DeliveryInfoSlotFill = ({ cart, extensions, context }) => {
-        console.log('[WLM Blocks] DeliveryInfoSlotFill rendered', { cart, extensions, context });
+    const DeliveryInfoSlotFill = () => {
+        console.log('[WLM Blocks] DeliveryInfoSlotFill rendered');
+        
+        // Get cart data from WooCommerce store
+        const { cart, extensions } = useSelect((select) => {
+            const store = select('wc/store/cart');
+            return {
+                cart: store.getCartData(),
+                extensions: store.getCartData()?.extensions || {}
+            };
+        });
+        
+        console.log('[WLM Blocks] Cart data:', cart);
+        console.log('[WLM Blocks] Extensions:', extensions);
+        
+        if (!cart) {
+            console.log('[WLM Blocks] No cart data available');
+            return null;
+        }
         
         // Get selected shipping method
-        const shippingRates = cart?.shippingRates || [];
+        const shippingRates = cart.shippingRates?.[0]?.shipping_rates || [];
         const selectedMethod = shippingRates.find(rate => rate.selected);
         
-        console.log('[WLM Blocks] Selected shipping method:', selectedMethod);
+        console.log('[WLM Blocks] Shipping rates:', shippingRates);
+        console.log('[WLM Blocks] Selected method:', selectedMethod);
         
         if (!selectedMethod) {
             console.log('[WLM Blocks] No shipping method selected');
@@ -48,9 +67,14 @@
         
         console.log('[WLM Blocks] Delivery info from extensions:', deliveryInfo);
         
-        // Render delivery window
+        if (!deliveryInfo.delivery_window && !deliveryInfo.express_available) {
+            console.log('[WLM Blocks] No delivery info available');
+            return null;
+        }
+        
+        // Render delivery window using Slot Fill
         return el(
-            ExperimentalOrderShippingPackages,
+            ExperimentalOrderShippingPackages.Fill,
             null,
             el(
                 'div',
