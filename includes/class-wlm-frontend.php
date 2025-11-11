@@ -70,6 +70,17 @@ class WLM_Frontend {
                 );
             }
 
+            // Enqueue Blocks Slot Fill for delivery info
+            if (is_checkout() || is_cart()) {
+                wp_enqueue_script(
+                    'wlm-blocks-delivery-info',
+                    WLM_PLUGIN_URL . 'assets/js/blocks-delivery-info.js',
+                    array('wp-plugins', 'wp-element', 'wp-i18n', 'wc-blocks-checkout'),
+                    WLM_VERSION,
+                    true
+                );
+            }
+            
             wp_enqueue_script(
                 'wlm-frontend',
                 WLM_PLUGIN_URL . 'assets/js/frontend.js',

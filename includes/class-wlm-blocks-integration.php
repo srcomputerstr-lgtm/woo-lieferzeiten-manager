@@ -156,13 +156,52 @@ class WLM_Blocks_Integration implements IntegrationInterface {
      */
     public function extend_cart_data() {
         $calculator = WLM_Core::instance()->calculator;
-        $window = $calculator->calculate_cart_window();
+        $shipping_methods = WLM_Core::instance()->shipping_methods;
         $express = WLM_Core::instance()->express;
-        $express_status = $express->get_express_status();
-
+        
+        // Get all configured shipping methods
+        $methods = $shipping_methods->get_all_methods();
+        $delivery_info = array();
+        
+        foreach ($methods as $method_id => $method_config) {
+            // Calculate delivery window for this method
+            $window = $calculator->calculate_cart_window($method_config);
+            
+            // Check if express is available for this method
+            $express_available = false;
+            $express_cost = 0;
+            $express_window = null;
+            
+            if (!empty($method_config['express_enabled'])) {
+                $cutoff_time = $method_config['express_cutoff'] ?? '12:00';
+                $express_available = $calculator->is_express_available($cutoff_time);
+                
+                if ($express_available) {
+                    $express_cost = floatval($method_config['express_cost'] ?? 0);
+                    
+                    // Calculate express window
+                    $express_config = $method_config;
+                    $express_config['min_days'] = intval($method_config['express_min_days'] ?? 1);
+                    $express_config['max_days'] = intval($method_config['express_max_days'] ?? 2);
+                    $express_window = $calculator->calculate_cart_window($express_config);
+                }
+            }
+            
+            // Check if express is currently selected
+            $is_express_selected = $express->is_express_active($method_id);
+            
+            $delivery_info[$method_id] = array(
+                'delivery_window' => $window ? $window['formatted'] : null,
+                'express_available' => $express_available,
+                'express_cost' => $express_cost,
+                'express_cost_formatted' => wc_price($express_cost),
+                'express_window' => $express_window ? $express_window['formatted'] : null,
+                'is_express_selected' => $is_express_selected
+            );
+        }
+        
         return array(
-            'delivery_window' => $window,
-            'express_status' => $express_status
+            'delivery_info' => $delivery_info
         );
     }
 
@@ -173,13 +212,8 @@ class WLM_Blocks_Integration implements IntegrationInterface {
      */
     public function extend_cart_schema() {
         return array(
-            'delivery_window' => array(
-                'description' => __('Lieferfenster für den Warenkorb', 'woo-lieferzeiten-manager'),
-                'type' => array('object', 'null'),
-                'readonly' => true
-            ),
-            'express_status' => array(
-                'description' => __('Express-Versand-Status', 'woo-lieferzeiten-manager'),
+            'delivery_info' => array(
+                'description' => __('Lieferinformationen pro Versandart', 'woo-lieferzeiten-manager'),
                 'type' => 'object',
                 'readonly' => true
             )
