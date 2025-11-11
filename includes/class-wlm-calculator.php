@@ -128,7 +128,8 @@ class WLM_Calculator {
             $variation_id = $cart_item['variation_id'] ?? 0;
             $quantity = $cart_item['quantity'];
 
-            $window = $this->calculate_product_window($product_id, $variation_id, $quantity);
+            // Pass method_config and is_express to product calculation
+            $window = $this->calculate_product_window($product_id, $variation_id, $quantity, $method_config, $is_express);
 
             if (empty($window)) {
                 continue;
@@ -150,6 +151,8 @@ class WLM_Calculator {
         return array(
             'earliest' => $earliest,
             'latest' => $latest,
+            'earliest_formatted' => $this->format_date($earliest),
+            'latest_formatted' => $this->format_date($latest),
             'window_formatted' => $this->format_date_range($earliest, $latest)
         );
     }
