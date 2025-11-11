@@ -10,28 +10,63 @@
     
     const { registerPlugin } = wp.plugins;
     const { ExperimentalOrderShippingPackages } = wc.blocksCheckout;
-    const { createElement: el, Fragment } = wp.element;
+    const { createElement: el, Fragment, useEffect } = wp.element;
     const { __ } = wp.i18n;
     const { useSelect } = wp.data;
+    
+    console.log('[WLM Blocks] Script loaded');
+    console.log('[WLM Blocks] Available globals:', {
+        wp: typeof wp,
+        wc: typeof wc,
+        'wp.data': typeof wp.data,
+        'wp.plugins': typeof wp.plugins,
+        'wc.blocksCheckout': typeof wc.blocksCheckout
+    });
     
     /**
      * Delivery Info Component
      * Renders delivery window and express option for selected shipping method
      */
     const DeliveryInfoSlotFill = () => {
-        console.log('[WLM Blocks] DeliveryInfoSlotFill rendered');
+        console.log('[WLM Blocks] DeliveryInfoSlotFill render started');
         
         // Get cart data from WooCommerce store
-        const { cart, extensions } = useSelect((select) => {
-            const store = select('wc/store/cart');
-            return {
-                cart: store.getCartData(),
-                extensions: store.getCartData()?.extensions || {}
-            };
-        });
+        const cartData = useSelect((select) => {
+            console.log('[WLM Blocks] useSelect callback running');
+            
+            // Check if store is available
+            const storeSelect = select('wc/store/cart');
+            console.log('[WLM Blocks] Store select:', storeSelect);
+            
+            if (!storeSelect) {
+                console.warn('[WLM Blocks] wc/store/cart not available');
+                return null;
+            }
+            
+            // Get cart data
+            const cart = storeSelect.getCartData();
+            console.log('[WLM Blocks] Cart data from store:', cart);
+            
+            return cart;
+        }, []);
         
-        console.log('[WLM Blocks] Cart data:', cart);
+        // Debug effect
+        useEffect(() => {
+            console.log('[WLM Blocks] Component mounted/updated');
+            console.log('[WLM Blocks] Cart data:', cartData);
+        }, [cartData]);
+        
+        if (!cartData) {
+            console.log('[WLM Blocks] No cart data available yet');
+            return null;
+        }
+        
+        // Extract cart and extensions
+        const cart = cartData;
+        const extensions = cartData.extensions || {};
+        
         console.log('[WLM Blocks] Extensions:', extensions);
+        console.log('[WLM Blocks] WLM Extension:', extensions['woo-lieferzeiten-manager']);
         
         if (!cart) {
             console.log('[WLM Blocks] No cart data available');
@@ -65,12 +100,15 @@
         const allDeliveryInfo = extensions?.['woo-lieferzeiten-manager']?.delivery_info || {};
         const deliveryInfo = allDeliveryInfo[methodId] || {};
         
-        console.log('[WLM Blocks] Delivery info from extensions:', deliveryInfo);
+        console.log('[WLM Blocks] All delivery info:', allDeliveryInfo);
+        console.log('[WLM Blocks] Delivery info for method:', deliveryInfo);
         
         if (!deliveryInfo.delivery_window && !deliveryInfo.express_available) {
-            console.log('[WLM Blocks] No delivery info available');
+            console.log('[WLM Blocks] No delivery info available for this method');
             return null;
         }
+        
+        console.log('[WLM Blocks] Rendering delivery info UI');
         
         // Render delivery window using Slot Fill
         return el(
@@ -182,6 +220,8 @@
     /**
      * Register the plugin
      */
+    console.log('[WLM Blocks] Registering plugin...');
+    
     registerPlugin('wlm-delivery-info-slot-fill', {
         render: DeliveryInfoSlotFill,
         scope: 'woocommerce-checkout'
