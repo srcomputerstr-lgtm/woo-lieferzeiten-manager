@@ -272,24 +272,35 @@ class WLM_Frontend {
     }
 
     /**
-     * Register blocks integration
+     * Register blocks integration - Store API Extension only
      */
     public function register_blocks_integration() {
-        if (class_exists('Automattic\WooCommerce\Blocks\Integrations\IntegrationInterface')) {
+        // Register Store API extension for delivery data
+        if (function_exists('woocommerce_store_api_register_endpoint_data')) {
             require_once WLM_PLUGIN_DIR . 'includes/class-wlm-blocks-integration.php';
             
-            add_action(
-                'woocommerce_blocks_cart_block_registration',
-                function($integration_registry) {
-                    $integration_registry->register(new WLM_Blocks_Integration());
-                }
+            $blocks_integration = new WLM_Blocks_Integration();
+            
+            // Register Store API extension for Cart endpoint
+            woocommerce_store_api_register_endpoint_data(
+                array(
+                    'endpoint' => \Automattic\WooCommerce\StoreApi\Schemas\V1\CartSchema::IDENTIFIER,
+                    'namespace' => 'woo-lieferzeiten-manager',
+                    'data_callback' => array($blocks_integration, 'extend_cart_data'),
+                    'schema_callback' => array($blocks_integration, 'extend_cart_schema'),
+                    'schema_type' => ARRAY_A
+                )
             );
             
-            add_action(
-                'woocommerce_blocks_checkout_block_registration',
-                function($integration_registry) {
-                    $integration_registry->register(new WLM_Blocks_Integration());
-                }
+            // Register Store API extension for Checkout endpoint
+            woocommerce_store_api_register_endpoint_data(
+                array(
+                    'endpoint' => \Automattic\WooCommerce\StoreApi\Schemas\V1\CheckoutSchema::IDENTIFIER,
+                    'namespace' => 'woo-lieferzeiten-manager',
+                    'data_callback' => array($blocks_integration, 'extend_checkout_data'),
+                    'schema_callback' => array($blocks_integration, 'extend_checkout_schema'),
+                    'schema_type' => ARRAY_A
+                )
             );
         }
     }

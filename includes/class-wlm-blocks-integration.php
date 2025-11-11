@@ -27,7 +27,7 @@ class WLM_Blocks_Integration implements IntegrationInterface {
     public function initialize() {
         $this->register_block_frontend_scripts();
         $this->register_block_editor_scripts();
-        $this->extend_store_api();
+        // Store API extension is now registered directly in class-wlm-frontend.php
     }
 
     /**
@@ -124,30 +124,9 @@ class WLM_Blocks_Integration implements IntegrationInterface {
 
     /**
      * Extend Store API with delivery data
+     * NOTE: This is now called directly from class-wlm-frontend.php
+     * to avoid double registration issues.
      */
-    private function extend_store_api() {
-        if (function_exists('woocommerce_store_api_register_endpoint_data')) {
-            woocommerce_store_api_register_endpoint_data(
-                array(
-                    'endpoint' => \Automattic\WooCommerce\StoreApi\Schemas\V1\CartSchema::IDENTIFIER,
-                    'namespace' => 'woo-lieferzeiten-manager',
-                    'data_callback' => array($this, 'extend_cart_data'),
-                    'schema_callback' => array($this, 'extend_cart_schema'),
-                    'schema_type' => ARRAY_A
-                )
-            );
-
-            woocommerce_store_api_register_endpoint_data(
-                array(
-                    'endpoint' => \Automattic\WooCommerce\StoreApi\Schemas\V1\CheckoutSchema::IDENTIFIER,
-                    'namespace' => 'woo-lieferzeiten-manager',
-                    'data_callback' => array($this, 'extend_checkout_data'),
-                    'schema_callback' => array($this, 'extend_checkout_schema'),
-                    'schema_type' => ARRAY_A
-                )
-            );
-        }
-    }
 
     /**
      * Extend cart data
