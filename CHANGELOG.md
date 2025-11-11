@@ -297,3 +297,48 @@ Dieses Projekt folgt [Semantic Versioning](https://semver.org/):
 - ⚠️ Labels contain dynamic content (not ideal for ERP systems, but works reliably)
 - ⚠️ Attribute conditions still have data structure issues (planned for v1.6.0)
 
+
+
+## [1.6.0] - 2025-11-11
+
+### 🎉 MAJOR UPDATE: Proper WooCommerce Blocks Integration
+
+#### Added
+- **React Slot Fill Component** (`blocks-delivery-info.js`)
+  - Uses `ExperimentalOrderShippingPackages` slot
+  - Native React rendering (no DOM hacks!)
+  - Renders delivery windows below shipping methods
+  - Renders express options with click handlers
+  
+- **Store API Extension** (per shipping method)
+  - Delivery window for each method
+  - Express availability check
+  - Express cost and window
+  - Express selection status
+
+#### Changed
+- **Blocks Integration** completely rewritten
+  - From JavaScript DOM manipulation
+  - To proper React Slot Fill
+  - Future-proof and maintainable
+  
+- **Labels stay clean**
+  - No more delivery info injection
+  - Consistent names for ERP/Payment systems
+  - Delivery info rendered separately
+
+#### Benefits
+- ✅ Native WooCommerce Blocks support
+- ✅ No JavaScript hacks or DOM manipulation
+- ✅ Future-proof architecture
+- ✅ Clean, maintainable code
+- ✅ Works in Cart AND Checkout blocks
+- ✅ Proper React component lifecycle
+
+#### Technical Details
+- Dependencies: `wp-plugins`, `wp-element`, `wp-i18n`, `wc-blocks-checkout`
+- Namespace: `woo-lieferzeiten-manager`
+- Slot: `ExperimentalOrderShippingPackages`
+- Store API: Extended with `delivery_info` per method
+
+---
