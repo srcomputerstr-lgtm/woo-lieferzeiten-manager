@@ -299,6 +299,32 @@ Dieses Projekt folgt [Semantic Versioning](https://semver.org/):
 
 
 
+## [1.6.1] - 2024-11-11
+
+### Fixed
+- **WooCommerce Blocks Integration:** Fixed React Slot-Fill props issue - Component now correctly uses `wp.data.useSelect` to get cart data from WooCommerce Store
+- **Store API Extension:** Resolved conflict between old `blocks-integration.js` and new `blocks-delivery-info.js` - Store API extension is now registered directly in `class-wlm-frontend.php`
+- **Calculator:** Fixed `calculate_cart_window()` to properly pass `$method_config` to `calculate_product_window()` - Each shipping method now gets correct delivery time window based on its transit times
+- **Express Shipping:** Express delivery times are now correctly calculated using method-specific express transit times
+
+### Added
+- **Debug Logging:** Extensive console logging in `blocks-delivery-info.js` for troubleshooting Blocks integration
+- **Debug Script:** `debug-blocks.js` - Comprehensive test script for browser console to verify WooCommerce Blocks integration
+- **Documentation:** `BLOCKS-INTEGRATION-STATUS.md` - Complete technical documentation of Blocks integration architecture and data flow
+- **Testing Guide:** `TESTING-CHECKLIST.md` - Step-by-step testing checklist with expected results and common errors
+
+### Changed
+- **Blocks Integration:** Switched from `ExperimentalOrderMeta` to `ExperimentalOrderShippingPackages.Fill` for better placement of delivery info below shipping methods
+- **Dependencies:** Added `wp-data` dependency to `blocks-delivery-info.js` for `useSelect` hook
+
+### Technical Details
+- React component now properly receives cart data and extensions from WooCommerce Store
+- Store API extension provides delivery info under namespace `woo-lieferzeiten-manager`
+- Each shipping method gets individual delivery time windows based on configured transit times
+- Express options are calculated with method-specific cutoff times and transit times
+
+---
+
 ## [1.6.0] - 2025-11-11
 
 ### 🎉 MAJOR UPDATE: Proper WooCommerce Blocks Integration
