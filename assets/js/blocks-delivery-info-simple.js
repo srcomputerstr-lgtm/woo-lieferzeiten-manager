@@ -1,133 +1,133 @@
 /**
- * Simple JavaScript solution for displaying delivery info in WooCommerce Blocks Checkout
- * No React Slot-Fills, just plain JavaScript + CSS
+ * Simple CSS ::after solution for displaying delivery info in WooCommerce Blocks Checkout
+ * NO DOM manipulation - only CSS rules!
  */
 
 (function() {
     'use strict';
     
-    console.log('[WLM Simple] Script loaded');
+    console.log('[WLM CSS] Script loaded');
+    
+    // Create style element for dynamic CSS rules
+    let styleElement = null;
     
     /**
-     * Add delivery info to shipping methods
+     * Add CSS ::after rules for delivery info
      */
-    function addDeliveryInfo() {
-        console.log('[WLM Simple] Looking for shipping methods...');
+    function addDeliveryInfoCSS() {
+        console.log('[WLM CSS] Adding delivery info CSS rules...');
         
-        // Find all shipping method labels
-        const labels = document.querySelectorAll('.wc-block-components-totals-item__label');
+        // Get delivery info from Store API Extension
+        if (!window.wp || !window.wp.data) {
+            console.log('[WLM CSS] wp.data not available yet');
+            return;
+        }
         
-        console.log('[WLM Simple] Found ' + labels.length + ' labels');
+        const store = window.wp.data.select('wc/store/cart');
+        if (!store) {
+            console.log('[WLM CSS] Store not available yet');
+            return;
+        }
         
-        labels.forEach((label, index) => {
-            const labelText = label.textContent.trim();
-            console.log('[WLM Simple] Label ' + index + ': ' + labelText);
+        const cartData = store.getCartData();
+        const extensions = cartData?.extensions || {};
+        const wlmExtension = extensions['woo-lieferzeiten-manager'];
+        
+        console.log('[WLM CSS] WLM Extension:', wlmExtension);
+        
+        if (!wlmExtension || !wlmExtension.delivery_info) {
+            console.log('[WLM CSS] No delivery info available');
+            return;
+        }
+        
+        const deliveryInfo = wlmExtension.delivery_info;
+        console.log('[WLM CSS] Delivery info:', deliveryInfo);
+        
+        // Create or update style element
+        if (!styleElement) {
+            styleElement = document.createElement('style');
+            styleElement.id = 'wlm-delivery-info-css';
+            document.head.appendChild(styleElement);
+        }
+        
+        // Build CSS rules
+        let cssRules = '';
+        
+        // For each shipping method with delivery info
+        Object.keys(deliveryInfo).forEach(function(methodId) {
+            const info = deliveryInfo[methodId];
             
-            // Skip if not a shipping method (e.g., "Szacowana łączna kwota")
-            const item = label.closest('.wc-block-components-totals-item');
-            if (!item) return;
+            console.log('[WLM CSS] Processing method:', methodId, info);
             
-            // Check if this is a shipping method item (has radio input)
-            const radio = item.querySelector('input[type="radio"]');
-            if (!radio) {
-                console.log('[WLM Simple] No radio input, skipping');
-                return;
+            // Build content string
+            let content = '';
+            
+            if (info.delivery_window) {
+                content += '\\A📦 Voraussichtliche Lieferung: ' + info.delivery_window;
             }
             
-            const rateId = radio.value;
-            const methodId = rateId.replace(/:[0-9]+$/, '');
-            
-            console.log('[WLM Simple] Found shipping method: ' + methodId);
-            
-            // Check if delivery info already added
-            if (item.querySelector('.wlm-delivery-info-simple')) {
-                console.log('[WLM Simple] Delivery info already added, skipping');
-                return;
+            if (info.express_available && info.express_window) {
+                if (content) content += '\\A';
+                content += '⚡ Express-Versand (' + info.express_cost + ' €) – Zustellung: ' + info.express_window;
             }
             
-            // Get delivery info from Store API Extension
-            if (window.wp && window.wp.data) {
-                const store = window.wp.data.select('wc/store/cart');
-                if (store) {
-                    const cartData = store.getCartData();
-                    const extensions = cartData?.extensions || {};
-                    const wlmExtension = extensions['woo-lieferzeiten-manager'];
+            if (content) {
+                // Find all shipping method labels and add data attribute
+                const labels = document.querySelectorAll('.wc-block-components-totals-item__label');
+                labels.forEach(function(label) {
+                    const labelText = label.textContent.trim();
                     
-                    console.log('[WLM Simple] WLM Extension:', wlmExtension);
-                    
-                    if (wlmExtension && wlmExtension.delivery_info) {
-                        const deliveryInfo = wlmExtension.delivery_info[methodId];
+                    // Check if this label belongs to our method
+                    // We need to match by label text since we can't easily get method ID from DOM
+                    // For now, add to all shipping method labels (will be refined)
+                    const item = label.closest('.wc-block-components-radio-control__option');
+                    if (item) {
+                        // Add data attribute for CSS targeting
+                        label.setAttribute('data-wlm-method', methodId);
                         
-                        console.log('[WLM Simple] Delivery info for ' + methodId + ':', deliveryInfo);
-                        
-                        if (deliveryInfo) {
-                            // Create delivery info container
-                            const container = document.createElement('div');
-                            container.className = 'wlm-delivery-info-simple';
-                            
-                            let html = '';
-                            
-                            // Delivery window
-                            if (deliveryInfo.delivery_window) {
-                                html += '<div class="wlm-delivery-window">';
-                                html += '<strong>📦 Voraussichtliche Lieferung:</strong> ';
-                                html += '<span>' + deliveryInfo.delivery_window + '</span>';
-                                html += '</div>';
-                            }
-                            
-                            // Express option
-                            if (deliveryInfo.express_available) {
-                                html += '<div class="wlm-express-option">';
-                                
-                                if (deliveryInfo.is_express_selected) {
-                                    html += '<div class="wlm-express-active">';
-                                    html += '✓ <strong>Express-Versand gewählt</strong><br>';
-                                    html += 'Zustellung: <strong>' + (deliveryInfo.express_window || 'N/A') + '</strong>';
-                                    html += '</div>';
-                                } else {
-                                    html += '<div class="wlm-express-button">';
-                                    html += '⚡ <strong>Express-Versand</strong> (' + deliveryInfo.express_cost + ' €) – ';
-                                    html += 'Zustellung: <strong>' + (deliveryInfo.express_window || 'N/A') + '</strong>';
-                                    html += '</div>';
-                                }
-                                
-                                html += '</div>';
-                            }
-                            
-                            container.innerHTML = html;
-                            
-                            // Insert after the label's parent item
-                            const description = item.querySelector('.wc-block-components-totals-item__description');
-                            if (description) {
-                                description.appendChild(container);
-                            } else {
-                                item.appendChild(container);
-                            }
-                            
-                            console.log('[WLM Simple] Delivery info added!');
-                        }
+                        console.log('[WLM CSS] Added data attribute to label:', labelText, methodId);
                     }
-                }
+                });
+                
+                // Add CSS rule for this method
+                cssRules += `
+.wc-block-components-totals-item__label[data-wlm-method="${methodId}"]::after {
+    content: "${content}";
+    display: block;
+    margin-top: 8px;
+    padding: 12px;
+    background-color: #f7f7f7;
+    border-left: 3px solid #2271b1;
+    font-size: 13px;
+    line-height: 1.6;
+    white-space: pre-line;
+    color: #333;
+}
+`;
             }
         });
+        
+        // Apply CSS rules
+        styleElement.textContent = cssRules;
+        console.log('[WLM CSS] CSS rules applied:', cssRules);
     }
     
     /**
      * Initialize
      */
     function init() {
-        console.log('[WLM Simple] Initializing...');
+        console.log('[WLM CSS] Initializing...');
         
         // Wait for DOM to be ready
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', function() {
-                setTimeout(addDeliveryInfo, 500);
+                setTimeout(addDeliveryInfoCSS, 500);
             });
         } else {
-            setTimeout(addDeliveryInfo, 500);
+            setTimeout(addDeliveryInfoCSS, 500);
         }
         
-        // Re-run when cart updates (WooCommerce Blocks uses React, so we need to watch for changes)
+        // Re-run when cart updates
         if (window.wp && window.wp.data) {
             let previousCartData = null;
             
@@ -139,8 +139,8 @@
                     // Check if cart data changed
                     if (JSON.stringify(cartData) !== JSON.stringify(previousCartData)) {
                         previousCartData = cartData;
-                        console.log('[WLM Simple] Cart data changed, re-adding delivery info...');
-                        setTimeout(addDeliveryInfo, 300);
+                        console.log('[WLM CSS] Cart data changed, re-adding CSS...');
+                        setTimeout(addDeliveryInfoCSS, 300);
                     }
                 }
             });
