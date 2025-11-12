@@ -207,9 +207,13 @@ class WLM_Shipping_Method extends WC_Shipping_Method {
         $this->add_rate($rate);
         
         // Add express rate if express is enabled
-        if ($this->get_option('express_enabled') === 'yes') {
-            $express_cost = (float) $this->get_option('express_cost', 0);
-            
+        $express_enabled = $this->get_option('express_enabled');
+        $express_cost = (float) $this->get_option('express_cost', 0);
+        
+        // Debug logging
+        error_log('[WLM] Method: ' . $this->id . ', Express enabled: ' . $express_enabled . ', Express cost: ' . $express_cost);
+        
+        if ($express_enabled === 'yes') {
             if ($express_cost > 0) {
                 $express_rate = array(
                     'id' => $this->get_rate_id() . ':express',
@@ -222,7 +226,12 @@ class WLM_Shipping_Method extends WC_Shipping_Method {
                     )
                 );
                 $this->add_rate($express_rate);
+                error_log('[WLM] Express rate added: ' . $this->title . ' - Express');
+            } else {
+                error_log('[WLM] Express cost is 0, not adding express rate');
             }
+        } else {
+            error_log('[WLM] Express not enabled for method: ' . $this->id);
         }
     }
 }
