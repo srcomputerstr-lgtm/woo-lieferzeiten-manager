@@ -187,8 +187,8 @@ class WLM_Shipping_Methods {
                 $cost = $methods_handler->calculate_method_cost($method_config, $package);
                 
                 // Add Express surcharge if this is an Express method
-                if (!empty($method_config['is_express'])) {
-                    $express_cost = floatval($method_config['express_cost'] ?? 0);
+                if (!empty($method_config["is_express"])) {
+                    $express_cost = floatval($method_config["express_cost"] ?? 0);
                     $cost += $express_cost;
                     error_log("WLM: Express surcharge added: " . $express_cost);
                 }
