@@ -70,20 +70,27 @@
                 
                 console.log('[WLM CSS] Comparing "' + labelText + '" with "' + methodName + '"');
                 
-                // Match by method name
-                if (labelText === methodName) {
+                // Check if this is an Express rate
+                const isExpressRate = labelText.endsWith(' - Express');
+                const baseLabel = isExpressRate ? labelText.replace(' - Express', '') : labelText;
+                
+                // Match by method name (compare base label without " - Express")
+                if (baseLabel === methodName) {
                     console.log('[WLM CSS] MATCH! Label "' + labelText + '" = Method "' + methodName + '"');
                     
                     // Build content string
                     let content = '';
                     
-                    if (info.delivery_window) {
-                        content += '\\A📦 Voraussichtliche Lieferung: ' + info.delivery_window;
-                    }
-                    
-                    if (info.express_available && info.express_window) {
-                        if (content) content += '\\A';
-                        content += '⚡ Express-Versand (' + info.express_cost + ' €) – Zustellung: ' + info.express_window;
+                    if (isExpressRate) {
+                        // For Express rates, only show express delivery window
+                        if (info.express_window) {
+                            content += '\\A⚡ Express-Lieferung: ' + info.express_window;
+                        }
+                    } else {
+                        // For normal rates, only show normal delivery window
+                        if (info.delivery_window) {
+                            content += '\\A📦 Voraussichtliche Lieferung: ' + info.delivery_window;
+                        }
                     }
                     
                     if (content) {
