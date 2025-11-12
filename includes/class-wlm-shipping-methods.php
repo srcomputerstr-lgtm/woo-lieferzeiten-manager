@@ -150,15 +150,15 @@ class WLM_Shipping_Methods {
                     $methods_handler = WLM_Core::instance()->shipping_methods;
                     
                     // For Express methods, get base method config
-                    $base_method_id = str_replace('_express', '', $this->wlm_method_id);
+                    $base_method_id = str_replace("_express", "", $this->wlm_method_id);
                     $this->wlm_method_config = $methods_handler->get_method_by_id($base_method_id);
                     
                     // If this is an Express method, modify config
-                    if (strpos($this->wlm_method_id, '_express') !== false && $this->wlm_method_config) {
+                    if (strpos($this->wlm_method_id, "_express") !== false && $this->wlm_method_config) {
                         // Use Express transit times
-                        $this->wlm_method_config['transit_min'] = intval($this->wlm_method_config['express_transit_min'] ?? 0);
-                        $this->wlm_method_config['transit_max'] = intval($this->wlm_method_config['express_transit_max'] ?? 1);
-                        $this->wlm_method_config['is_express'] = true;
+                        $this->wlm_method_config["transit_min"] = intval($this->wlm_method_config["express_transit_min"] ?? 0);
+                        $this->wlm_method_config["transit_max"] = intval($this->wlm_method_config["express_transit_max"] ?? 1);
+                        $this->wlm_method_config["is_express"] = true;
                     }
                 }
                 return $this->wlm_method_config;
