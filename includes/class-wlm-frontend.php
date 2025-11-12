@@ -34,7 +34,8 @@ class WLM_Frontend {
         add_action('wp_ajax_nopriv_wlm_get_shipping_delivery_info', array($this, 'ajax_get_shipping_delivery_info'));
 
         // Blocks integration
-        add_action('woocommerce_blocks_loaded', array($this, 'register_blocks_integration'));
+        // Register Store API extension early (before blocks are loaded)
+        add_action('woocommerce_init', array($this, 'register_blocks_integration'), 5);
         
         // Block-based checkout: Add delivery info after shipping options
         add_filter('woocommerce_cart_shipping_packages', array($this, 'add_delivery_info_to_shipping_packages'));
