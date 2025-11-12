@@ -197,19 +197,32 @@ class WLM_Shipping_Method extends WC_Shipping_Method {
             $cost += $surcharge['amount'];
         }
 
-        // Add express cost if selected
-        $is_express = WC()->session && WC()->session->get('wlm_express_selected') === $this->id;
-        if ($is_express && $this->get_option('express_enabled') === 'yes') {
-            $cost += (float) $this->get_option('express_cost', 0);
-        }
-
+        // Add normal rate
         $rate = array(
             'id' => $this->get_rate_id(),
             'label' => $this->title,
             'cost' => $cost,
             'package' => $package
         );
-
         $this->add_rate($rate);
+        
+        // Add express rate if express is enabled
+        if ($this->get_option('express_enabled') === 'yes') {
+            $express_cost = (float) $this->get_option('express_cost', 0);
+            
+            if ($express_cost > 0) {
+                $express_rate = array(
+                    'id' => $this->get_rate_id() . ':express',
+                    'label' => $this->title . ' - Express',
+                    'cost' => $cost + $express_cost,
+                    'package' => $package,
+                    'meta_data' => array(
+                        'wlm_is_express' => true,
+                        'wlm_base_method_id' => $this->id
+                    )
+                );
+                $this->add_rate($express_rate);
+            }
+        }
     }
 }
