@@ -103,19 +103,26 @@
                             if (position > 0) {
                                 console.log('[WLM CSS] Found position: ' + position);
                                 
-                                // Add CSS rule using nth-child
+                                // Add CSS rules using nth-child
                                 cssRules += `
+/* Make label relative for absolute positioning of ::after */
+.wc-block-components-totals-shipping .wc-block-components-totals-item:nth-child(${position}) .wc-block-components-totals-item__label {
+    position: relative;
+    display: inline-block;
+    margin-bottom: 50px; /* Space for delivery info */
+}
+
+/* Delivery info as ::after with absolute positioning */
 .wc-block-components-totals-shipping .wc-block-components-totals-item:nth-child(${position}) .wc-block-components-totals-item__label::after {
     content: "${content}";
-    display: block;
-    margin-top: 8px;
-    padding: 12px;
-    background-color: #f7f7f7;
-    border-left: 3px solid #2271b1;
-    font-size: 13px;
-    line-height: 1.6;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    margin-top: 4px;
+    font-size: 12px;
+    line-height: 1.5;
     white-space: pre-line;
-    color: #333;
+    color: #666;
 }
 `;
                                 matchedCount++;
