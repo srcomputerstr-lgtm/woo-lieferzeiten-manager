@@ -139,7 +139,7 @@ class WLM_Blocks_Integration implements IntegrationInterface {
         $express = WLM_Core::instance()->express;
         
         // Get all configured shipping methods
-        $methods = $shipping_methods->get_all_methods();
+        $methods = $shipping_methods->get_configured_methods();
         $delivery_info = array();
         
         foreach ($methods as $method_id => $method_config) {
