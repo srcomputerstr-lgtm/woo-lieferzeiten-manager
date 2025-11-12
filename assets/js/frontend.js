@@ -366,7 +366,7 @@
                     $target.removeClass('wlm-loading');
                 }
             });
-        }
+        },
         /**
          * Move delivery info from label to description div
          * This runs after DOMContentLoaded and after every AJAX update
