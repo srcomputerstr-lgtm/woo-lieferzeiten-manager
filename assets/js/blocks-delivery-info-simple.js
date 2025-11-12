@@ -105,11 +105,10 @@
                                 
                                 // Add CSS rules using nth-child
                                 cssRules += `
-/* Make label relative for absolute positioning of ::after */
-.wc-block-components-totals-shipping .wc-block-components-totals-item:nth-child(${position}) .wc-block-components-totals-item__label {
+/* Make parent item relative for absolute positioning */
+.wc-block-components-totals-shipping .wc-block-components-totals-item:nth-child(${position}) {
     position: relative;
-    display: inline-block;
-    margin-bottom: 50px; /* Space for delivery info */
+    padding-bottom: 45px; /* Space for delivery info */
 }
 
 /* Delivery info as ::after with absolute positioning */
@@ -118,9 +117,10 @@
     position: absolute;
     top: 100%;
     left: 0;
-    margin-top: 4px;
-    font-size: 12px;
-    line-height: 1.5;
+    right: 0;
+    margin-top: 6px;
+    font-size: 11px;
+    line-height: 1.6;
     white-space: pre-line;
     color: #666;
 }
