@@ -169,29 +169,34 @@ class WLM_Blocks_Integration implements IntegrationInterface {
             error_log('[WLM Blocks] Checking Express for ' . $method_id . ': enabled=' . ($method_config['express_enabled'] ?? 'NOT SET'));
             
             if (!empty($method_config['express_enabled'])) {
+                $express_method_id = $method_id . '_express';
+                
+                // Calculate express window using express transit times
+                $express_config = $method_config;
+                $express_config['transit_min'] = intval($method_config['express_transit_min'] ?? 0);
+                $express_config['transit_max'] = intval($method_config['express_transit_max'] ?? 1);
+                
+                // Check cutoff time to adjust transit days
                 $cutoff_time = $method_config['express_cutoff'] ?? '14:00';
-                $express_available = $calculator->is_express_available($cutoff_time);
+                $is_after_cutoff = !$calculator->is_express_available($cutoff_time);
                 
-                error_log('[WLM Blocks] Express available check: cutoff=' . $cutoff_time . ', available=' . ($express_available ? 'YES' : 'NO'));
-                
-                if ($express_available) {
-                    $express_method_id = $method_id . '_express';
-                    
-                    // Calculate express window using express transit times
-                    $express_config = $method_config;
-                    $express_config['transit_min'] = intval($method_config['express_transit_min'] ?? 0);
-                    $express_config['transit_max'] = intval($method_config['express_transit_max'] ?? 1);
-                    $express_window = $calculator->calculate_cart_window($express_config, true);
-                    
-                    $delivery_info[$express_method_id] = array(
-                        'method_id' => $express_method_id,
-                        'method_name' => ($method_config['name'] ?? '') . ' - Express',
-                        'delivery_window' => $express_window ? $express_window['window_formatted'] : null,
-                        'is_express_rate' => true
-                    );
-                    
-                    error_log('[WLM Blocks] Added express method: ' . $express_method_id . ' - ' . ($express_window ? $express_window['window_formatted'] : 'no window'));
+                if ($is_after_cutoff) {
+                    // Add 1 day to transit times if after cutoff
+                    $express_config['transit_min'] += 1;
+                    $express_config['transit_max'] += 1;
+                    error_log('[WLM Blocks] After cutoff - added 1 day to transit times');
                 }
+                
+                $express_window = $calculator->calculate_cart_window($express_config, true);
+                
+                $delivery_info[$express_method_id] = array(
+                    'method_id' => $express_method_id,
+                    'method_name' => ($method_config['name'] ?? '') . ' - Express',
+                    'delivery_window' => $express_window ? $express_window['window_formatted'] : null,
+                    'is_express_rate' => true
+                );
+                
+                error_log('[WLM Blocks] Added express method: ' . $express_method_id . ' - ' . ($express_window ? $express_window['window_formatted'] : 'no window'));
             }
         }
         
