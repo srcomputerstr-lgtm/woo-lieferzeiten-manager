@@ -55,9 +55,13 @@
         });
         console.log('[WLM DEBUG] === ENDE ===');
         
-        // Find all shipping method labels
-        const labels = document.querySelectorAll('.wc-block-components-totals-item__label');
-        console.log('[WLM CSS] Found ' + labels.length + ' labels');
+        // Find all shipping method labels in totals section
+        const totalsLabels = document.querySelectorAll('.wc-block-components-totals-item__label');
+        console.log('[WLM CSS] Found ' + totalsLabels.length + ' totals labels');
+        
+        // Find all shipping option labels (radio buttons)
+        const shippingLabels = document.querySelectorAll('label[for^="radio-control-"]');
+        console.log('[WLM CSS] Found ' + shippingLabels.length + ' shipping option labels');
         
         // Create or update style element
         if (!styleElement) {
@@ -70,8 +74,55 @@
         let cssRules = '';
         let matchedCount = 0;
         
-        // For each label, try to match with delivery info
-        labels.forEach(function(label, index) {
+        // Process shipping option labels (radio buttons)
+        shippingLabels.forEach(function(label) {
+            const forAttr = label.getAttribute('for');
+            if (!forAttr) return;
+            
+            // Extract method ID from for attribute
+            // Format: radio-control-0-wlm_method_1762783567431 or radio-control-0-wlm_method_1762783567431_express:10
+            const parts = forAttr.split('-');
+            if (parts.length < 4) return;
+            
+            // Get everything after "radio-control-0-"
+            const methodPart = parts.slice(3).join('-');
+            // Remove instance ID suffix (e.g. ":10")
+            const methodId = methodPart.split(':')[0];
+            
+            console.log('[WLM CSS] Shipping label for="' + forAttr + '" -> methodId="' + methodId + '"');
+            
+            // Find matching delivery info
+            const info = deliveryInfo[methodId];
+            if (info && info.delivery_window) {
+                const isExpressRate = info.is_express_rate || false;
+                const icon = isExpressRate ? '⚡' : '📦';
+                const prefix = isExpressRate ? 'Express-Lieferung' : 'Voraussichtliche Lieferung';
+                
+                console.log('[WLM CSS] ✅ Match for shipping option: ' + methodId + ' - ' + info.delivery_window);
+                
+                // Add CSS rule for this specific label using for attribute
+                cssRules += 'label[for="' + forAttr + '"] {\n';
+                cssRules += '    position: relative;\n';
+                cssRules += '    display: block;\n';
+                cssRules += '    padding-bottom: 20px;\n';
+                cssRules += '}\n';
+                cssRules += 'label[for="' + forAttr + '"]::after {\n';
+                cssRules += '    content: "\\A' + icon + ' ' + prefix + ': ' + info.delivery_window + '";\n';
+                cssRules += '    position: absolute;\n';
+                cssRules += '    bottom: 0;\n';
+                cssRules += '    left: 0;\n';
+                cssRules += '    font-size: 12px;\n';
+                cssRules += '    line-height: 1.5;\n';
+                cssRules += '    white-space: pre-line;\n';
+                cssRules += '    color: #666;\n';
+                cssRules += '}\n';
+                
+                matchedCount++;
+            }
+        });
+        
+        // Process totals labels (for summary section)
+        totalsLabels.forEach(function(label, index) {
             const labelText = label.textContent.trim();
             console.log('[WLM CSS] Label ' + index + ': "' + labelText + '"');
             
