@@ -185,10 +185,20 @@ class WLM_Shipping_Methods {
             return array();
         }
         
-        // Ensure each method has an ID
+        // Ensure each method has an ID and merge with instance settings
         foreach ($methods as $key => $method) {
             if (empty($method['id'])) {
                 $methods[$key]['id'] = 'wlm_method_' . $key;
+            }
+            
+            $method_id = $methods[$key]['id'];
+            
+            // Try to get instance settings from WooCommerce Shipping Zones
+            $instance_settings = $this->get_method_instance_settings($method_id);
+            
+            if ($instance_settings) {
+                // Merge instance settings into method config
+                $methods[$key] = array_merge($methods[$key], $instance_settings);
             }
         }
         
@@ -198,6 +208,34 @@ class WLM_Shipping_Methods {
         });
         
         return $methods;
+    }
+    
+    /**
+     * Get method instance settings from WooCommerce Shipping Zones
+     *
+     * @param string $method_id Method ID.
+     * @return array|null Instance settings.
+     */
+    private function get_method_instance_settings($method_id) {
+        global $wpdb;
+        
+        // Query for shipping zone method instances
+        $query = $wpdb->prepare(
+            "SELECT instance_id, method_id FROM {$wpdb->prefix}woocommerce_shipping_zone_methods WHERE method_id = %s AND is_enabled = 1 LIMIT 1",
+            $method_id
+        );
+        
+        $result = $wpdb->get_row($query);
+        
+        if (!$result) {
+            return null;
+        }
+        
+        // Get instance settings
+        $option_key = 'woocommerce_' . $method_id . '_' . $result->instance_id . '_settings';
+        $settings = get_option($option_key, array());
+        
+        return $settings;
     }
 
     /**
