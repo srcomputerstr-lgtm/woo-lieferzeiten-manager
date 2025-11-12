@@ -28,7 +28,9 @@ class WLM_Calculator {
      * @return array Delivery window data.
      */
     public function calculate_product_window($product_id, $variation_id = 0, $quantity = 1, $shipping_zone = null, $is_express = false) {
-        $cache_key = sprintf('%d_%d_%d_%s', $product_id, $variation_id, $quantity, $shipping_zone);
+        // Build cache key - if shipping_zone is array (method config), use method ID
+        $zone_key = is_array($shipping_zone) ? ($shipping_zone['id'] ?? 'unknown') : (string)$shipping_zone;
+        $cache_key = sprintf('%d_%d_%d_%s_%s', $product_id, $variation_id, $quantity, $zone_key, $is_express ? 'express' : 'normal');
         
         if (isset($this->cache[$cache_key])) {
             return $this->cache[$cache_key];
@@ -66,6 +68,7 @@ class WLM_Calculator {
         // If shipping_zone is an array, it's a method config
         if (is_array($shipping_zone)) {
             $shipping_method = $shipping_zone;
+            error_log('[WLM DEBUG Calculator] Using method config: ' . ($shipping_method['name'] ?? 'unknown'));
         } else {
             $shipping_method = $this->get_applicable_shipping_method($product, $quantity, $shipping_zone);
         }
@@ -86,6 +89,7 @@ class WLM_Calculator {
             } else {
                 $transit_min = (int) ($shipping_method['transit_min'] ?? 1);
                 $transit_max = (int) ($shipping_method['transit_max'] ?? 3);
+                error_log('[WLM DEBUG Calculator] Method: ' . ($shipping_method['name'] ?? 'unknown') . ', transit_min=' . $transit_min . ', transit_max=' . $transit_max);
             }
             
             $earliest_date = $this->add_business_days($earliest_date, $transit_min);
