@@ -43,6 +43,18 @@
         const deliveryInfo = wlmExtension.delivery_info;
         console.log('[WLM CSS] Delivery info:', deliveryInfo);
         
+        // DEBUG: Show all methods with their data
+        console.log('[WLM DEBUG] === ALLE VERSANDMETHODEN IN DATEN ===');
+        Object.keys(deliveryInfo).forEach(function(methodId) {
+            const info = deliveryInfo[methodId];
+            console.log('[WLM DEBUG] Method ID: ' + methodId);
+            console.log('[WLM DEBUG]   - Name: ' + (info.method_name || 'NICHT GESETZT'));
+            console.log('[WLM DEBUG]   - Lieferzeitraum: ' + (info.delivery_window || 'NICHT GESETZT'));
+            console.log('[WLM DEBUG]   - Express: ' + (info.express_window || 'NICHT GESETZT'));
+            console.log('[WLM DEBUG]   - Alle Daten:', info);
+        });
+        console.log('[WLM DEBUG] === ENDE ===');
+        
         // Find all shipping method labels
         const labels = document.querySelectorAll('.wc-block-components-totals-item__label');
         console.log('[WLM CSS] Found ' + labels.length + ' labels');
@@ -68,7 +80,10 @@
                 const info = deliveryInfo[methodId];
                 const methodName = info.method_name || '';
                 
-                console.log('[WLM CSS] Comparing "' + labelText + '" with "' + methodName + '"');
+                // Only log if method name exists
+                if (methodName) {
+                    console.log('[WLM CSS] Comparing "' + labelText + '" with "' + methodName + '"');
+                }
                 
                 // Check if this is an Express rate
                 const isExpressRate = labelText.endsWith(' - Express');
@@ -76,7 +91,11 @@
                 
                 // Match by method name (compare base label without " - Express")
                 if (baseLabel === methodName) {
-                    console.log('[WLM CSS] MATCH! Label "' + labelText + '" = Method "' + methodName + '"');
+                    console.log('[WLM DEBUG] ✅ MATCH GEFUNDEN!');
+                    console.log('[WLM DEBUG]   - Label im Checkout: "' + labelText + '"');
+                    console.log('[WLM DEBUG]   - Method Name: "' + methodName + '"');
+                    console.log('[WLM DEBUG]   - Lieferzeitraum: ' + (info.delivery_window || 'FEHLT'));
+                    console.log('[WLM DEBUG]   - Express: ' + (info.express_window || 'FEHLT'));
                     
                     // Build content string
                     let content = '';
@@ -108,7 +127,8 @@
                             });
                             
                             if (position > 0) {
-                                console.log('[WLM CSS] Found position: ' + position);
+                                console.log('[WLM DEBUG]   - CSS Position: nth-child(' + position + ')');
+                                console.log('[WLM DEBUG]   - CSS Content wird gesetzt: ' + content);
                                 
                                 // Add CSS rules using nth-child
                                 cssRules += `
