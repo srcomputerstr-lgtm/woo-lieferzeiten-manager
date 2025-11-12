@@ -85,12 +85,9 @@
                     console.log('[WLM CSS] Comparing "' + labelText + '" with "' + methodName + '"');
                 }
                 
-                // Check if this is an Express rate
-                const isExpressRate = labelText.endsWith(' - Express');
-                const baseLabel = isExpressRate ? labelText.replace(' - Express', '') : labelText;
-                
-                // Match by method name (compare base label without " - Express")
-                if (baseLabel === methodName) {
+                // Match by exact method name
+                if (labelText === methodName) {
+                    const isExpressRate = info.is_express_rate || false;
                     console.log('[WLM DEBUG] ✅ MATCH GEFUNDEN!');
                     console.log('[WLM DEBUG]   - Label im Checkout: "' + labelText + '"');
                     console.log('[WLM DEBUG]   - Method Name: "' + methodName + '"');
@@ -101,12 +98,12 @@
                     let content = '';
                     
                     if (isExpressRate) {
-                        // For Express rates, only show express delivery window
-                        if (info.express_window) {
-                            content += '\\A⚡ Express-Lieferung: ' + info.express_window;
+                        // For Express rates, show delivery window as Express delivery
+                        if (info.delivery_window) {
+                            content += '\\A⚡ Express-Lieferung: ' + info.delivery_window;
                         }
                     } else {
-                        // For normal rates, only show normal delivery window
+                        // For normal rates, show normal delivery window
                         if (info.delivery_window) {
                             content += '\\A📦 Voraussichtliche Lieferung: ' + info.delivery_window;
                         }
