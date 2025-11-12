@@ -250,7 +250,124 @@
                     var deliveryTimeHtml = deliveryTimeMatch[1];
                     var $deliveryTime = $('<div class="wlm-delivery-time" style="font-size: 0.9em; color: #666; margin-top: 5px;">' + deliveryTimeHtml + '</div>');
                     $label.closest('li').append($deliveryTime);
-                }\n            });\n        },\n        \n        /**\n         * Load delivery info for shipping methods via AJAX\n         */\n        loadDeliveryInfoForShippingMethods: function() {\n            var self = this;\n            \n            // Wait for DOM to be ready\n            setTimeout(function() {\n                // Find all shipping rate items in blocks checkout\n                $('.wc-block-components-totals-item').each(function() {\n                    var $item = $(this);\n                    var $label = $item.find('.wc-block-components-totals-item__label');\n                    var $description = $item.find('.wc-block-components-totals-item__description');\n                    \n                    if ($label.length > 0 && $description.length > 0) {\n                        // Extract method ID from radio input value\n                        var $radio = $item.find('input[type="radio"]');\n                        if ($radio.length > 0) {\n                            var rateId = $radio.val();\n                            // Extract method ID (remove instance suffix)\n                            var methodId = rateId.replace(/:[0-9]+$/, '');\n                            \n                            // Load delivery info via AJAX\n                            self.fetchAndRenderDeliveryInfo(methodId, $description);\n                        }\n                    }\n                });\n                \n                // Also handle classic checkout\n                $('.woocommerce-shipping-methods li').each(function() {\n                    var $li = $(this);\n                    var $input = $li.find('input[type="radio"]');\n                    \n                    if ($input.length > 0) {\n                        var rateId = $input.val();\n                        var methodId = rateId.replace(/:[0-9]+$/, '');\n                        \n                        // Create container if not exists\n                        var $container = $li.find('.wlm-delivery-info-container');\n                        if ($container.length === 0) {\n                            $container = $('<div class="wlm-delivery-info-container"></div>');\n                            $li.append($container);\n                        }\n                        \n                        self.fetchAndRenderDeliveryInfo(methodId, $container);\n                    }\n                });\n            }, 100);\n        },\n        \n        /**\n         * Fetch delivery info via AJAX and render in target element\n         */\n        fetchAndRenderDeliveryInfo: function(methodId, $target) {\n            // Skip if already loading\n            if ($target.hasClass('wlm-loading')) {\n                return;\n            }\n            \n            $target.addClass('wlm-loading');\n            \n            $.ajax({\n                url: wlm_params.ajax_url,\n                type: 'POST',\n                data: {\n                    action: 'wlm_get_shipping_delivery_info',\n                    nonce: wlm_params.nonce,\n                    method_id: methodId\n                },\n                success: function(response) {\n                    if (response.success && response.data) {\n                        var html = '';\n                        \n                        // Delivery window\n                        if (response.data.delivery_window) {\n                            html += '<div class="wlm-order-window">';\n                            html += '<div class="wlm-delivery-estimate">';\n                            html += '<strong>Voraussichtliche Lieferung:</strong> ';\n                            html += '<span>' + response.data.delivery_window + '</span>';\n                            html += '</div>';\n                            html += '</div>';\n                        }\n                        \n                        // Express option\n                        if (response.data.express_available) {\n                            html += '<div class="wlm-express-section">';\n                            \n                            if (response.data.is_express_selected) {\n                                html += '<div class="wlm-express-active">';\n                                html += '<span class="wlm-checkmark">✓</span> ';\n                                html += '<strong>Express-Versand gewählt</strong><br>';\n                                html += '<span>Zustellung: <strong>' + response.data.express_window + '</strong></span>';\n                                html += '<button type="button" class="wlm-remove-express" data-method-id="' + methodId + '">✕ entfernen</button>';\n                                html += '</div>';\n                            } else {\n                                html += '<button type="button" class="wlm-activate-express" data-method-id="' + methodId + '">';\n                                html += '⚡ Express-Versand (' + response.data.express_cost_formatted + ') – ';\n                                html += 'Zustellung: <strong>' + response.data.express_window + '</strong>';\n                                html += '</button>';\n                            }\n                            \n                            html += '</div>';\n                        }\n                        \n                        $target.html(html);\n                        $target.show();\n                    }\n                },\n                complete: function() {\n                    $target.removeClass('wlm-loading');\n                }\n            });\n        }\n        /**
+                }
+            });
+        },
+        
+        /**
+         * Load delivery info for shipping methods via AJAX
+         */
+        loadDeliveryInfoForShippingMethods: function() {
+            var self = this;
+            
+            // Wait for DOM to be ready
+            setTimeout(function() {
+                // Find all shipping rate items in blocks checkout
+                $('.wc-block-components-totals-item').each(function() {
+                    var $item = $(this);
+                    var $label = $item.find('.wc-block-components-totals-item__label');
+                    var $description = $item.find('.wc-block-components-totals-item__description');
+                    
+                    if ($label.length > 0 && $description.length > 0) {
+                        // Extract method ID from radio input value
+                        var $radio = $item.find('input[type="radio"]');
+                        if ($radio.length > 0) {
+                            var rateId = $radio.val();
+                            // Extract method ID (remove instance suffix)
+                            var methodId = rateId.replace(/:[0-9]+$/, '');
+                            
+                            // Load delivery info via AJAX
+                            self.fetchAndRenderDeliveryInfo(methodId, $description);
+                        }
+                    }
+                });
+                
+                // Also handle classic checkout
+                $('.woocommerce-shipping-methods li').each(function() {
+                    var $li = $(this);
+                    var $input = $li.find('input[type="radio"]');
+                    
+                    if ($input.length > 0) {
+                        var rateId = $input.val();
+                        var methodId = rateId.replace(/:[0-9]+$/, '');
+                        
+                        // Create container if not exists
+                        var $container = $li.find('.wlm-delivery-info-container');
+                        if ($container.length === 0) {
+                            $container = $('<div class="wlm-delivery-info-container"></div>');
+                            $li.append($container);
+                        }
+                        
+                        self.fetchAndRenderDeliveryInfo(methodId, $container);
+                    }
+                });
+            }, 100);
+        },
+        
+        /**
+         * Fetch delivery info via AJAX and render in target element
+         */
+        fetchAndRenderDeliveryInfo: function(methodId, $target) {
+            // Skip if already loading
+            if ($target.hasClass('wlm-loading')) {
+                return;
+            }
+            
+            $target.addClass('wlm-loading');
+            
+            $.ajax({
+                url: wlm_params.ajax_url,
+                type: 'POST',
+                data: {
+                    action: 'wlm_get_shipping_delivery_info',
+                    nonce: wlm_params.nonce,
+                    method_id: methodId
+                },
+                success: function(response) {
+                    if (response.success && response.data) {
+                        var html = '';
+                        
+                        // Delivery window
+                        if (response.data.delivery_window) {
+                            html += '<div class="wlm-order-window">';
+                            html += '<div class="wlm-delivery-estimate">';
+                            html += '<strong>Voraussichtliche Lieferung:</strong> ';
+                            html += '<span>' + response.data.delivery_window + '</span>';
+                            html += '</div>';
+                            html += '</div>';
+                        }
+                        
+                        // Express option
+                        if (response.data.express_available) {
+                            html += '<div class="wlm-express-section">';
+                            
+                            if (response.data.is_express_selected) {
+                                html += '<div class="wlm-express-active">';
+                                html += '<span class="wlm-checkmark">✓</span> ';
+                                html += '<strong>Express-Versand gewählt</strong><br>';
+                                html += '<span>Zustellung: <strong>' + response.data.express_window + '</strong></span>';
+                                html += '<button type="button" class="wlm-remove-express" data-method-id="' + methodId + '">✕ entfernen</button>';
+                                html += '</div>';
+                            } else {
+                                html += '<button type="button" class="wlm-activate-express" data-method-id="' + methodId + '">';
+                                html += '⚡ Express-Versand (' + response.data.express_cost_formatted + ') – ';
+                                html += 'Zustellung: <strong>' + response.data.express_window + '</strong>';
+                                html += '</button>';
+                            }
+                            
+                            html += '</div>';
+                        }
+                        
+                        $target.html(html);
+                        $target.show();
+                    }
+                },
+                complete: function() {
+                    $target.removeClass('wlm-loading');
+                }
+            });
+        }
+        /**
          * Move delivery info from label to description div
          * This runs after DOMContentLoaded and after every AJAX update
          */
