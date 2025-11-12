@@ -43,11 +43,22 @@ class WLM_Shipping_Methods {
             $method_id = $method_config['id'];
             
             // Create a unique class for this method
-            $this->create_method_class($method_id, $method_config);
+            $this->create_method_class($method_id, $method_config, false);
             
             // Register the class
             $class_name = 'WLM_Shipping_Method_' . str_replace('wlm_method_', '', $method_id);
             $methods[$method_id] = $class_name;
+            
+            // If Express is enabled, create Express class too
+            if (!empty($method_config['express_enabled'])) {
+                $express_method_id = $method_id . '_express';
+                $this->create_method_class($express_method_id, $method_config, true);
+                
+                $express_class_name = 'WLM_Shipping_Method_' . str_replace('wlm_method_', '', $express_method_id);
+                $methods[$express_method_id] = $express_class_name;
+                
+                error_log('[WLM] Registered Express method: ' . $express_method_id);
+            }
         }
         
         return $methods;
@@ -58,8 +69,9 @@ class WLM_Shipping_Methods {
      *
      * @param string $method_id Method ID.
      * @param array $method_config Method configuration.
+     * @param bool $is_express Whether this is an Express method.
      */
-    private function create_method_class($method_id, $method_config) {
+    private function create_method_class($method_id, $method_config, $is_express = false) {
         $class_name = 'WLM_Shipping_Method_' . str_replace('wlm_method_', '', $method_id);
         
         // Skip if class already exists
@@ -69,7 +81,14 @@ class WLM_Shipping_Methods {
         
         // Prepare values for the dynamic class
         $method_name = addslashes($method_config['name'] ?? 'WLM Versandart');
+        if ($is_express) {
+            $method_name .= ' - Express';
+        }
+        
         $method_title = isset($method_config['title']) ? addslashes($method_config['title']) : (isset($method_config['name']) ? addslashes($method_config['name']) : 'Versandart');
+        if ($is_express) {
+            $method_title .= ' - Express';
+        }
         
         // Create the class dynamically
         $code = '
