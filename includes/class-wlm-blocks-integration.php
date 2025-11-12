@@ -166,9 +166,13 @@ class WLM_Blocks_Integration implements IntegrationInterface {
             error_log('[WLM Blocks] Added normal method: ' . $method_id . ' - ' . ($window ? $window['window_formatted'] : 'no window'));
             
             // If Express is enabled, add Express method too
+            error_log('[WLM Blocks] Checking Express for ' . $method_id . ': enabled=' . ($method_config['express_enabled'] ?? 'NOT SET'));
+            
             if (!empty($method_config['express_enabled'])) {
                 $cutoff_time = $method_config['express_cutoff'] ?? '14:00';
                 $express_available = $calculator->is_express_available($cutoff_time);
+                
+                error_log('[WLM Blocks] Express available check: cutoff=' . $cutoff_time . ', available=' . ($express_available ? 'YES' : 'NO'));
                 
                 if ($express_available) {
                     $express_method_id = $method_id . '_express';
