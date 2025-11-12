@@ -198,7 +198,9 @@ class WLM_Shipping_Methods {
             
             if ($instance_settings) {
                 // Merge instance settings into method config
-                $methods[$key] = array_merge($methods[$key], $instance_settings);
+                // IMPORTANT: Merge order matters! Instance settings first, then our custom fields
+                // This way our custom fields (transit_min/max, etc.) override WooCommerce defaults
+                $methods[$key] = array_merge($instance_settings, $methods[$key]);
             }
         }
         
