@@ -142,7 +142,13 @@ class WLM_Blocks_Integration implements IntegrationInterface {
         $methods = $shipping_methods->get_configured_methods();
         $delivery_info = array();
         
-        foreach ($methods as $method_id => $method_config) {
+        foreach ($methods as $method_config) {
+            // Get the actual method ID from config
+            $method_id = $method_config['id'] ?? null;
+            if (!$method_id) {
+                continue;
+            }
+            
             // Calculate delivery window for this method
             $window = $calculator->calculate_cart_window($method_config);
             
