@@ -152,43 +152,43 @@ class WLM_Blocks_Integration implements IntegrationInterface {
                 continue;
             }
             
-            // Calculate delivery window for this method
-            $window = $calculator->calculate_cart_window($method_config);
+            // Calculate delivery window for normal method
+            $window = $calculator->calculate_cart_window($method_config, false);
             
-            // Check if express is available for this method
-            $express_available = false;
-            $express_cost = 0;
-            $express_window = null;
-            
-            if (!empty($method_config['express_enabled'])) {
-                $cutoff_time = $method_config['express_cutoff'] ?? '12:00';
-                $express_available = $calculator->is_express_available($cutoff_time);
-                
-                if ($express_available) {
-                    $express_cost = floatval($method_config['express_cost'] ?? 0);
-                    
-                    // Calculate express window
-                    $express_config = $method_config;
-                    $express_config['min_days'] = intval($method_config['express_min_days'] ?? 1);
-                    $express_config['max_days'] = intval($method_config['express_max_days'] ?? 2);
-                    $express_window = $calculator->calculate_cart_window($express_config);
-                }
-            }
-            
-            // Check if express is currently selected
-            $express_status = $express->get_express_status();
-            $is_express_selected = !empty($express_status['active']);
-            
+            // Add normal method delivery info
             $delivery_info[$method_id] = array(
                 'method_id' => $method_id,
                 'method_name' => $method_config['name'] ?? '',
                 'delivery_window' => $window ? $window['window_formatted'] : null,
-                'express_available' => $express_available,
-                'express_cost' => $express_cost,
-                'express_cost_formatted' => wc_price($express_cost),
-                'express_window' => $express_window ? $express_window['window_formatted'] : null,
-                'is_express_selected' => $is_express_selected
+                'is_express_rate' => false
             );
+            
+            error_log('[WLM Blocks] Added normal method: ' . $method_id . ' - ' . ($window ? $window['window_formatted'] : 'no window'));
+            
+            // If Express is enabled, add Express method too
+            if (!empty($method_config['express_enabled'])) {
+                $cutoff_time = $method_config['express_cutoff'] ?? '14:00';
+                $express_available = $calculator->is_express_available($cutoff_time);
+                
+                if ($express_available) {
+                    $express_method_id = $method_id . '_express';
+                    
+                    // Calculate express window using express transit times
+                    $express_config = $method_config;
+                    $express_config['transit_min'] = intval($method_config['express_transit_min'] ?? 0);
+                    $express_config['transit_max'] = intval($method_config['express_transit_max'] ?? 1);
+                    $express_window = $calculator->calculate_cart_window($express_config, true);
+                    
+                    $delivery_info[$express_method_id] = array(
+                        'method_id' => $express_method_id,
+                        'method_name' => ($method_config['name'] ?? '') . ' - Express',
+                        'delivery_window' => $express_window ? $express_window['window_formatted'] : null,
+                        'is_express_rate' => true
+                    );
+                    
+                    error_log('[WLM Blocks] Added express method: ' . $express_method_id . ' - ' . ($express_window ? $express_window['window_formatted'] : 'no window'));
+                }
+            }
         }
         
         return array(
