@@ -148,7 +148,18 @@ class WLM_Shipping_Methods {
             private function get_method_config() {
                 if ($this->wlm_method_config === null) {
                     $methods_handler = WLM_Core::instance()->shipping_methods;
-                    $this->wlm_method_config = $methods_handler->get_method_by_id($this->wlm_method_id);
+                    
+                    // For Express methods, get base method config
+                    $base_method_id = str_replace('_express', '', $this->wlm_method_id);
+                    $this->wlm_method_config = $methods_handler->get_method_by_id($base_method_id);
+                    
+                    // If this is an Express method, modify config
+                    if (strpos($this->wlm_method_id, '_express') !== false && $this->wlm_method_config) {
+                        // Use Express transit times
+                        $this->wlm_method_config['transit_min'] = intval($this->wlm_method_config['express_transit_min'] ?? 0);
+                        $this->wlm_method_config['transit_max'] = intval($this->wlm_method_config['express_transit_max'] ?? 1);
+                        $this->wlm_method_config['is_express'] = true;
+                    }
                 }
                 return $this->wlm_method_config;
             }
@@ -174,6 +185,13 @@ class WLM_Shipping_Methods {
                 }
                 
                 $cost = $methods_handler->calculate_method_cost($method_config, $package);
+                
+                // Add Express surcharge if this is an Express method
+                if (!empty($method_config['is_express'])) {
+                    $express_cost = floatval($method_config['express_cost'] ?? 0);
+                    $cost += $express_cost;
+                    error_log("WLM: Express surcharge added: " . $express_cost);
+                }
                 
                 $rate = array(
                     "id" => $this->get_rate_id(),
