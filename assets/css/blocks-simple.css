@@ -1,0 +1,51 @@
+/**
+ * Simple CSS for delivery info display in WooCommerce Blocks Checkout
+ */
+
+.wlm-delivery-info-simple {
+    margin-top: 12px;
+    padding: 12px;
+    background-color: #f7f7f7;
+    border-left: 3px solid #2271b1;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.wlm-delivery-window {
+    margin-bottom: 8px;
+    color: #333;
+}
+
+.wlm-delivery-window strong {
+    color: #2271b1;
+}
+
+.wlm-express-option {
+    margin-top: 8px;
+}
+
+.wlm-express-active {
+    padding: 8px;
+    background-color: #d4edda;
+    border-radius: 4px;
+    color: #155724;
+}
+
+.wlm-express-button {
+    padding: 10px;
+    background-color: #fff;
+    border: 2px solid #2271b1;
+    border-radius: 4px;
+    color: #2271b1;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.wlm-express-button:hover {
+    background-color: #2271b1;
+    color: #fff;
+}
+
+.wlm-express-button strong {
+    font-weight: 600;
+}

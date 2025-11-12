@@ -71,14 +71,21 @@ class WLM_Frontend {
                 );
             }
 
-            // Enqueue Blocks Slot Fill for delivery info
+            // Enqueue simple delivery info script (no React Slot-Fills)
             if (is_checkout() || is_cart()) {
                 wp_enqueue_script(
-                    'wlm-blocks-delivery-info',
-                    WLM_PLUGIN_URL . 'assets/js/blocks-delivery-info.js',
-                    array('wp-plugins', 'wp-element', 'wp-i18n', 'wp-data', 'wc-blocks-checkout'),
+                    'wlm-blocks-delivery-info-simple',
+                    WLM_PLUGIN_URL . 'assets/js/blocks-delivery-info-simple.js',
+                    array('wp-data'),
                     WLM_VERSION,
                     true
+                );
+                
+                wp_enqueue_style(
+                    'wlm-blocks-simple',
+                    WLM_PLUGIN_URL . 'assets/css/blocks-simple.css',
+                    array(),
+                    WLM_VERSION
                 );
             }
             
