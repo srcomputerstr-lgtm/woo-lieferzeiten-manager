@@ -167,7 +167,8 @@ class WLM_Blocks_Integration implements IntegrationInterface {
             }
             
             // Check if express is currently selected
-            $is_express_selected = $express->is_express_active($method_id);
+            $express_status = $express->get_express_status();
+            $is_express_selected = !empty($express_status['active']);
             
             $delivery_info[$method_id] = array(
                 'delivery_window' => $window ? $window['formatted'] : null,
