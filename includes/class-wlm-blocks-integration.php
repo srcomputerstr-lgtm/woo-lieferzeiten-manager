@@ -177,6 +177,8 @@ class WLM_Blocks_Integration implements IntegrationInterface {
             $is_express_selected = !empty($express_status['active']);
             
             $delivery_info[$method_id] = array(
+                'method_id' => $method_id,
+                'method_name' => $method_config['name'] ?? '',
                 'delivery_window' => $window ? $window['window_formatted'] : null,
                 'express_available' => $express_available,
                 'express_cost' => $express_cost,

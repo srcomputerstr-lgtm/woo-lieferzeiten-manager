@@ -1,6 +1,6 @@
 /**
  * Simple CSS ::after solution for displaying delivery info in WooCommerce Blocks Checkout
- * NO DOM manipulation - only CSS rules!
+ * Matches shipping method labels by name and adds CSS rules
  */
 
 (function() {
@@ -43,6 +43,10 @@
         const deliveryInfo = wlmExtension.delivery_info;
         console.log('[WLM CSS] Delivery info:', deliveryInfo);
         
+        // Find all shipping method labels
+        const labels = document.querySelectorAll('.wc-block-components-totals-item__label');
+        console.log('[WLM CSS] Found ' + labels.length + ' labels');
+        
         // Create or update style element
         if (!styleElement) {
             styleElement = document.createElement('style');
@@ -52,46 +56,56 @@
         
         // Build CSS rules
         let cssRules = '';
+        let matchedCount = 0;
         
-        // For each shipping method with delivery info
-        Object.keys(deliveryInfo).forEach(function(methodId) {
-            const info = deliveryInfo[methodId];
+        // For each label, try to match with delivery info
+        labels.forEach(function(label, index) {
+            const labelText = label.textContent.trim();
+            console.log('[WLM CSS] Label ' + index + ': "' + labelText + '"');
             
-            console.log('[WLM CSS] Processing method:', methodId, info);
-            
-            // Build content string
-            let content = '';
-            
-            if (info.delivery_window) {
-                content += '\\A📦 Voraussichtliche Lieferung: ' + info.delivery_window;
-            }
-            
-            if (info.express_available && info.express_window) {
-                if (content) content += '\\A';
-                content += '⚡ Express-Versand (' + info.express_cost + ' €) – Zustellung: ' + info.express_window;
-            }
-            
-            if (content) {
-                // Find all shipping method labels and add data attribute
-                const labels = document.querySelectorAll('.wc-block-components-totals-item__label');
-                labels.forEach(function(label) {
-                    const labelText = label.textContent.trim();
-                    
-                    // Check if this label belongs to our method
-                    // We need to match by label text since we can't easily get method ID from DOM
-                    // For now, add to all shipping method labels (will be refined)
-                    const item = label.closest('.wc-block-components-radio-control__option');
-                    if (item) {
-                        // Add data attribute for CSS targeting
-                        label.setAttribute('data-wlm-method', methodId);
-                        
-                        console.log('[WLM CSS] Added data attribute to label:', labelText, methodId);
-                    }
-                });
+            // Try to find matching method in delivery info
+            Object.keys(deliveryInfo).forEach(function(methodId) {
+                const info = deliveryInfo[methodId];
+                const methodName = info.method_name || '';
                 
-                // Add CSS rule for this method
-                cssRules += `
-.wc-block-components-totals-item__label[data-wlm-method="${methodId}"]::after {
+                console.log('[WLM CSS] Comparing "' + labelText + '" with "' + methodName + '"');
+                
+                // Match by method name
+                if (labelText === methodName) {
+                    console.log('[WLM CSS] MATCH! Label "' + labelText + '" = Method "' + methodName + '"');
+                    
+                    // Build content string
+                    let content = '';
+                    
+                    if (info.delivery_window) {
+                        content += '\\A📦 Voraussichtliche Lieferung: ' + info.delivery_window;
+                    }
+                    
+                    if (info.express_available && info.express_window) {
+                        if (content) content += '\\A';
+                        content += '⚡ Express-Versand (' + info.express_cost + ' €) – Zustellung: ' + info.express_window;
+                    }
+                    
+                    if (content) {
+                        // Get parent container to find position
+                        const parent = label.closest('.wc-block-components-totals-shipping');
+                        if (parent) {
+                            const allItems = parent.querySelectorAll('.wc-block-components-totals-item');
+                            let position = -1;
+                            
+                            allItems.forEach(function(item, idx) {
+                                const itemLabel = item.querySelector('.wc-block-components-totals-item__label');
+                                if (itemLabel === label) {
+                                    position = idx + 1; // CSS nth-child is 1-indexed
+                                }
+                            });
+                            
+                            if (position > 0) {
+                                console.log('[WLM CSS] Found position: ' + position);
+                                
+                                // Add CSS rule using nth-child
+                                cssRules += `
+.wc-block-components-totals-shipping .wc-block-components-totals-item:nth-child(${position}) .wc-block-components-totals-item__label::after {
     content: "${content}";
     display: block;
     margin-top: 8px;
@@ -104,12 +118,17 @@
     color: #333;
 }
 `;
-            }
+                                matchedCount++;
+                            }
+                        }
+                    }
+                }
+            });
         });
         
         // Apply CSS rules
         styleElement.textContent = cssRules;
-        console.log('[WLM CSS] CSS rules applied:', cssRules);
+        console.log('[WLM CSS] CSS rules applied (' + matchedCount + ' matches):', cssRules);
     }
     
     /**
