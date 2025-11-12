@@ -175,7 +175,7 @@
                                     el('br', { key: 'br' }),
                                     el('span', { key: 'window' }, [
                                         __('Zustellung: ', 'woo-lieferzeiten-manager'),
-                                        el('strong', { key: 'date' }, deliveryInfo.express_window)
+                                        el('strong', { key: 'date' }, deliveryInfo.express_window || 'N/A')
                                     ])
                                 ]
                             )
@@ -206,9 +206,9 @@
                                 [
                                     '⚡ ',
                                     __('Express-Versand', 'woo-lieferzeiten-manager'),
-                                    ' (' + deliveryInfo.express_cost_formatted + ') – ',
+                                    ' (' + deliveryInfo.express_cost + ' €) – ',
                                     __('Zustellung: ', 'woo-lieferzeiten-manager'),
-                                    el('strong', { key: 'date' }, deliveryInfo.express_window)
+                                    el('strong', { key: 'date' }, deliveryInfo.express_window || 'N/A')
                                 ]
                             )
                     )
