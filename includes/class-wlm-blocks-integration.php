@@ -142,6 +142,9 @@ class WLM_Blocks_Integration implements IntegrationInterface {
         $methods = $shipping_methods->get_configured_methods();
         $delivery_info = array();
         
+        // DEBUG: Log method configs
+        error_log('[WLM DEBUG] Method configs: ' . print_r($methods, true));
+        
         foreach ($methods as $method_config) {
             // Get the actual method ID from config
             $method_id = $method_config['id'] ?? null;
