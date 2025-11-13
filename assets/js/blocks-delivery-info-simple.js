@@ -106,10 +106,14 @@
                 cssRules += '    display: block;\n';
                 cssRules += '    padding-bottom: 20px;\n';
                 cssRules += '}\n';
+                // Add padding to radio option container for delivery info space
+                cssRules += '.wc-block-checkout__shipping-option .wc-block-components-radio-control__option {\n';
+                cssRules += '    padding: .875em .875em 1.75em 3.5em;\n';
+                cssRules += '}\n';
                 cssRules += 'label[for="' + forAttr + '"]::before {\n';
                 cssRules += '    content: "\\A' + icon + ' ' + prefix + ': ' + info.delivery_window + '";\n';
                 cssRules += '    position: absolute;\n';
-                cssRules += '    bottom: 0;\n';
+                cssRules += '    bottom: 10px;\n';
                 cssRules += '    font-size: 12px;\n';
                 cssRules += '    line-height: 1.5;\n';
                 cssRules += '    white-space: pre-line;\n';
@@ -190,7 +194,6 @@
 .wc-block-components-totals-shipping .wc-block-components-totals-item:nth-child(${position}) .wc-block-components-totals-item__label::after {
     content: "${content}";
     position: absolute;
-    top: 100%;
     left: 0;
     margin-top: 4px;
     font-size: 12px;
