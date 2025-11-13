@@ -92,6 +92,21 @@ class WLM_Blocks_Integration implements IntegrationInterface {
             'wlm-blocks-integration',
             'woo-lieferzeiten-manager'
         );
+        
+        // Register cart stock status script
+        $stock_script_url = WLM_PLUGIN_URL . 'assets/js/blocks-cart-stock-status.js';
+        wp_register_script(
+            'wlm-cart-stock-status',
+            $stock_script_url,
+            array('wp-data', 'wp-element', 'wp-plugins'),
+            WLM_VERSION,
+            true
+        );
+        
+        // Enqueue on cart page
+        if (is_cart() || has_block('woocommerce/cart')) {
+            wp_enqueue_script('wlm-cart-stock-status');
+        }
     }
 
     /**
