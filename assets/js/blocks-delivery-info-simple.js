@@ -161,6 +161,17 @@
                         if (info.delivery_window) {
                             content += '\\A📦 Voraussichtliche Lieferung: ' + info.delivery_window;
                         }
+                        
+                        // Check if Express is available for this method
+                        const expressMethodId = methodId + '_express';
+                        const expressInfo = deliveryInfo[expressMethodId];
+                        if (expressInfo && expressInfo.delivery_window) {
+                            // Extract end date from Express window (e.g. "Mi, 12.11. – Do, 13.11." -> "Do, 13.11.")
+                            const expressWindow = expressInfo.delivery_window;
+                            const parts = expressWindow.split('–');
+                            const expressEndDate = parts.length > 1 ? parts[1].trim() : expressWindow;
+                            content += '\\A⚡ Express-Lieferung bis ' + expressEndDate + ' im Checkout verfügbar';
+                        }
                     }
                     
                     if (content) {
