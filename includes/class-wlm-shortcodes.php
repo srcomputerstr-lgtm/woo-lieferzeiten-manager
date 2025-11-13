@@ -357,16 +357,8 @@ class WLM_Shortcodes {
             return '';
         }
         
-        ob_start();
-        ?>
-        <div class="wlm-order-window" style="margin-top: 0.5em; padding: 0.75em; background: #f7f7f7; border-radius: 4px;">
-            <div class="wlm-delivery-estimate" style="font-size: 0.9em; color: #666;">
-                <strong style="color: #2c3e50;"><?php echo esc_html__('Voraussichtliche Lieferung:', 'woo-lieferzeiten-manager'); ?></strong><br>
-                <span style="font-size: 1.1em; color: #2c3e50;"><?php echo esc_html($window['window_formatted']); ?></span>
-            </div>
-        </div>
-        <?php
-        return ob_get_clean();
+        // Disabled - delivery info now shown via CSS in totals section
+        return '';
     }
     
     /**
@@ -420,33 +412,7 @@ class WLM_Shortcodes {
         $express_window = $calculator->calculate_cart_window($method_config, true);
         $express_cost = floatval($method_config['express_cost'] ?? 0);
         
-        ob_start();
-        ?>
-        <div class="wlm-express-section" style="margin-top: 0.5em;">
-            <?php if ($is_express): ?>
-                <div class="wlm-express-active" style="padding: 0.75em; background: #e8f5e9; border-radius: 4px; border-left: 4px solid #4caf50;">
-                    <span class="wlm-checkmark" style="color: #4caf50; font-weight: bold;">✓</span>
-                    <strong style="color: #2e7d32;"><?php echo esc_html__('Express-Versand gewählt', 'woo-lieferzeiten-manager'); ?></strong><br>
-                    <span style="font-size: 0.9em; color: #666;">
-                        <?php echo esc_html__('Zustellung:', 'woo-lieferzeiten-manager'); ?>
-                        <strong><?php echo esc_html($express_window['window_formatted']); ?></strong>
-                    </span>
-                    <button type="button" class="wlm-remove-express" data-method-id="<?php echo esc_attr($base_method_id); ?>" 
-                            style="margin-left: 10px; padding: 0.25em 0.5em; background: #f44336; color: white; border: none; border-radius: 3px; cursor: pointer;">
-                        ✕ <?php echo esc_html__('entfernen', 'woo-lieferzeiten-manager'); ?>
-                    </button>
-                </div>
-            <?php else: ?>
-                <button type="button" class="wlm-activate-express" data-method-id="<?php echo esc_attr($base_method_id); ?>" 
-                        style="width: 100%; padding: 0.75em; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; text-align: left;">
-                    ⚡ <?php echo esc_html__('Express-Versand', 'woo-lieferzeiten-manager'); ?> 
-                    (<?php echo wc_price($express_cost); ?>) – 
-                    <?php echo esc_html__('Zustellung:', 'woo-lieferzeiten-manager'); ?> 
-                    <strong><?php echo esc_html($express_window['window_formatted']); ?></strong>
-                </button>
-            <?php endif; ?>
-        </div>
-        <?php
-        return ob_get_clean();
+        // Disabled - Express now available as separate shipping method in checkout
+        return '';
     }
 }
