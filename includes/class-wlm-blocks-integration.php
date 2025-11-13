@@ -200,8 +200,32 @@ class WLM_Blocks_Integration implements IntegrationInterface {
             }
         }
         
+        // Get stock status for all cart items
+        $cart_items_stock = array();
+        if (WC()->cart) {
+            foreach (WC()->cart->get_cart() as $cart_item_key => $cart_item) {
+                $product = $cart_item['data'];
+                if (!$product) continue;
+                
+                $product_id = $product->get_parent_id() ? $product->get_parent_id() : $product->get_id();
+                $variation_id = $product->get_parent_id() ? $product->get_id() : 0;
+                
+                // Get stock status
+                $stock_status = $calculator->get_stock_status($product_id, $variation_id);
+                
+                $cart_items_stock[$cart_item_key] = array(
+                    'product_id' => $product_id,
+                    'variation_id' => $variation_id,
+                    'in_stock' => $stock_status['in_stock'],
+                    'available_date' => $stock_status['available_date'] ?? null,
+                    'available_date_formatted' => $stock_status['available_date_formatted'] ?? null
+                );
+            }
+        }
+        
         return array(
-            'delivery_info' => $delivery_info
+            'delivery_info' => $delivery_info,
+            'cart_items_stock' => $cart_items_stock
         );
     }
 
@@ -214,6 +238,11 @@ class WLM_Blocks_Integration implements IntegrationInterface {
         return array(
             'delivery_info' => array(
                 'description' => __('Lieferinformationen pro Versandart', 'woo-lieferzeiten-manager'),
+                'type' => 'object',
+                'readonly' => true
+            ),
+            'cart_items_stock' => array(
+                'description' => __('Lagerstatus pro Warenkorb-Artikel', 'woo-lieferzeiten-manager'),
                 'type' => 'object',
                 'readonly' => true
             )
