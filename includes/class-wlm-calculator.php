@@ -543,9 +543,10 @@ class WLM_Calculator {
      * Get stock status for product
      *
      * @param WC_Product $product Product object.
+     * @param int $requested_quantity Requested quantity (for cart items).
      * @return array Stock status data.
      */
-    public function get_stock_status($product) {
+    public function get_stock_status($product, $requested_quantity = 1) {
         $stock_status = $product->get_stock_status();
         $stock_quantity = $product->get_stock_quantity();
         $settings = WLM_Core::instance()->get_settings();
@@ -561,9 +562,44 @@ class WLM_Calculator {
         );
 
         if ($stock_status === 'instock' && $stock_quantity !== null) {
-            $display_quantity = min($stock_quantity, $max_visible);
-            $result['quantity'] = $display_quantity;
-            $result['message'] = sprintf(__('Auf Lager: %d Stück', 'woo-lieferzeiten-manager'), $display_quantity);
+            // Check if requested quantity exceeds available stock
+            if ($requested_quantity > $stock_quantity) {
+                // Backorder needed - calculate available date
+                $backorder_enabled = $product->get_backorders();
+                if ($backorder_enabled && $backorder_enabled !== 'no') {
+                    // Check for manual available_from date
+                    $available_from = get_post_meta($product->get_id(), '_wlm_available_from', true);
+                    if ($available_from) {
+                        $result['in_stock'] = false;
+                        $result['available_date'] = $available_from;
+                        $result['available_date_formatted'] = $this->format_date(strtotime($available_from));
+                        $result['message'] = sprintf(__('Wieder verfügbar ab: %s', 'woo-lieferzeiten-manager'), $result['available_date_formatted']);
+                    } else {
+                        // Calculate based on delivery_days_min
+                        $delivery_days = (int) get_post_meta($product->get_id(), '_wlm_delivery_days_min', true);
+                        if ($delivery_days > 0) {
+                            $available_timestamp = $this->add_business_days(time(), $delivery_days);
+                            $result['in_stock'] = false;
+                            $result['available_date'] = date('Y-m-d', $available_timestamp);
+                            $result['available_date_formatted'] = $this->format_date($available_timestamp);
+                            $result['message'] = sprintf(__('Wieder verfügbar ab: %s', 'woo-lieferzeiten-manager'), $result['available_date_formatted']);
+                        } else {
+                            // No delivery days configured
+                            $result['in_stock'] = false;
+                            $result['message'] = __('Zurzeit nicht auf Lager', 'woo-lieferzeiten-manager');
+                        }
+                    }
+                } else {
+                    // Backorder not enabled
+                    $result['in_stock'] = false;
+                    $result['message'] = __('Nicht genügend auf Lager', 'woo-lieferzeiten-manager');
+                }
+            } else {
+                // Enough stock available
+                $display_quantity = min($stock_quantity, $max_visible);
+                $result['quantity'] = $display_quantity;
+                $result['message'] = sprintf(__('Auf Lager: %d Stück', 'woo-lieferzeiten-manager'), $display_quantity);
+            }
         } elseif ($stock_status === 'onbackorder') {
             $available_from = get_post_meta($product->get_id(), '_wlm_available_from', true);
             if ($available_from) {

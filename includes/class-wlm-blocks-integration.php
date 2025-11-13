@@ -242,8 +242,9 @@ class WLM_Blocks_Integration implements IntegrationInterface {
                 $product_id = $product->get_parent_id() ? $product->get_parent_id() : $product->get_id();
                 $variation_id = $product->get_parent_id() ? $product->get_id() : 0;
                 
-                // Get stock status
-                $stock_status = $calculator->get_stock_status($product);
+                // Get stock status with quantity check
+                $quantity = $cart_item['quantity'];
+                $stock_status = $calculator->get_stock_status($product, $quantity);
                 
                 $cart_items_stock[$cart_item_key] = array(
                     'product_id' => $product_id,
