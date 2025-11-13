@@ -106,11 +106,10 @@
                 cssRules += '    display: block;\n';
                 cssRules += '    padding-bottom: 20px;\n';
                 cssRules += '}\n';
-                cssRules += 'label[for="' + forAttr + '"]::after {\n';
+                cssRules += 'label[for="' + forAttr + '"]::before {\n';
                 cssRules += '    content: "\\A' + icon + ' ' + prefix + ': ' + info.delivery_window + '";\n';
                 cssRules += '    position: absolute;\n';
                 cssRules += '    bottom: 0;\n';
-                cssRules += '    left: 0;\n';
                 cssRules += '    font-size: 12px;\n';
                 cssRules += '    line-height: 1.5;\n';
                 cssRules += '    white-space: pre-line;\n';
