@@ -108,7 +108,7 @@
                 cssRules += '}\n';
                 // Add padding to radio option container for delivery info space
                 cssRules += '.wc-block-checkout__shipping-option .wc-block-components-radio-control__option {\n';
-                cssRules += '    padding: .875em .875em 1.75em 3.5em;\n';
+                cssRules += '    padding: .875em .875em 1.75em 3.5em !important;\n';
                 cssRules += '}\n';
                 cssRules += 'label[for="' + forAttr + '"]::before {\n';
                 cssRules += '    content: "\\A' + icon + ' ' + prefix + ': ' + info.delivery_window + '";\n';
