@@ -545,7 +545,7 @@ class WLM_Calculator {
      * @param WC_Product $product Product object.
      * @return array Stock status data.
      */
-    private function get_stock_status($product) {
+    public function get_stock_status($product) {
         $stock_status = $product->get_stock_status();
         $stock_quantity = $product->get_stock_quantity();
         $settings = WLM_Core::instance()->get_settings();
@@ -555,7 +555,9 @@ class WLM_Calculator {
             'status' => $stock_status,
             'in_stock' => $stock_status === 'instock',
             'quantity' => null,
-            'message' => ''
+            'message' => '',
+            'available_date' => null,
+            'available_date_formatted' => null
         );
 
         if ($stock_status === 'instock' && $stock_quantity !== null) {
@@ -565,7 +567,9 @@ class WLM_Calculator {
         } elseif ($stock_status === 'onbackorder') {
             $available_from = get_post_meta($product->get_id(), '_wlm_available_from', true);
             if ($available_from) {
-                $result['message'] = sprintf(__('Wieder verfügbar ab: %s', 'woo-lieferzeiten-manager'), $this->format_date(strtotime($available_from)));
+                $result['available_date'] = $available_from;
+                $result['available_date_formatted'] = $this->format_date(strtotime($available_from));
+                $result['message'] = sprintf(__('Wieder verfügbar ab: %s', 'woo-lieferzeiten-manager'), $result['available_date_formatted']);
             } else {
                 // Use configurable out-of-stock text
                 $out_of_stock_text = $settings['out_of_stock_text'] ?? __('Zurzeit nicht auf Lager', 'woo-lieferzeiten-manager');
