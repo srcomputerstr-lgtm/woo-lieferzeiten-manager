@@ -103,10 +103,8 @@ class WLM_Blocks_Integration implements IntegrationInterface {
             true
         );
         
-        // Enqueue on cart page
-        if (is_cart() || has_block('woocommerce/cart')) {
-            wp_enqueue_script('wlm-cart-stock-status');
-        }
+        // Enqueue on frontend (will only run if cart block is present)
+        wp_enqueue_script('wlm-cart-stock-status');
     }
 
     /**
