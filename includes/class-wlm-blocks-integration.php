@@ -180,10 +180,29 @@ class WLM_Blocks_Integration implements IntegrationInterface {
             
             error_log('[WLM Blocks] Added normal method: ' . $method_id . ' - ' . ($window ? $window['window_formatted'] : 'no window'));
             
-            // If Express is enabled, add Express method too
+            // If Express is enabled, check if all products are in stock
             error_log('[WLM Blocks] Checking Express for ' . $method_id . ': enabled=' . ($method_config['express_enabled'] ?? 'NOT SET'));
             
-            if (!empty($method_config['express_enabled'])) {
+            // Check if all cart items are in stock
+            $all_in_stock = true;
+            if (WC()->cart) {
+                foreach (WC()->cart->get_cart() as $cart_item) {
+                    $product = $cart_item['data'];
+                    if (!$product) continue;
+                    
+                    $product_id = $product->get_parent_id() ? $product->get_parent_id() : $product->get_id();
+                    $variation_id = $product->get_parent_id() ? $product->get_id() : 0;
+                    $stock_status = $calculator->get_stock_status($product_id, $variation_id);
+                    
+                    if (!$stock_status['in_stock']) {
+                        $all_in_stock = false;
+                        error_log('[WLM Blocks] Product ' . $product_id . ' not in stock - Express not available');
+                        break;
+                    }
+                }
+            }
+            
+            if (!empty($method_config['express_enabled']) && $all_in_stock) {
                 $express_method_id = $method_id . '_express';
                 
                 // Calculate express window using express transit times
