@@ -41,7 +41,9 @@
         }
         
         const deliveryInfo = wlmExtension.delivery_info;
+        const cartItemsStock = wlmExtension.cart_items_stock || {};
         console.log('[WLM CSS] Delivery info:', deliveryInfo);
+        console.log('[WLM CSS] Cart items stock:', cartItemsStock);
         
         // DEBUG: Show all methods with their data
         console.log('[WLM DEBUG] === ALLE VERSANDMETHODEN IN DATEN ===');
@@ -221,9 +223,51 @@
             });
         });
         
+        // Add cart stock status CSS
+        const cartItems = document.querySelectorAll('.wc-block-cart-items__row');
+        console.log('[WLM CSS] Found ' + cartItems.length + ' cart items');
+        
+        const cartItemKeys = Object.keys(cartItemsStock);
+        cartItemKeys.forEach(function(cartItemKey, index) {
+            const stock = cartItemsStock[cartItemKey];
+            if (!stock) return;
+            
+            const rowIndex = index + 1; // nth-child is 1-indexed
+            console.log('[WLM CSS] Adding stock status for row ' + rowIndex + ':', stock);
+            
+            let content = '';
+            let color = '';
+            
+            if (stock.in_stock) {
+                // Green - In stock
+                color = '#4caf50';
+                content = '🟢 Auf Lager';
+            } else if (stock.available_date_formatted) {
+                // Yellow - Available later
+                color = '#ff9800';
+                content = '🟡 Wieder verfügbar ab ' + stock.available_date_formatted;
+            } else {
+                // Red - Not available
+                color = '#f44336';
+                content = '🔴 Nicht verfügbar';
+            }
+            
+            // Add CSS rule for this specific row
+            cssRules += `
+.wc-block-cart-items__row:nth-child(${rowIndex}) .wc-block-cart-item__quantity::before {
+    content: "${content}";
+    display: block;
+    margin-bottom: 8px;
+    font-size: 12px;
+    color: ${color};
+    white-space: nowrap;
+}
+`;
+        });
+        
         // Apply CSS rules
         styleElement.textContent = cssRules;
-        console.log('[WLM CSS] CSS rules applied (' + matchedCount + ' matches):', cssRules);
+        console.log('[WLM CSS] CSS rules applied (' + matchedCount + ' matches + ' + cartItemKeys.length + ' stock statuses):', cssRules);
     }
     
     /**
