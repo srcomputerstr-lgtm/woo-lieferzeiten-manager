@@ -28,6 +28,66 @@ class WLM_Blocks_Integration implements IntegrationInterface {
         $this->register_block_frontend_scripts();
         $this->register_block_editor_scripts();
         // Store API extension is now registered directly in class-wlm-frontend.php
+        
+        // Filter shipping package rates to hide methods that don't meet conditions
+        add_filter('woocommerce_package_rates', array($this, 'filter_package_rates'), 10, 2);
+    }
+    
+    /**
+     * Filter shipping package rates based on product conditions
+     *
+     * @param array $rates Available shipping rates.
+     * @param array $package Shipping package.
+     * @return array Filtered shipping rates.
+     */
+    public function filter_package_rates($rates, $package) {
+        $calculator = WLM_Core::instance()->calculator;
+        $shipping_methods = WLM_Core::instance()->shipping_methods;
+        
+        // Get all configured methods
+        $methods = $shipping_methods->get_configured_methods();
+        
+        foreach ($rates as $rate_id => $rate) {
+            // Find matching method config
+            $method_config = null;
+            foreach ($methods as $method) {
+                if (isset($method['id']) && strpos($rate_id, $method['id']) === 0) {
+                    $method_config = $method;
+                    break;
+                }
+            }
+            
+            if (!$method_config) {
+                continue; // Not our method
+            }
+            
+            // Check if method has attribute conditions
+            if (empty($method_config['attribute_conditions'])) {
+                continue; // No conditions to check
+            }
+            
+            error_log('[WLM Package Rates] Checking conditions for rate: ' . $rate_id);
+            
+            // Check each product in package
+            $should_show = true;
+            foreach ($package['contents'] as $item) {
+                $product = $item['data'];
+                if (!$product) continue;
+                
+                if (!$calculator->check_product_conditions($product, $method_config)) {
+                    error_log('[WLM Package Rates] Product ' . $product->get_name() . ' does not meet conditions - removing rate ' . $rate_id);
+                    $should_show = false;
+                    break;
+                }
+            }
+            
+            // Remove rate if conditions not met
+            if (!$should_show) {
+                unset($rates[$rate_id]);
+            }
+        }
+        
+        return $rates;
     }
 
     /**
