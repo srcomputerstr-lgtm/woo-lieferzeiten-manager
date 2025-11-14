@@ -377,8 +377,21 @@ class WLM_REST_API {
      */
     public function set_product_availability_by_sku($request) {
         $sku = sanitize_text_field($request->get_param('sku'));
-        $available_from = $request->get_param('available_from');
-        $lead_time_days = $request->get_param('lead_time_days');
+        
+        // Get parameters from JSON body
+        $json_params = $request->get_json_params();
+        $available_from = isset($json_params['available_from']) ? $json_params['available_from'] : null;
+        $lead_time_days = isset($json_params['lead_time_days']) ? $json_params['lead_time_days'] : null;
+        
+        // Sanitize available_from if provided
+        if ($available_from !== null) {
+            $available_from = $this->sanitize_date_param($available_from);
+        }
+        
+        // Sanitize lead_time_days if provided
+        if ($lead_time_days !== null) {
+            $lead_time_days = (int) $lead_time_days;
+        }
 
         error_log('[WLM API] SKU-based update request:');
         error_log('[WLM API] - SKU: ' . $sku);
