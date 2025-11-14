@@ -112,13 +112,21 @@ class WLM_REST_API {
                 ),
                 'available_from' => array(
                     'required' => false,
-                    'validate_callback' => function($param) {
-                        return empty($param) || preg_match('/^\d{4}-\d{2}-\d{2}$/', $param);
+                    'validate_callback' => function($param, $request, $key) {
+                        // Allow null/empty for optional parameter
+                        if ($param === null || $param === '') {
+                            return true;
+                        }
+                        return preg_match('/^\d{4}-\d{2}-\d{2}$/', $param);
                     }
                 ),
                 'lead_time_days' => array(
                     'required' => false,
-                    'validate_callback' => function($param) {
+                    'validate_callback' => function($param, $request, $key) {
+                        // Allow null for optional parameter
+                        if ($param === null || $param === '') {
+                            return true;
+                        }
                         return is_numeric($param) && $param >= 0;
                     }
                 )
