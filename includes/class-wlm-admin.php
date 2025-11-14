@@ -377,8 +377,54 @@ class WLM_Admin {
         
         // Save shipping methods
         if (isset($data['wlm_shipping_methods'])) {
-            // Normalize data: Validate and clean attribute_conditions
+            // Normalize data: Convert flat keys to nested arrays
             foreach ($data['wlm_shipping_methods'] as $method_index => &$method) {
+                // Fix flat keys like "attribute_conditions][0][logic" to nested structure
+                $conditions = array();
+                $keys_to_remove = array();
+                
+                foreach ($method as $key => $value) {
+                    // Match: attribute_conditions][INDEX][FIELD] or attribute_conditions][INDEX][FIELD][]
+                    if (preg_match('/^attribute_conditions\]\[(\d+)\]\[([^\]]+)\](\[\])?$/', $key, $matches)) {
+                        $index = (int)$matches[1];
+                        $field = $matches[2];
+                        $is_array = isset($matches[3]) && $matches[3] === '[]';
+                        
+                        if (!isset($conditions[$index])) {
+                            $conditions[$index] = array(
+                                'logic' => 'at_least_one',
+                                'attribute' => '',
+                                'values' => array()
+                            );
+                        }
+                        
+                        if ($is_array) {
+                            // It's an array field like values[]
+                            $conditions[$index][$field] = is_array($value) ? $value : array($value);
+                        } else {
+                            $conditions[$index][$field] = $value;
+                        }
+                        
+                        $keys_to_remove[] = $key;
+                    }
+                    // Also fix required_categories][] format
+                    elseif ($key === 'required_categories][]' || $key === 'required_categories][') {
+                        $method['required_categories'] = is_array($value) ? $value : array();
+                        $keys_to_remove[] = $key;
+                    }
+                }
+                
+                // Remove flat keys
+                foreach ($keys_to_remove as $key) {
+                    unset($method[$key]);
+                }
+                
+                // Add normalized conditions if found
+                if (!empty($conditions)) {
+                    $method['attribute_conditions'] = array_values($conditions);
+                    error_log('WLM: Normalized flat keys to attribute_conditions for method ' . $method_index . ': ' . print_r($method['attribute_conditions'], true));
+                }
+                
                 // Validate attribute_conditions structure
                 if (isset($method['attribute_conditions']) && is_array($method['attribute_conditions'])) {
                     // Filter out empty or invalid conditions
