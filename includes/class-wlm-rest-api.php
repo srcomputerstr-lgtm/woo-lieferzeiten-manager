@@ -117,8 +117,17 @@ class WLM_REST_API {
                         if ($param === null || $param === '') {
                             return true;
                         }
-                        return preg_match('/^\d{4}-\d{2}-\d{2}$/', $param);
-                    }
+                        // Accept YYYY-MM-DD format
+                        if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $param)) {
+                            return true;
+                        }
+                        // Accept German format: DD.MM.YYYY or DD.MM.YYYY HH:MM:SS
+                        if (preg_match('/^\d{2}\.\d{2}\.\d{4}(\s+\d{2}:\d{2}:\d{2})?$/', $param)) {
+                            return true;
+                        }
+                        return false;
+                    },
+                    'sanitize_callback' => array($this, 'sanitize_date_param')
                 ),
                 'lead_time_days' => array(
                     'required' => false,
@@ -539,10 +548,42 @@ class WLM_REST_API {
             'delivery_window' => $window
         );
 
-        return new WP_REST_Response(array(
+         return new WP_REST_Response(array(
             'success' => true,
             'data' => $data
         ), 200);
     }
 
+    /**
+     * Sanitize date parameter - converts German format to YYYY-MM-DD
+     *
+     * @param string $date Date string in various formats.
+     * @return string|null Sanitized date in YYYY-MM-DD format or null.
+     */
+    public function sanitize_date_param($date) {
+        if (empty($date)) {
+            return null;
+        }
+
+        error_log('[WLM API] sanitize_date_param input: ' . $date);
+
+        // Already in YYYY-MM-DD format
+        if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
+            error_log('[WLM API] Date already in YYYY-MM-DD format: ' . $date);
+            return $date;
+        }
+
+        // German format: DD.MM.YYYY or DD.MM.YYYY HH:MM:SS
+        if (preg_match('/^(\d{2})\.(\d{2})\.(\d{4})(\s+\d{2}:\d{2}:\d{2})?$/', $date, $matches)) {
+            $day = $matches[1];
+            $month = $matches[2];
+            $year = $matches[3];
+            $converted = sprintf('%s-%s-%s', $year, $month, $day);
+            error_log('[WLM API] Converted German date to: ' . $converted);
+            return $converted;
+        }
+
+        error_log('[WLM API] Could not parse date format: ' . $date);
+        return null;
+    }
 }
