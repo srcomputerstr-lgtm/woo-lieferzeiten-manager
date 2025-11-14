@@ -181,7 +181,7 @@ class WLM_Blocks_Integration implements IntegrationInterface {
             // If Express is enabled, check if all products are in stock
             error_log('[WLM Blocks] Checking Express for ' . $method_id . ': enabled=' . ($method_config['express_enabled'] ?? 'NOT SET'));
             
-            // Check if all cart items are in stock
+            // Check if all cart items are in stock (with sufficient quantity)
             $all_in_stock = true;
             if (WC()->cart) {
                 foreach (WC()->cart->get_cart() as $cart_item) {
@@ -190,11 +190,14 @@ class WLM_Blocks_Integration implements IntegrationInterface {
                     
                     $product_id = $product->get_parent_id() ? $product->get_parent_id() : $product->get_id();
                     $variation_id = $product->get_parent_id() ? $product->get_id() : 0;
-                    $stock_status = $calculator->get_stock_status($product);
+                    $quantity = $cart_item['quantity'];
+                    
+                    // Check stock status WITH quantity to ensure sufficient stock for Express
+                    $stock_status = $calculator->get_stock_status($product, $quantity);
                     
                     if (!$stock_status['in_stock']) {
                         $all_in_stock = false;
-                        error_log('[WLM Blocks] Product ' . $product_id . ' not in stock - Express not available');
+                        error_log('[WLM Blocks] Product ' . $product_id . ' not fully in stock (requested: ' . $quantity . ') - Express not available');
                         break;
                     }
                 }
@@ -250,6 +253,7 @@ class WLM_Blocks_Integration implements IntegrationInterface {
                     'product_id' => $product_id,
                     'variation_id' => $variation_id,
                     'in_stock' => $stock_status['in_stock'],
+                    'message' => $stock_status['message'] ?? '',
                     'available_date' => $stock_status['available_date'] ?? null,
                     'available_date_formatted' => $stock_status['available_date_formatted'] ?? null
                 );

@@ -238,18 +238,31 @@
             let content = '';
             let color = '';
             
-            if (stock.in_stock) {
-                // Green - In stock
-                color = '#4caf50';
-                content = '🟢 Auf Lager';
-            } else if (stock.available_date_formatted) {
-                // Yellow - Available later
-                color = '#ff9800';
-                content = '🟡 Wieder verfügbar ab ' + stock.available_date_formatted;
+            // Use the complete message from backend if available
+            if (stock.message) {
+                // Determine color based on in_stock status
+                if (stock.in_stock) {
+                    color = '#4caf50'; // Green
+                    content = '🜢 ' + stock.message;
+                } else if (stock.available_date_formatted) {
+                    color = '#ff9800'; // Yellow
+                    content = '🜡 ' + stock.message;
+                } else {
+                    color = '#f44336'; // Red
+                    content = '🔴 ' + stock.message;
+                }
             } else {
-                // Red - Not available
-                color = '#f44336';
-                content = '🔴 Nicht verfügbar';
+                // Fallback to old logic if message is not available
+                if (stock.in_stock) {
+                    color = '#4caf50';
+                    content = '🜢 Auf Lager';
+                } else if (stock.available_date_formatted) {
+                    color = '#ff9800';
+                    content = '🜡 Wieder verfügbar ab ' + stock.available_date_formatted;
+                } else {
+                    color = '#f44336';
+                    content = '🔴 Nicht verfügbar';
+                }
             }
             
             // Add CSS rule for this specific row
