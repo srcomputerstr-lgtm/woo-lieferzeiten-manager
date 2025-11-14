@@ -153,10 +153,14 @@ class WLM_Admin {
             }
         }
         
-        wp_localize_script('wlm-admin', 'wlm_admin_params', array(
-            'ajax_url' => admin_url('admin-ajax.php'),
+        wp_localize_script('wlm-admin', 'wlmAdmin', array(
+            'ajaxUrl' => admin_url('admin-ajax.php'),
             'nonce' => wp_create_nonce('wlm-admin-nonce'),
-            'attributes' => $attributes
+            'attributes' => $attributes,
+            'i18n' => array(
+                'running' => __('Wird ausgeführt...', 'woo-lieferzeiten-manager'),
+                'runNow' => __('Jetzt ausführen', 'woo-lieferzeiten-manager')
+            )
         ));
     }
 
