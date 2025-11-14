@@ -184,6 +184,35 @@ class WLM_Shipping_Methods {
                     return;
                 }
                 
+                // Check stock availability for Express methods
+                if (!empty($method_config["is_express"])) {
+                    $calculator = WLM_Core::instance()->calculator;
+                    $all_in_stock = true;
+                    
+                    // Check each item in the package
+                    foreach ($package["contents"] as $item) {
+                        $product = $item["data"];
+                        $quantity = $item["quantity"];
+                        
+                        if (!$product) continue;
+                        
+                        // Check if sufficient stock is available
+                        $stock_status = $calculator->get_stock_status($product, $quantity);
+                        
+                        if (!$stock_status["in_stock"]) {
+                            $all_in_stock = false;
+                            error_log("WLM: Express not available - Product " . $product->get_id() . " insufficient stock (requested: " . $quantity . ")");
+                            break;
+                        }
+                    }
+                    
+                    // If not all items are in stock, do not offer Express
+                    if (!$all_in_stock) {
+                        error_log("WLM: Express method hidden due to insufficient stock: " . $this->wlm_method_id);
+                        return;
+                    }
+                }
+                
                 $cost = $methods_handler->calculate_method_cost($method_config, $package);
                 
                 // Add Express surcharge if this is an Express method

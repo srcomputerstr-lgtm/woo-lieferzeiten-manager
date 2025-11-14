@@ -243,33 +243,50 @@
                 // Determine color based on in_stock status
                 if (stock.in_stock) {
                     color = '#4caf50'; // Green
-                    content = '🜢 ' + stock.message;
+                    content = stock.message;
                 } else if (stock.available_date_formatted) {
                     color = '#ff9800'; // Yellow
-                    content = '🜡 ' + stock.message;
+                    content = stock.message;
                 } else {
                     color = '#f44336'; // Red
-                    content = '🔴 ' + stock.message;
+                    content = stock.message;
                 }
             } else {
                 // Fallback to old logic if message is not available
                 if (stock.in_stock) {
                     color = '#4caf50';
-                    content = '🜢 Auf Lager';
+                    content = 'Auf Lager';
                 } else if (stock.available_date_formatted) {
                     color = '#ff9800';
-                    content = '🜡 Wieder verfügbar ab ' + stock.available_date_formatted;
+                    content = 'Wieder verfügbar ab ' + stock.available_date_formatted;
                 } else {
                     color = '#f44336';
-                    content = '🔴 Nicht verfügbar';
+                    content = 'Nicht verfügbar';
                 }
             }
             
-            // Add CSS rule for this specific row
+            // Add CSS rule for this specific row with colored circle
             cssRules += `
+.wc-block-cart-items__row:nth-child(${rowIndex}) .wc-block-cart-item__quantity {
+    position: relative;
+    padding-left: 20px;
+}
+
 .wc-block-cart-items__row:nth-child(${rowIndex}) .wc-block-cart-item__quantity::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 2px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: ${color};
+}
+
+.wc-block-cart-items__row:nth-child(${rowIndex}) .wc-block-cart-item__quantity::after {
     content: "${content}";
     display: block;
+    margin-top: -20px;
     margin-bottom: 8px;
     font-size: 12px;
     color: ${color};
