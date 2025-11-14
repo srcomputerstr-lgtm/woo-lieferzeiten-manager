@@ -249,13 +249,37 @@ class WLM_Blocks_Integration implements IntegrationInterface {
                 $quantity = $cart_item['quantity'];
                 $stock_status = $calculator->get_stock_status($product, $quantity);
                 
+                // Get product attributes
+                $attributes = array();
+                if ($product->is_type('variation')) {
+                    $variation_attrs = $product->get_attributes();
+                    foreach ($variation_attrs as $attr_slug => $attr_value) {
+                        $attributes[$attr_slug] = $attr_value;
+                    }
+                } else {
+                    $product_attributes = $product->get_attributes();
+                    foreach ($product_attributes as $attr_slug => $attribute) {
+                        if ($attribute->is_taxonomy()) {
+                            $terms = wc_get_product_terms($product_id, $attr_slug, array('fields' => 'slugs'));
+                            $attributes[$attr_slug] = $terms;
+                        } else {
+                            $attributes[$attr_slug] = $attribute->get_options();
+                        }
+                    }
+                }
+                
+                // Get product categories
+                $categories = wp_get_post_terms($product_id, 'product_cat', array('fields' => 'slugs'));
+                
                 $cart_items_stock[$cart_item_key] = array(
                     'product_id' => $product_id,
                     'variation_id' => $variation_id,
                     'in_stock' => $stock_status['in_stock'],
                     'message' => $stock_status['message'] ?? '',
                     'available_date' => $stock_status['available_date'] ?? null,
-                    'available_date_formatted' => $stock_status['available_date_formatted'] ?? null
+                    'available_date_formatted' => $stock_status['available_date_formatted'] ?? null,
+                    'attributes' => $attributes,
+                    'categories' => $categories
                 );
             }
         }
