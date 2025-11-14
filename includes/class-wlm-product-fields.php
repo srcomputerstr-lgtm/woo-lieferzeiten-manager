@@ -58,20 +58,23 @@ class WLM_Product_Fields {
         
         // Calculated availability date (read-only)
         $calculated_date = get_post_meta($product_object->get_id(), '_wlm_calculated_available_date', true);
-        $calculated_date_display = $calculated_date ? date_i18n(get_option('date_format'), strtotime($calculated_date)) : __('Nicht berechnet', 'woo-lieferzeiten-manager');
+        $calculated_date_display = $calculated_date ? date_i18n(get_option('date_format'), strtotime($calculated_date)) : __('Noch nicht berechnet (Cronjob ausführen)', 'woo-lieferzeiten-manager');
         
-        woocommerce_wp_text_input(array(
-            'id' => '_wlm_calculated_available_date_display',
-            'label' => __('Berechnetes Verfügbarkeitsdatum', 'woo-lieferzeiten-manager'),
-            'desc_tip' => true,
-            'description' => __('Automatisch berechnet basierend auf "Lieferzeit (Tage)". Wird täglich per Cronjob aktualisiert. Nur-Lesen.', 'woo-lieferzeiten-manager'),
-            'type' => 'text',
-            'custom_attributes' => array(
-                'readonly' => 'readonly',
-                'style' => 'background-color: #f0f0f0; cursor: not-allowed;'
-            ),
-            'value' => $calculated_date_display
-        ));
+        ?>
+        <p class="form-field _wlm_calculated_available_date_display_field">
+            <label for="_wlm_calculated_available_date_display">
+                <?php echo esc_html__('Berechnetes Verfügbarkeitsdatum', 'woo-lieferzeiten-manager'); ?>
+                <span class="woocommerce-help-tip" data-tip="<?php echo esc_attr__('Automatisch berechnet basierend auf "Lieferzeit (Tage)". Wird täglich per Cronjob aktualisiert. Nur-Lesen.', 'woo-lieferzeiten-manager'); ?>"></span>
+            </label>
+            <input type="text" 
+                   id="_wlm_calculated_available_date_display" 
+                   name="_wlm_calculated_available_date_display" 
+                   value="<?php echo esc_attr($calculated_date_display); ?>" 
+                   class="short" 
+                   readonly="readonly" 
+                   style="background-color: #f0f0f0; cursor: not-allowed;">
+        </p>
+        <?php
 
         // Max visible stock
         woocommerce_wp_text_input(array(
