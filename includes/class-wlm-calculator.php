@@ -462,6 +462,8 @@ class WLM_Calculator {
         }
         
         // Check each attribute condition
+        error_log('[WLM] Checking ' . count($required_attrs) . ' attribute conditions for product: ' . $product->get_name());
+        
         foreach ($required_attrs as $condition) {
             // Convert old format to new format if needed
             if (isset($condition['value']) && !isset($condition['values'])) {
@@ -496,7 +498,10 @@ class WLM_Calculator {
             // Apply logic operator
             $condition_met = $this->check_attribute_logic($product_values, $values, $logic);
             
+            error_log('[WLM] Condition check - Attribute: ' . $attr_slug . ', Logic: ' . $logic . ', Required: ' . implode(',', $values) . ', Product has: ' . implode(',', $product_values) . ', Met: ' . ($condition_met ? 'YES' : 'NO'));
+            
             if (!$condition_met) {
+                error_log('[WLM] Condition NOT met - returning false');
                 return false;
             }
         }
