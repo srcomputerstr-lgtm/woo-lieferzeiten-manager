@@ -209,8 +209,9 @@ class WLM_Calculator {
 
         if ($available_from) {
             $available_timestamp = strtotime($available_from);
+            $today_start = strtotime('today', current_time('timestamp'));
             // Only use if date is today or in the future
-            if ($available_timestamp >= strtotime('today')) {
+            if ($available_timestamp >= $today_start) {
                 return $available_timestamp;
             }
         }
@@ -220,8 +221,9 @@ class WLM_Calculator {
         
         if ($calculated_date) {
             $calculated_timestamp = strtotime($calculated_date);
+            $today_start = strtotime('today', current_time('timestamp'));
             // Only use if date is today or in the future
-            if ($calculated_timestamp >= strtotime('today')) {
+            if ($calculated_timestamp >= $today_start) {
                 return $calculated_timestamp;
             }
         }

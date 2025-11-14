@@ -153,7 +153,7 @@
             
             // Send AJAX request
             $.ajax({
-                url: ajaxurl,
+                url: wlmAdmin.ajaxUrl,
                 type: 'POST',
                 dataType: 'json',
                 data: {
@@ -541,7 +541,7 @@
             
             // AJAX request
             $.ajax({
-                url: ajaxurl,
+                url: wlmAdmin.ajaxUrl,
                 type: 'POST',
                 data: {
                     action: 'wlm_get_attribute_values',
