@@ -50,8 +50,8 @@ class WLM_Calculator {
         // Determine start date
         $start_date = $this->get_start_date($current_time, $cutoff_time);
 
-        // Get product availability
-        $available_from = $this->get_product_available_from($product);
+        // Get product availability (considering requested quantity)
+        $available_from = $this->get_product_available_from($product, $quantity);
         
         if ($available_from > $start_date) {
             $start_date = $available_from;
@@ -191,16 +191,27 @@ class WLM_Calculator {
      * Get product available from date
      *
      * @param WC_Product $product Product object.
+     * @param int $quantity Requested quantity.
      * @return int Timestamp.
      */
-    private function get_product_available_from($product) {
+    private function get_product_available_from($product, $quantity = 1) {
+        // Check if product is in stock with sufficient quantity
+        $stock_quantity = $product->get_stock_quantity();
+        $is_in_stock = $product->get_stock_status() === 'instock';
+        
+        // If sufficient stock available, product is immediately available
+        if ($is_in_stock && $stock_quantity !== null && $quantity <= $stock_quantity) {
+            return current_time('timestamp');
+        }
+        
+        // If not enough stock, check for manual available_from date
         $available_from = get_post_meta($product->get_id(), '_wlm_available_from', true);
 
         if ($available_from) {
             return strtotime($available_from);
         }
 
-        // If not set, calculate from lead time
+        // If not set, calculate from lead time (only when stock is insufficient)
         $lead_time = get_post_meta($product->get_id(), '_wlm_lead_time_days', true);
         
         if ($lead_time && is_numeric($lead_time)) {
