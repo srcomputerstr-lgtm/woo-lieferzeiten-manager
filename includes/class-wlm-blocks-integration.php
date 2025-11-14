@@ -165,6 +165,34 @@ class WLM_Blocks_Integration implements IntegrationInterface {
                 continue;
             }
             
+            // Check product attribute conditions
+            $should_show_method = true;
+            if (!empty($method_config['attribute_conditions'])) {
+                error_log('[WLM Blocks] Checking attribute conditions for method: ' . $method_id);
+                error_log('[WLM Blocks] Conditions: ' . print_r($method_config['attribute_conditions'], true));
+                
+                // Check each product in cart
+                if (WC()->cart) {
+                    foreach (WC()->cart->get_cart() as $cart_item) {
+                        $product = $cart_item['data'];
+                        if (!$product) continue;
+                        
+                        // Check if product meets conditions
+                        if (!$calculator->check_product_conditions($product, $method_config)) {
+                            error_log('[WLM Blocks] Product ' . $product->get_name() . ' does not meet conditions - hiding method ' . $method_id);
+                            $should_show_method = false;
+                            break; // Stop checking, method is hidden
+                        }
+                    }
+                }
+            }
+            
+            // Skip this method if conditions not met
+            if (!$should_show_method) {
+                error_log('[WLM Blocks] Skipping method ' . $method_id . ' due to unmet conditions');
+                continue;
+            }
+            
             // Calculate delivery window for normal method
             $window = $calculator->calculate_cart_window($method_config, false);
             
