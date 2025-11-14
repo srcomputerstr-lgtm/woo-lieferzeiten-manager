@@ -2,6 +2,22 @@
 
 All notable changes to WooCommerce Lieferzeiten Manager will be documented in this file.
 
+## [1.12.2] - 2025-11-14
+
+### Fixed
+- **CRITICAL: Product Conditions werden jetzt geprüft**
+  - `check_product_conditions()` wird jetzt in `calculate_shipping()` aufgerufen
+  - Versandarten werden korrekt gefiltert basierend auf Produktattributen
+  - Mehrere Bedingungen funktionieren jetzt korrekt (AND-Verknüpfung)
+  - Debug-Logging für Troubleshooting hinzugefügt
+
+### Technical
+- Implementiert Conditions-Check für jedes Produkt im Warenkorb
+- Versandart wird ausgeblendet wenn ein Produkt die Bedingungen nicht erfüllt
+- Unterstützt alle Logik-Operatoren: at_least_one, all, none, only
+
+---
+
 ## [1.12.1] - 2025-11-14
 
 ### Fixed
