@@ -180,6 +180,25 @@ class WLM_Shipping_Method extends WC_Shipping_Method {
         if ($weight_max > 0 && $package_weight > $weight_max) {
             return;
         }
+        
+        // Check product attribute conditions
+        $method_data = array(
+            'attribute_conditions' => $this->get_option('attribute_conditions', array()),
+            'required_categories' => $this->get_option('required_categories', array())
+        );
+        
+        error_log('[WLM Shipping] Checking conditions for method: ' . $this->id . ', attribute_conditions: ' . print_r($method_data['attribute_conditions'], true));
+        
+        // Check each product in cart against conditions
+        foreach ($package['contents'] as $item) {
+            $product = $item['data'];
+            $calculator = WLM_Core::instance()->calculator;
+            
+            if (!$calculator->check_product_conditions($product, $method_data)) {
+                error_log('[WLM Shipping] Product ' . $product->get_name() . ' does not meet conditions - hiding method');
+                return; // Don't offer this shipping method
+            }
+        }
 
         // Calculate cost based on type
         $cost = $base_cost;
