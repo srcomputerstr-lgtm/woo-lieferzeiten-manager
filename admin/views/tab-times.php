@@ -206,6 +206,50 @@ $debug_mode = isset($settings['debug_mode']) ? $settings['debug_mode'] : false;
 
             <tr>
                 <th scope="row">
+                    <label for="wlm_cronjob_time"><?php esc_html_e('Cronjob-Zeit', 'woo-lieferzeiten-manager'); ?></label>
+                </th>
+                <td>
+                    <?php
+                    $cronjob_time = isset($settings['cronjob_time']) ? $settings['cronjob_time'] : '01:00';
+                    $last_run = get_option('wlm_cronjob_last_run', 0);
+                    $last_count = get_option('wlm_cronjob_last_count', 0);
+                    $next_scheduled = wp_next_scheduled('wlm_daily_availability_update');
+                    ?>
+                    <input type="time" 
+                           id="wlm_cronjob_time" 
+                           name="wlm_settings[cronjob_time]" 
+                           value="<?php echo esc_attr($cronjob_time); ?>" 
+                           class="regular-text">
+                    <p class="description">
+                        <?php esc_html_e('Uhrzeit für die tägliche Berechnung der Verfügbarkeitsdaten.', 'woo-lieferzeiten-manager'); ?>
+                    </p>
+                    
+                    <?php if ($last_run > 0): ?>
+                    <p class="description">
+                        <strong><?php esc_html_e('Letzter Lauf:', 'woo-lieferzeiten-manager'); ?></strong> 
+                        <?php echo date_i18n(get_option('date_format') . ' ' . get_option('time_format'), $last_run); ?>
+                        (<?php echo $last_count; ?> <?php esc_html_e('Produkte verarbeitet', 'woo-lieferzeiten-manager'); ?>)
+                    </p>
+                    <?php endif; ?>
+                    
+                    <?php if ($next_scheduled): ?>
+                    <p class="description">
+                        <strong><?php esc_html_e('Nächster Lauf:', 'woo-lieferzeiten-manager'); ?></strong> 
+                        <?php echo date_i18n(get_option('date_format') . ' ' . get_option('time_format'), $next_scheduled); ?>
+                    </p>
+                    <?php endif; ?>
+                    
+                    <p>
+                        <button type="button" id="wlm-run-cronjob-now" class="button button-secondary">
+                            <?php esc_html_e('Jetzt ausführen', 'woo-lieferzeiten-manager'); ?>
+                        </button>
+                        <span id="wlm-cronjob-status" style="margin-left: 10px;"></span>
+                    </p>
+                </td>
+            </tr>
+
+            <tr>
+                <th scope="row">
                     <?php esc_html_e('Debug-Modus', 'woo-lieferzeiten-manager'); ?>
                 </th>
                 <td>

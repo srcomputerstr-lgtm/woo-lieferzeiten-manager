@@ -204,17 +204,32 @@ class WLM_Calculator {
             return current_time('timestamp');
         }
         
-        // If not enough stock, check for manual available_from date
+        // If not enough stock, check for manual available_from date (Priority 1)
         $available_from = get_post_meta($product->get_id(), '_wlm_available_from', true);
 
         if ($available_from) {
-            return strtotime($available_from);
+            $available_timestamp = strtotime($available_from);
+            // Only use if date is today or in the future
+            if ($available_timestamp >= strtotime('today')) {
+                return $available_timestamp;
+            }
         }
 
-        // If not set, calculate from lead time (only when stock is insufficient)
+        // If manual date not set or in past, use calculated date (Priority 2)
+        $calculated_date = get_post_meta($product->get_id(), '_wlm_calculated_available_date', true);
+        
+        if ($calculated_date) {
+            $calculated_timestamp = strtotime($calculated_date);
+            // Only use if date is today or in the future
+            if ($calculated_timestamp >= strtotime('today')) {
+                return $calculated_timestamp;
+            }
+        }
+
+        // Fallback: Calculate on-the-fly from lead time (Priority 3)
         $lead_time = get_post_meta($product->get_id(), '_wlm_lead_time_days', true);
         
-        if ($lead_time && is_numeric($lead_time)) {
+        if ($lead_time && is_numeric($lead_time) && $lead_time > 0) {
             return $this->add_business_days(current_time('timestamp'), (int) $lead_time);
         }
 

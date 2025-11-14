@@ -181,6 +181,7 @@ class WLM_Core {
 
     /**
      * Update product availability (cron job)
+     * Calculates and updates the calculated availability date for all products with lead time
      */
     public function update_product_availability() {
         $args = array(
@@ -196,14 +197,31 @@ class WLM_Core {
         );
 
         $products = get_posts($args);
+        $processed_count = 0;
 
         foreach ($products as $product) {
             $lead_time = get_post_meta($product->ID, '_wlm_lead_time_days', true);
             
-            if ($lead_time && is_numeric($lead_time)) {
-                $available_from = $this->calculator->calculate_available_from_date($lead_time);
-                update_post_meta($product->ID, '_wlm_available_from', $available_from);
+            if ($lead_time && is_numeric($lead_time) && $lead_time > 0) {
+                // Calculate date: Today + Lead Time (business days)
+                $calculated_date = $this->calculator->calculate_available_from_date($lead_time);
+                
+                // Save to calculated field (not the manual field!)
+                update_post_meta($product->ID, '_wlm_calculated_available_date', $calculated_date);
+                $processed_count++;
             }
+        }
+        
+        // Update last run timestamp and count
+        update_option('wlm_cronjob_last_run', current_time('timestamp'));
+        update_option('wlm_cronjob_last_count', $processed_count);
+        
+        // Log for debugging
+        if ($this->is_debug_mode()) {
+            $this->debug_log('Cronjob executed', array(
+                'processed_products' => $processed_count,
+                'timestamp' => current_time('mysql')
+            ));
         }
     }
 

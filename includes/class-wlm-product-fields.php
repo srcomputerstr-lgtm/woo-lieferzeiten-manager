@@ -47,13 +47,30 @@ class WLM_Product_Fields {
             'id' => '_wlm_lead_time_days',
             'label' => __('Lieferzeit (Tage)', 'woo-lieferzeiten-manager'),
             'desc_tip' => true,
-            'description' => __('Anzahl der Werktage bis zur Verfügbarkeit. Wird zur automatischen Berechnung des "Lieferbar ab"-Datums verwendet.', 'woo-lieferzeiten-manager'),
+            'description' => __('Anzahl der Werktage bis zur Verfügbarkeit. Wird zur automatischen Berechnung des "Berechnetes Verfügbarkeitsdatum" verwendet.', 'woo-lieferzeiten-manager'),
             'type' => 'number',
             'custom_attributes' => array(
                 'step' => '1',
                 'min' => '0'
             ),
             'value' => get_post_meta($product_object->get_id(), '_wlm_lead_time_days', true)
+        ));
+        
+        // Calculated availability date (read-only)
+        $calculated_date = get_post_meta($product_object->get_id(), '_wlm_calculated_available_date', true);
+        $calculated_date_display = $calculated_date ? date_i18n(get_option('date_format'), strtotime($calculated_date)) : __('Nicht berechnet', 'woo-lieferzeiten-manager');
+        
+        woocommerce_wp_text_input(array(
+            'id' => '_wlm_calculated_available_date_display',
+            'label' => __('Berechnetes Verfügbarkeitsdatum', 'woo-lieferzeiten-manager'),
+            'desc_tip' => true,
+            'description' => __('Automatisch berechnet basierend auf "Lieferzeit (Tage)". Wird täglich per Cronjob aktualisiert. Nur-Lesen.', 'woo-lieferzeiten-manager'),
+            'type' => 'text',
+            'custom_attributes' => array(
+                'readonly' => 'readonly',
+                'style' => 'background-color: #f0f0f0; cursor: not-allowed;'
+            ),
+            'value' => $calculated_date_display
         ));
 
         // Max visible stock

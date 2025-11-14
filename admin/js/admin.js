@@ -40,6 +40,9 @@
         $(document).on('click', '.wlm-add-value', this.addValueTag.bind(this));
         $(document).on('click', '.wlm-remove-value-tag', this.removeValueTag.bind(this));
         $(document).on('keypress', '.wlm-value-input', this.handleValueInputKeypress.bind(this));
+        
+        // Cronjob
+        $(document).on('click', '#wlm-run-cronjob-now', this.runCronjob.bind(this));
         },
 
         /**
@@ -632,6 +635,50 @@
                 e.preventDefault();
                 $(e.currentTarget).closest('.wlm-condition-values').find('.wlm-add-value').click();
             }
+        },
+        
+        /**
+         * Run cronjob manually
+         */
+        runCronjob: function(e) {
+            e.preventDefault();
+            
+            var $button = $(e.currentTarget);
+            var $status = $('#wlm-cronjob-status');
+            
+            // Disable button
+            $button.prop('disabled', true).text(wlmAdmin.i18n.running || 'Wird ausgeführt...');
+            $status.html('<span style="color: #0073aa;">⏳ Wird ausgeführt...</span>');
+            
+            $.ajax({
+                url: wlmAdmin.ajaxUrl,
+                type: 'POST',
+                data: {
+                    action: 'wlm_run_cronjob',
+                    nonce: wlmAdmin.nonce
+                },
+                success: function(response) {
+                    if (response.success) {
+                        $status.html('<span style="color: #46b450;">✓ ' + response.data.message + '</span>');
+                        
+                        // Update last run info if present
+                        if (response.data.last_run) {
+                            setTimeout(function() {
+                                location.reload();
+                            }, 1500);
+                        }
+                    } else {
+                        $status.html('<span style="color: #dc3232;">✗ Fehler: ' + response.data + '</span>');
+                    }
+                },
+                error: function() {
+                    $status.html('<span style="color: #dc3232;">✗ AJAX-Fehler</span>');
+                },
+                complete: function() {
+                    // Re-enable button
+                    $button.prop('disabled', false).text(wlmAdmin.i18n.runNow || 'Jetzt ausführen');
+                }
+            });
         },
         
         /**

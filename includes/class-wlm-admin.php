@@ -25,6 +25,9 @@ class WLM_Admin {
         
         // AJAX handler for saving settings
         add_action('wp_ajax_wlm_save_settings', array($this, 'ajax_save_settings'));
+        
+        // AJAX handler for running cronjob manually
+        add_action('wp_ajax_wlm_run_cronjob', array($this, 'ajax_run_cronjob'));
     }
 
     /**
@@ -487,5 +490,38 @@ class WLM_Admin {
                 error_log('WLM: Added method ' . $method_id . ' to zone ' . $zone_id);
             }
         }
+    }
+    
+    /**
+     * AJAX handler for running cronjob manually
+     */
+    public function ajax_run_cronjob() {
+        // Verify nonce
+        if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'wlm-admin-nonce')) {
+            wp_send_json_error('Invalid nonce');
+            return;
+        }
+        
+        // Check permissions
+        if (!current_user_can('manage_woocommerce')) {
+            wp_send_json_error('Insufficient permissions');
+            return;
+        }
+        
+        // Run the cronjob
+        WLM_Core::instance()->update_product_availability();
+        
+        // Get updated stats
+        $last_run = get_option('wlm_cronjob_last_run', 0);
+        $last_count = get_option('wlm_cronjob_last_count', 0);
+        
+        wp_send_json_success(array(
+            'message' => sprintf(
+                __('Cronjob erfolgreich ausgeführt! %d Produkte verarbeitet.', 'woo-lieferzeiten-manager'),
+                $last_count
+            ),
+            'last_run' => date_i18n(get_option('date_format') . ' ' . get_option('time_format'), $last_run),
+            'count' => $last_count
+        ));
     }
 }
