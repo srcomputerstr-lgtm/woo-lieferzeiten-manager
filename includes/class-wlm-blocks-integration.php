@@ -251,19 +251,43 @@ class WLM_Blocks_Integration implements IntegrationInterface {
                 
                 // Get product attributes
                 $attributes = array();
+                
                 if ($product->is_type('variation')) {
+                    // For variations: Get parent product attributes first
+                    $parent_product = wc_get_product($product_id);
+                    if ($parent_product) {
+                        $parent_attributes = $parent_product->get_attributes();
+                        foreach ($parent_attributes as $attr_slug => $attribute) {
+                            if ($attribute->is_taxonomy()) {
+                                $terms = wc_get_product_terms($product_id, $attr_slug, array('fields' => 'slugs'));
+                                if (!empty($terms)) {
+                                    $attributes[$attr_slug] = $terms;
+                                }
+                            }
+                        }
+                    }
+                    
+                    // Then get variation-specific attributes (override parent if set)
                     $variation_attrs = $product->get_attributes();
                     foreach ($variation_attrs as $attr_slug => $attr_value) {
-                        $attributes[$attr_slug] = $attr_value;
+                        if (!empty($attr_value)) {
+                            $attributes[$attr_slug] = is_array($attr_value) ? $attr_value : array($attr_value);
+                        }
                     }
                 } else {
+                    // For simple products: Get all attributes
                     $product_attributes = $product->get_attributes();
                     foreach ($product_attributes as $attr_slug => $attribute) {
                         if ($attribute->is_taxonomy()) {
                             $terms = wc_get_product_terms($product_id, $attr_slug, array('fields' => 'slugs'));
-                            $attributes[$attr_slug] = $terms;
+                            if (!empty($terms)) {
+                                $attributes[$attr_slug] = $terms;
+                            }
                         } else {
-                            $attributes[$attr_slug] = $attribute->get_options();
+                            $options = $attribute->get_options();
+                            if (!empty($options)) {
+                                $attributes[$attr_slug] = $options;
+                            }
                         }
                     }
                 }
