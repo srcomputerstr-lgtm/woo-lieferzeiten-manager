@@ -167,7 +167,13 @@
                         // Check if Express is available for this method
                         const expressMethodId = methodId + '_express';
                         const expressInfo = deliveryInfo[expressMethodId];
-                        if (expressInfo && expressInfo.delivery_window) {
+                        
+                        // Only show Express hint in Cart OR in Checkout summary when no method is selected yet
+                        const isCheckout = document.body.classList.contains('woocommerce-checkout');
+                        const isCart = document.body.classList.contains('woocommerce-cart');
+                        const showExpressHint = isCart || !isCheckout; // Show in Cart, hide in Checkout summary
+                        
+                        if (expressInfo && expressInfo.delivery_window && showExpressHint) {
                             // Extract end date from Express window (e.g. "Mi, 12.11. – Do, 13.11." -> "Do, 13.11.")
                             const expressWindow = expressInfo.delivery_window;
                             const parts = expressWindow.split('–');
