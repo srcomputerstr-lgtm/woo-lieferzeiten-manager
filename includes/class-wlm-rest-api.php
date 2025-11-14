@@ -378,6 +378,15 @@ class WLM_REST_API {
     public function set_product_availability_by_sku($request) {
         $sku = sanitize_text_field($request->get_param('sku'));
         
+        // DEBUG: Log all request data
+        error_log('[WLM API DEBUG] Request method: ' . $request->get_method());
+        error_log('[WLM API DEBUG] Request route: ' . $request->get_route());
+        error_log('[WLM API DEBUG] Content-Type: ' . $request->get_content_type());
+        error_log('[WLM API DEBUG] Body params: ' . print_r($request->get_body_params(), true));
+        error_log('[WLM API DEBUG] JSON params: ' . print_r($request->get_json_params(), true));
+        error_log('[WLM API DEBUG] All params: ' . print_r($request->get_params(), true));
+        error_log('[WLM API DEBUG] Raw body: ' . $request->get_body());
+        
         // Get parameters from JSON body
         $json_params = $request->get_json_params();
         $available_from = isset($json_params['available_from']) ? $json_params['available_from'] : null;
