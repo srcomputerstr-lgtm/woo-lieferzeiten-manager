@@ -113,52 +113,56 @@
                     var name = $(this).attr('name');
                     var value = $(this).is(':checkbox') ? $(this).is(':checked') : $(this).val();
                     
-                    // Parse nested array notation: wlm_shipping_methods[0][key] or wlm_shipping_methods[0][key][0][subkey]
-                    var match = name.match(/wlm_shipping_methods\[\d+\]\[(.+)\]/);
-                    if (match) {
-                        var path = match[1];
+                    // Parse: wlm_shipping_methods[0][path]
+                    // Extract path after method index
+                    var methodMatch = name.match(/wlm_shipping_methods\[\d+\](.*)/);
+                    if (!methodMatch) return;
+                    
+                    var fullPath = methodMatch[1];
+                    if (!fullPath) return;
+                    
+                    // Parse all bracket segments: [key1][key2][key3][]
+                    var segments = [];
+                    var segmentRegex = /\[([^\]]+)\]/g;
+                    var segmentMatch;
+                    while ((segmentMatch = segmentRegex.exec(fullPath)) !== null) {
+                        segments.push(segmentMatch[1]);
+                    }
+                    
+                    if (segments.length === 0) return;
+                    
+                    // Build nested structure
+                    var current = method;
+                    for (var i = 0; i < segments.length; i++) {
+                        var segment = segments[i];
+                        var isLast = (i === segments.length - 1);
+                        var nextSegment = isLast ? null : segments[i + 1];
                         
-                        // Handle nested arrays like attribute_conditions[0][attribute] or attribute_conditions[0][values][]
-                        var nestedMatch = path.match(/^([^\[]+)(\[.+\])$/);
-                        if (nestedMatch) {
-                            var baseKey = nestedMatch[1];
-                            var nestedPath = nestedMatch[2];
-                            
-                            // Initialize base array if needed
-                            if (!method[baseKey]) {
-                                method[baseKey] = [];
-                            }
-                            
-                            // Parse nested indices and keys - with optional [] for arrays
-                            var parts = nestedPath.match(/\[(\d+)\]\[([^\]]+)\](\[\])?/);
-                            if (parts) {
-                                var index = parseInt(parts[1]);
-                                var key = parts[2];
-                                var isArray = parts[3] === '[]';
-                                
-                                // Initialize nested object if needed
-                                if (!method[baseKey][index]) {
-                                    method[baseKey][index] = {};
-                                }
-                                
-                                // Handle array values (like values[])
-                                if (isArray) {
-                                    if (!method[baseKey][index][key]) {
-                                        method[baseKey][index][key] = [];
-                                    }
-                                    // For multiselect, value is already an array
-                                    if (Array.isArray(value)) {
-                                        method[baseKey][index][key] = value;
-                                    } else {
-                                        method[baseKey][index][key].push(value);
-                                    }
-                                } else {
-                                    method[baseKey][index][key] = value;
-                                }
-                            }
+                        // Check if this is an array index (numeric)
+                        var isIndex = /^\d+$/.test(segment);
+                        
+                        // Check if next segment is empty (indicates array notation [])
+                        var isArrayNotation = (segment === '');
+                        
+                        if (isArrayNotation) {
+                            // This is [], skip it - value should be an array already
+                            break;
+                        }
+                        
+                        if (isLast) {
+                            // Last segment - assign value
+                            current[segment] = value;
                         } else {
-                            // Simple key
-                            method[path] = value;
+                            // Not last - create nested structure
+                            if (!current[segment]) {
+                                // Check if next segment is numeric (array index)
+                                if (/^\d+$/.test(nextSegment)) {
+                                    current[segment] = [];
+                                } else {
+                                    current[segment] = {};
+                                }
+                            }
+                            current = current[segment];
                         }
                     }
                 });
