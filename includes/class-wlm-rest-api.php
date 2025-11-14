@@ -334,7 +334,6 @@ class WLM_REST_API {
             'data' => $data
         ), 200);
     }
-}
 
     /**
      * Helper: Get product ID by SKU
@@ -525,3 +524,5 @@ class WLM_REST_API {
             'data' => $data
         ), 200);
     }
+
+}

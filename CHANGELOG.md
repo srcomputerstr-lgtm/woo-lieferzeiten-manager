@@ -2,6 +2,74 @@
 
 All notable changes to WooCommerce Lieferzeiten Manager will be documented in this file.
 
+## [1.11.0] - 2025-11-14
+
+### 🎯 SKU-basierte REST API für ERP-Integration
+
+### Added
+- **SKU-basierte API Endpunkte**
+  - `POST /products/sku/{SKU}/availability` - Produkt via SKU aktualisieren
+  - `POST /products/sku/batch` - Bulk-Update mit SKU-Liste
+  - `GET /products/sku/{SKU}/delivery-info` - Lieferinformationen via SKU abrufen
+  - Automatisches SKU → Produkt-ID Mapping
+
+- **ERP Integration Guide**
+  - Komplette Dokumentation für ERP-Systeme
+  - Code-Beispiele für Python, PHP, C#, Java, cURL
+  - CSV-Import Workflow
+  - Authentifizierung via Application Passwords
+
+- **Berechnetes Verfügbarkeitsdatum**
+  - Neues Read-Only Feld im Produktbackend
+  - Täglicher Cronjob berechnet Datum basierend auf Lieferzeit
+  - Manuelle Daten werden nie überschrieben
+
+- **Cronjob-Verwaltung**
+  - Admin-Einstellungen für Cronjob-Zeit
+  - "Jetzt ausführen" Button für sofortiges Testen
+  - Anzeige: Letzter Lauf, Nächster Lauf, Anzahl Produkte
+
+### Changed
+- **Verfügbarkeitsdatum-Logik**
+  - Priorität 1: Manuelles "Lieferbar ab" (wenn Zukunft/Heute)
+  - Priorität 2: Berechnetes Datum (Cronjob)
+  - Priorität 3: On-the-fly Berechnung
+  - Vergangenheits-Daten werden automatisch ignoriert
+
+- **Express-Hinweis im Checkout**
+  - Nur noch im Cart sichtbar
+  - Im Checkout nur bei gewählter Express-Versandart
+  - Reduziert visuelle Überladung
+
+- **Stock-Status Anzeige**
+  - Differenzierte Anzeige bei Teilbestand
+  - "Auf Lager: X Stück - Rest ab: Datum"
+  - CSS-gezeichnete Kreise statt Unicode-Zeichen
+
+### Fixed
+- **Lieferzeit-Berechnung**
+  - Produkt-Lieferzeit wird nur verwendet wenn Stock unzureichend
+  - Bei ausreichendem Stock: Nur Transit-Zeit
+  - Korrekte Zeitzone-Behandlung bei Datums-Vergleichen
+
+- **Express-Verfügbarkeit**
+  - Express wird ausgeblendet wenn nicht alle Produkte auf Lager
+  - Sowohl als Info als auch als Versandart-Option
+  - Stock-Check berücksichtigt bestellte Menge
+
+- **JavaScript-Fehler**
+  - Localized script object korrekt benannt (wlmAdmin)
+  - AJAX-Calls funktionieren wieder
+  - Speichern von Versandarten gefixt
+
+### Technical Details
+- REST API nutzt WP_REST_Response
+- SKU-Lookup via wpdb für Performance
+- Cronjob via wp_schedule_event
+- Timezone-aware Datums-Vergleiche
+
+---
+
 ## [1.5.0] - 2025-11-10
 
 ### 🎯 CRITICAL FIX: Frontend Rendering
