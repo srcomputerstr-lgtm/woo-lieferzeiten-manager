@@ -2,6 +2,21 @@
 
 All notable changes to WooCommerce Lieferzeiten Manager will be documented in this file.
 
+## [1.12.1] - 2025-11-14
+
+### Fixed
+- **Browser-Caching Problem**
+  - Version-Bump erzwingt Reload der JavaScript-Datei
+  - Browser laden jetzt die neue admin.js mit korrekter Serialisierung
+  - PHP-Normalisierung als Fallback bleibt aktiv
+
+### Technical
+- JavaScript wird mit `WLM_VERSION` Parameter geladen
+- Browser-Cache wird durch Version-Änderung invalidiert
+- Beide Fixes (JS + PHP) sind jetzt aktiv
+
+---
+
 ## [1.12.0] - 2025-11-14
 
 ### 🎨 Verbesserte Produktattribute/Taxonomien UI
