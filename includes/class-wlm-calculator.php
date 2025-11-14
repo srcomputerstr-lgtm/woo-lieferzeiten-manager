@@ -798,3 +798,107 @@ class WLM_Calculator {
         return $current_time < $cutoff_time;
     }
 }
+
+    /**
+     * Check if product meets attribute and category conditions
+     * Public wrapper for use by other classes
+     *
+     * @param WC_Product $product Product object.
+     * @param array $method Method configuration with attribute_conditions and required_categories.
+     * @return bool Whether product meets all conditions.
+     */
+    public function check_product_conditions($product, $method) {
+        // Check required attributes
+        $required_attrs = array();
+        
+        // New format: attribute_conditions array
+        if (!empty($method['attribute_conditions']) && is_array($method['attribute_conditions'])) {
+            $required_attrs = $method['attribute_conditions'];
+        }
+        // Old format: required_attributes string
+        elseif (!empty($method['required_attributes'])) {
+            $lines = array_filter(array_map('trim', explode("\n", $method['required_attributes'])));
+            foreach ($lines as $line) {
+                if (strpos($line, '=') !== false) {
+                    list($attr, $val) = array_map('trim', explode('=', $line, 2));
+                    $required_attrs[] = array('attribute' => $attr, 'value' => $val);
+                }
+            }
+        }
+        
+        // Check each attribute condition
+        error_log('[WLM] Checking ' . count($required_attrs) . ' attribute conditions for product: ' . $product->get_name());
+        
+        foreach ($required_attrs as $condition) {
+            // Convert old format to new format if needed
+            if (isset($condition['value']) && !isset($condition['values'])) {
+                $condition['values'] = array($condition['value']);
+                $condition['logic'] = 'at_least_one';
+            }
+            
+            $attr_slug = $condition['attribute'] ?? '';
+            $values = $condition['values'] ?? array();
+            $logic = $condition['logic'] ?? 'at_least_one';
+            
+            if (empty($attr_slug) || empty($values)) {
+                continue;
+            }
+            
+            // Get product attribute values
+            $product_values = array();
+            
+            // Get product ID (parent for variations)
+            $product_id = $product->get_parent_id() ? $product->get_parent_id() : $product->get_id();
+            
+            if ($product->is_type('variation')) {
+                // For variations: Try to get from variation first, then from parent
+                $variation_attrs = $product->get_attributes();
+                if (isset($variation_attrs[$attr_slug]) && !empty($variation_attrs[$attr_slug])) {
+                    $product_values[] = $variation_attrs[$attr_slug];
+                } else {
+                    // Try parent product
+                    $parent_product = wc_get_product($product_id);
+                    if ($parent_product) {
+                        $parent_attr = $parent_product->get_attribute($attr_slug);
+                        if ($parent_attr) {
+                            $product_values = array_map('trim', explode(',', $parent_attr));
+                        }
+                    }
+                }
+            } else {
+                $product_attr = $product->get_attribute($attr_slug);
+                if ($product_attr) {
+                    // Split by comma for multi-value attributes
+                    $product_values = array_map('trim', explode(',', $product_attr));
+                }
+            }
+            
+            // Apply logic operator
+            $condition_met = $this->check_attribute_logic($product_values, $values, $logic);
+            
+            error_log('[WLM] Condition check - Attribute: ' . $attr_slug . ', Logic: ' . $logic . ', Required: ' . implode(',', $values) . ', Product has: ' . implode(',', $product_values) . ', Met: ' . ($condition_met ? 'YES' : 'NO'));
+            
+            if (!$condition_met) {
+                error_log('[WLM] Condition NOT met - returning false');
+                return false;
+            }
+        }
+        
+        // Check required categories
+        if (!empty($method['required_categories'])) {
+            $required_cats = is_array($method['required_categories']) 
+                ? $method['required_categories'] 
+                : array_filter(array_map('trim', explode(',', $method['required_categories'])));
+            
+            if (!empty($required_cats)) {
+                $product_id = $product->get_parent_id() ? $product->get_parent_id() : $product->get_id();
+                $product_cats = wp_get_post_terms($product_id, 'product_cat', array('fields' => 'ids'));
+                
+                if (!array_intersect($required_cats, $product_cats)) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
