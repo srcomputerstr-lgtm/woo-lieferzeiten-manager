@@ -97,6 +97,61 @@ class WLM_REST_API {
                 )
             )
         ));
+
+        // SKU-based endpoints for ERP integration
+        
+        // Set product availability by SKU
+        register_rest_route(self::NAMESPACE, '/products/sku/(?P<sku>[a-zA-Z0-9_-]+)/availability', array(
+            'methods' => 'POST',
+            'callback' => array($this, 'set_product_availability_by_sku'),
+            'permission_callback' => array($this, 'check_permission'),
+            'args' => array(
+                'sku' => array(
+                    'required' => true,
+                    'sanitize_callback' => 'sanitize_text_field'
+                ),
+                'available_from' => array(
+                    'required' => false,
+                    'validate_callback' => function($param) {
+                        return empty($param) || preg_match('/^\d{4}-\d{2}-\d{2}$/', $param);
+                    }
+                ),
+                'lead_time_days' => array(
+                    'required' => false,
+                    'validate_callback' => function($param) {
+                        return is_numeric($param) && $param >= 0;
+                    }
+                )
+            )
+        ));
+
+        // Batch update products by SKU
+        register_rest_route(self::NAMESPACE, '/products/sku/batch', array(
+            'methods' => 'POST',
+            'callback' => array($this, 'batch_update_products_by_sku'),
+            'permission_callback' => array($this, 'check_permission'),
+            'args' => array(
+                'products' => array(
+                    'required' => true,
+                    'validate_callback' => function($param) {
+                        return is_array($param);
+                    }
+                )
+            )
+        ));
+
+        // Get product delivery info by SKU
+        register_rest_route(self::NAMESPACE, '/products/sku/(?P<sku>[a-zA-Z0-9_-]+)/delivery-info', array(
+            'methods' => 'GET',
+            'callback' => array($this, 'get_product_delivery_info_by_sku'),
+            'permission_callback' => '__return_true',
+            'args' => array(
+                'sku' => array(
+                    'required' => true,
+                    'sanitize_callback' => 'sanitize_text_field'
+                )
+            )
+        ));
     }
 
     /**
@@ -280,3 +335,193 @@ class WLM_REST_API {
         ), 200);
     }
 }
+
+    /**
+     * Helper: Get product ID by SKU
+     *
+     * @param string $sku Product SKU.
+     * @return int|false Product ID or false if not found.
+     */
+    private function get_product_id_by_sku($sku) {
+        global $wpdb;
+        
+        $product_id = $wpdb->get_var($wpdb->prepare(
+            "SELECT post_id FROM $wpdb->postmeta WHERE meta_key='_sku' AND meta_value=%s LIMIT 1",
+            $sku
+        ));
+        
+        return $product_id ? (int) $product_id : false;
+    }
+
+    /**
+     * Set product availability by SKU
+     *
+     * @param WP_REST_Request $request Request object.
+     * @return WP_REST_Response
+     */
+    public function set_product_availability_by_sku($request) {
+        $sku = sanitize_text_field($request->get_param('sku'));
+        $available_from = $request->get_param('available_from');
+        $lead_time_days = $request->get_param('lead_time_days');
+
+        // Find product by SKU
+        $product_id = $this->get_product_id_by_sku($sku);
+        
+        if (!$product_id) {
+            return new WP_REST_Response(array(
+                'success' => false,
+                'message' => sprintf(__('Produkt mit SKU "%s" nicht gefunden', 'woo-lieferzeiten-manager'), $sku)
+            ), 404);
+        }
+
+        $product = wc_get_product($product_id);
+        
+        if (!$product) {
+            return new WP_REST_Response(array(
+                'success' => false,
+                'message' => __('Produkt nicht gefunden', 'woo-lieferzeiten-manager')
+            ), 404);
+        }
+
+        $updated_fields = array();
+
+        // Update available_from if provided
+        if ($available_from !== null) {
+            update_post_meta($product_id, '_wlm_available_from', $available_from);
+            $updated_fields['available_from'] = $available_from;
+        }
+
+        // Update lead_time_days if provided
+        if ($lead_time_days !== null) {
+            update_post_meta($product_id, '_wlm_lead_time_days', (int) $lead_time_days);
+            $updated_fields['lead_time_days'] = (int) $lead_time_days;
+        }
+
+        return new WP_REST_Response(array(
+            'success' => true,
+            'message' => __('Produkt aktualisiert', 'woo-lieferzeiten-manager'),
+            'data' => array(
+                'product_id' => $product_id,
+                'sku' => $sku,
+                'updated_fields' => $updated_fields
+            )
+        ), 200);
+    }
+
+    /**
+     * Batch update products by SKU
+     *
+     * @param WP_REST_Request $request Request object.
+     * @return WP_REST_Response
+     */
+    public function batch_update_products_by_sku($request) {
+        $products = $request->get_param('products');
+        $results = array(
+            'success' => array(),
+            'failed' => array()
+        );
+
+        foreach ($products as $product_data) {
+            if (!isset($product_data['sku'])) {
+                $results['failed'][] = array(
+                    'sku' => 'UNKNOWN',
+                    'message' => __('SKU fehlt', 'woo-lieferzeiten-manager')
+                );
+                continue;
+            }
+
+            $sku = sanitize_text_field($product_data['sku']);
+            $product_id = $this->get_product_id_by_sku($sku);
+
+            if (!$product_id) {
+                $results['failed'][] = array(
+                    'sku' => $sku,
+                    'message' => sprintf(__('Produkt mit SKU "%s" nicht gefunden', 'woo-lieferzeiten-manager'), $sku)
+                );
+                continue;
+            }
+
+            $product = wc_get_product($product_id);
+            
+            if (!$product) {
+                $results['failed'][] = array(
+                    'sku' => $sku,
+                    'message' => __('Produkt nicht gefunden', 'woo-lieferzeiten-manager')
+                );
+                continue;
+            }
+
+            // Update fields
+            if (isset($product_data['available_from'])) {
+                $available_from = sanitize_text_field($product_data['available_from']);
+                update_post_meta($product_id, '_wlm_available_from', $available_from);
+            }
+
+            if (isset($product_data['lead_time_days'])) {
+                $lead_time = (int) $product_data['lead_time_days'];
+                update_post_meta($product_id, '_wlm_lead_time_days', $lead_time);
+            }
+
+            $results['success'][] = array(
+                'sku' => $sku,
+                'product_id' => $product_id,
+                'message' => __('Erfolgreich aktualisiert', 'woo-lieferzeiten-manager')
+            );
+        }
+
+        return new WP_REST_Response(array(
+            'success' => true,
+            'message' => sprintf(
+                __('%d Produkte aktualisiert, %d fehlgeschlagen', 'woo-lieferzeiten-manager'),
+                count($results['success']),
+                count($results['failed'])
+            ),
+            'results' => $results
+        ), 200);
+    }
+
+    /**
+     * Get product delivery info by SKU
+     *
+     * @param WP_REST_Request $request Request object.
+     * @return WP_REST_Response
+     */
+    public function get_product_delivery_info_by_sku($request) {
+        $sku = sanitize_text_field($request->get_param('sku'));
+        $product_id = $this->get_product_id_by_sku($sku);
+
+        if (!$product_id) {
+            return new WP_REST_Response(array(
+                'success' => false,
+                'message' => sprintf(__('Produkt mit SKU "%s" nicht gefunden', 'woo-lieferzeiten-manager'), $sku)
+            ), 404);
+        }
+
+        $product = wc_get_product($product_id);
+
+        if (!$product) {
+            return new WP_REST_Response(array(
+                'success' => false,
+                'message' => __('Produkt nicht gefunden', 'woo-lieferzeiten-manager')
+            ), 404);
+        }
+
+        $calculator = WLM_Core::instance()->calculator;
+        $window = $calculator->calculate_product_window($product_id);
+
+        $data = array(
+            'product_id' => $product_id,
+            'sku' => $sku,
+            'available_from' => get_post_meta($product_id, '_wlm_available_from', true),
+            'calculated_available_date' => get_post_meta($product_id, '_wlm_calculated_available_date', true),
+            'lead_time_days' => get_post_meta($product_id, '_wlm_lead_time_days', true),
+            'stock_status' => $product->get_stock_status(),
+            'stock_quantity' => $product->get_stock_quantity(),
+            'delivery_window' => $window
+        );
+
+        return new WP_REST_Response(array(
+            'success' => true,
+            'data' => $data
+        ), 200);
+    }
