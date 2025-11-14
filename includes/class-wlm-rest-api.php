@@ -387,8 +387,12 @@ class WLM_REST_API {
         error_log('[WLM API DEBUG] All params: ' . print_r($request->get_params(), true));
         error_log('[WLM API DEBUG] Raw body: ' . $request->get_body());
         
-        // Get parameters from JSON body
-        $json_params = $request->get_json_params();
+        // Get parameters from JSON body - manually parse since get_json_params() doesn't work with URL params
+        $raw_body = $request->get_body();
+        $json_params = json_decode($raw_body, true);
+        
+        error_log('[WLM API DEBUG] Parsed JSON: ' . print_r($json_params, true));
+        
         $available_from = isset($json_params['available_from']) ? $json_params['available_from'] : null;
         $lead_time_days = isset($json_params['lead_time_days']) ? $json_params['lead_time_days'] : null;
         
