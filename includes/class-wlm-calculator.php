@@ -797,7 +797,6 @@ class WLM_Calculator {
         // Compare times
         return $current_time < $cutoff_time;
     }
-}
 
     /**
      * Check if product meets attribute and category conditions
@@ -902,3 +901,4 @@ class WLM_Calculator {
 
         return true;
     }
+}
