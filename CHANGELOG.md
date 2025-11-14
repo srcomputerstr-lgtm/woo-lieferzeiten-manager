@@ -1,6 +1,40 @@
-# Changelog
+# CHANGELOG
 
 All notable changes to WooCommerce Lieferzeiten Manager will be documented in this file.
+
+## [1.12.0] - 2025-11-14
+
+### 🎨 Verbesserte Produktattribute/Taxonomien UI
+
+### Fixed
+- **JavaScript Serialisierung** für Select2 Multiselect-Arrays
+  - `values[]` Arrays werden jetzt korrekt erkannt und gespeichert
+  - Regex erweitert um `(\[\])?` Pattern zu matchen
+  - Array-Handling für verschachtelte Strukturen implementiert
+  - Bedingungen bleiben nach Speichern erhalten
+
+### Changed
+- **Conditions UI für Versandarten**
+  - Select2-basierte Mehrfachauswahl für Attributwerte (Chip-Design)
+  - Dropdown für Logik-Operatoren: "at least one of", "all of", "none of", "only"
+  - Autocomplete für verfügbare Attributwerte
+  - Mehrere Bedingungen pro Versandart möglich
+  - "+ Bedingung hinzufügen" Button
+  - "Entfernen" Button pro Bedingung
+  - Visuell ansprechende Card-basierte Darstellung
+
+- **Backend-Validierung**
+  - Automatische Filterung leerer Bedingungen
+  - Validierung der Conditions-Struktur beim Speichern
+  - Saubere Array-Normalisierung
+
+### Technical
+- Select2 Integration für bessere UX
+- AJAX-basiertes Laden der Attributwerte
+- Kompatibel mit bestehender Logic-Engine
+- Keine Breaking Changes für bestehende Konfigurationen
+
+---
 
 ## [1.11.0] - 2025-11-14
 

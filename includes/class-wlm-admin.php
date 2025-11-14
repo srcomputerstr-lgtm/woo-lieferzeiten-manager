@@ -135,10 +135,14 @@ class WLM_Admin {
             WLM_VERSION
         );
 
+        // Enqueue Select2 (WooCommerce includes it)
+        wp_enqueue_style('select2');
+        wp_enqueue_script('select2');
+        
         wp_enqueue_script(
             'wlm-admin',
             WLM_PLUGIN_URL . 'admin/js/admin.js',
-            array('jquery', 'jquery-ui-datepicker', 'jquery-ui-sortable'),
+            array('jquery', 'jquery-ui-datepicker', 'jquery-ui-sortable', 'select2'),
             WLM_VERSION,
             true
         );
@@ -373,51 +377,43 @@ class WLM_Admin {
         
         // Save shipping methods
         if (isset($data['wlm_shipping_methods'])) {
-            // Normalize data: Fix attribute_conditions if it's in wrong format
+            // Normalize data: Validate and clean attribute_conditions
             foreach ($data['wlm_shipping_methods'] as $method_index => &$method) {
-                // Check if attribute_conditions has wrong format
-                // Wrong: ["attribute_conditions[0][attribute]"] => "value"
-                // Right: ["attribute_conditions"] => [["attribute" => "value", "value" => "val", "operator" => "="]]
-                $conditions = array();
-                $keys_to_remove = array();
-                
-                foreach ($method as $key => $value) {
-                    // Match pattern: attribute_conditions[0][attribute], attribute_conditions[0][value], attribute_conditions[0][operator]
-                    if (preg_match('/^attribute_conditions\[(\d+)\]\[(\w+)\]$/', $key, $matches)) {
-                        $index = (int)$matches[1];
-                        $field = $matches[2];
-                        
-                        if (!isset($conditions[$index])) {
-                            $conditions[$index] = array(
-                                'attribute' => '',
-                                'operator' => '=',
-                                'value' => ''
-                            );
+                // Validate attribute_conditions structure
+                if (isset($method['attribute_conditions']) && is_array($method['attribute_conditions'])) {
+                    // Filter out empty or invalid conditions
+                    $method['attribute_conditions'] = array_filter($method['attribute_conditions'], function($cond) {
+                        // Must have attribute and at least one value
+                        if (empty($cond['attribute'])) {
+                            return false;
                         }
-                        $conditions[$index][$field] = $value;
                         
-                        // Mark for removal
-                        $keys_to_remove[] = $key;
-                    }
-                }
-                
-                // Remove wrong keys
-                foreach ($keys_to_remove as $key) {
-                    unset($method[$key]);
-                }
-                
-                // If we found conditions, add them in correct format
-                if (!empty($conditions)) {
-                    // Filter out empty conditions
-                    $conditions = array_filter($conditions, function($cond) {
-                        return !empty($cond['attribute']) && !empty($cond['value']);
+                        // Ensure values is an array
+                        if (!isset($cond['values']) || !is_array($cond['values'])) {
+                            return false;
+                        }
+                        
+                        // Filter out empty values
+                        $cond['values'] = array_filter($cond['values'], function($val) {
+                            return !empty($val);
+                        });
+                        
+                        // Must have at least one value
+                        return !empty($cond['values']);
                     });
                     
-                    $method['attribute_conditions'] = array_values($conditions);
-                    error_log('WLM: Normalized attribute_conditions for method ' . $method_index . ': ' . print_r($method['attribute_conditions'], true));
-                } else if (isset($method['attribute_conditions']) && is_array($method['attribute_conditions'])) {
-                    // Already in correct format, just validate
-                    error_log('WLM: attribute_conditions already in correct format for method ' . $method_index);
+                    // Re-index array
+                    $method['attribute_conditions'] = array_values($method['attribute_conditions']);
+                    
+                    // Ensure logic field exists for each condition
+                    foreach ($method['attribute_conditions'] as &$cond) {
+                        if (!isset($cond['logic'])) {
+                            $cond['logic'] = 'at_least_one';
+                        }
+                    }
+                    unset($cond);
+                    
+                    error_log('WLM: Validated attribute_conditions for method ' . $method_index . ': ' . print_r($method['attribute_conditions'], true));
                 }
             }
             unset($method); // Break reference

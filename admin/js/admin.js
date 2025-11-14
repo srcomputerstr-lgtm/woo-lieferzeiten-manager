@@ -11,7 +11,36 @@
         init: function() {
             this.initPostboxes();
             this.initSortable();
+            this.initSelect2();
             this.bindEvents();
+        },
+
+        /**
+         * Initialize Select2 on existing elements
+         */
+        initSelect2: function() {
+            // Initialize Select2 on all existing attribute value selects
+            $('.wlm-values-select2').each(function() {
+                var $select = $(this);
+                var attribute = $select.attr('data-attribute');
+                
+                if (attribute && attribute !== '') {
+                    // Has attribute - will be populated by loadAttributeValues
+                    $select.select2({
+                        placeholder: 'Werte auswählen...',
+                        allowClear: true,
+                        width: '100%'
+                    });
+                } else {
+                    // No attribute yet
+                    $select.select2({
+                        placeholder: 'Zuerst Attribut wählen...',
+                        tags: true,
+                        allowClear: true,
+                        width: '100%'
+                    });
+                }
+            });
         },
 
         /**
@@ -89,7 +118,7 @@
                     if (match) {
                         var path = match[1];
                         
-                        // Handle nested arrays like attribute_conditions[0][attribute]
+                        // Handle nested arrays like attribute_conditions[0][attribute] or attribute_conditions[0][values][]
                         var nestedMatch = path.match(/^([^\[]+)(\[.+\])$/);
                         if (nestedMatch) {
                             var baseKey = nestedMatch[1];
@@ -100,17 +129,32 @@
                                 method[baseKey] = [];
                             }
                             
-                            // Parse nested indices and keys
-                            var parts = nestedPath.match(/\[(\d+)\]\[([^\]]+)\]/);                            if (parts) {
+                            // Parse nested indices and keys - with optional [] for arrays
+                            var parts = nestedPath.match(/\[(\d+)\]\[([^\]]+)\](\[\])?/);
+                            if (parts) {
                                 var index = parseInt(parts[1]);
                                 var key = parts[2];
+                                var isArray = parts[3] === '[]';
                                 
                                 // Initialize nested object if needed
                                 if (!method[baseKey][index]) {
                                     method[baseKey][index] = {};
                                 }
                                 
-                                method[baseKey][index][key] = value;
+                                // Handle array values (like values[])
+                                if (isArray) {
+                                    if (!method[baseKey][index][key]) {
+                                        method[baseKey][index][key] = [];
+                                    }
+                                    // For multiselect, value is already an array
+                                    if (Array.isArray(value)) {
+                                        method[baseKey][index][key] = value;
+                                    } else {
+                                        method[baseKey][index][key].push(value);
+                                    }
+                                } else {
+                                    method[baseKey][index][key] = value;
+                                }
                             }
                         } else {
                             // Simple key
@@ -503,6 +547,16 @@
             
             // Append to container
             $container.append(template);
+            
+            // Initialize Select2 on the newly added values select
+            var $newRow = $container.find('.wlm-attribute-condition-row').last();
+            var $valuesSelect = $newRow.find('.wlm-values-select2');
+            $valuesSelect.select2({
+                placeholder: 'Zuerst Attribut wählen...',
+                tags: true,
+                allowClear: true,
+                width: '100%'
+            });
         },
         
         /**
@@ -521,25 +575,27 @@
         },
         
         /**
-         * Load attribute values via AJAX
+         * Load attribute values via AJAX and populate Select2
          */
         loadAttributeValues: function(e) {
             var $select = $(e.currentTarget);
             var attribute = $select.val();
             var $row = $select.closest('.wlm-attribute-condition-row');
-            var $valueInput = $row.find('input[type="text"]');
-            var currentValue = $valueInput.val();
+            var $valuesSelect = $row.find('.wlm-values-select2');
+            
+            // Update data-attribute
+            $valuesSelect.attr('data-attribute', attribute);
             
             if (!attribute) {
-                // Reset to text input
-                $valueInput.replaceWith('<input type="text" name="' + $valueInput.attr('name') + '" value="" placeholder="Wert" class="regular-text" style="width: 200px;">');
+                // Clear and disable select2
+                $valuesSelect.empty().trigger('change');
+                if ($valuesSelect.hasClass('select2-hidden-accessible')) {
+                    $valuesSelect.select2('destroy');
+                }
                 return;
             }
             
-            // Show loading
-            $valueInput.prop('disabled', true).val('Lädt...');
-            
-            // AJAX request
+            // AJAX request to get attribute values
             $.ajax({
                 url: wlmAdmin.ajaxUrl,
                 type: 'POST',
@@ -550,27 +606,46 @@
                 },
                 success: function(response) {
                     if (response.success && response.data.length > 0) {
-                        // Create datalist
-                        var datalistId = 'wlm-values-' + Math.random().toString(36).substr(2, 9);
-                        var $newInput = $('<input type="text" list="' + datalistId + '" name="' + $valueInput.attr('name') + '" value="' + currentValue + '" placeholder="Wert wählen oder eingeben" class="regular-text" style="width: 200px;">');
-                        var $datalist = $('<datalist id="' + datalistId + '"></datalist>');
-                        
-                        // Add options
+                        // Populate select with options
+                        $valuesSelect.empty();
                         $.each(response.data, function(i, item) {
-                            $datalist.append('<option value="' + item.value + '">' + item.label + '</option>');
+                            var option = new Option(item.label, item.value, false, false);
+                            $valuesSelect.append(option);
                         });
                         
-                        // Replace input with datalist version
-                        $valueInput.replaceWith($newInput);
-                        $newInput.after($datalist);
+                        // Initialize or refresh Select2
+                        if ($valuesSelect.hasClass('select2-hidden-accessible')) {
+                            $valuesSelect.select2('destroy');
+                        }
+                        $valuesSelect.select2({
+                            placeholder: 'Werte auswählen...',
+                            allowClear: true,
+                            width: '100%'
+                        });
                     } else {
-                        // No values found, keep text input
-                        $valueInput.prop('disabled', false).val(currentValue).attr('placeholder', 'Wert eingeben');
+                        // No values found - allow manual input
+                        if ($valuesSelect.hasClass('select2-hidden-accessible')) {
+                            $valuesSelect.select2('destroy');
+                        }
+                        $valuesSelect.select2({
+                            placeholder: 'Werte eingeben...',
+                            tags: true,
+                            allowClear: true,
+                            width: '100%'
+                        });
                     }
                 },
                 error: function() {
-                    // Error, keep text input
-                    $valueInput.prop('disabled', false).val(currentValue).attr('placeholder', 'Wert eingeben');
+                    // Error - allow manual input
+                    if ($valuesSelect.hasClass('select2-hidden-accessible')) {
+                        $valuesSelect.select2('destroy');
+                    }
+                    $valuesSelect.select2({
+                        placeholder: 'Werte eingeben...',
+                        tags: true,
+                        allowClear: true,
+                        width: '100%'
+                    });
                 }
             });
         },

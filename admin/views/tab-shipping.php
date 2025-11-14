@@ -239,31 +239,25 @@ if (!defined('ABSPATH')) {
                                                             <button type="button" class="button wlm-remove-attribute-condition" style="margin-left: auto;"><?php esc_html_e('Entfernen', 'woo-lieferzeiten-manager'); ?></button>
                                                         </div>
                                                         
-                                                        <!-- Werte (Tags) -->
+                                                        <!-- Werte (Select2 Multiselect) -->
                                                         <div class="wlm-condition-values" style="margin-top: 10px;">
                                                             <label style="display: block; margin-bottom: 5px; font-weight: 600;"><?php esc_html_e('Werte:', 'woo-lieferzeiten-manager'); ?></label>
-                                                            <div class="wlm-value-tags" style="display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px;">
+                                                            <select 
+                                                                multiple="multiple" 
+                                                                class="wlm-values-select2" 
+                                                                name="wlm_shipping_methods[<?php echo $index; ?>][attribute_conditions][<?php echo $cond_index; ?>][values][]" 
+                                                                data-attribute="<?php echo esc_attr($condition['attribute'] ?? ''); ?>"
+                                                                data-method-index="<?php echo $index; ?>"
+                                                                data-condition-index="<?php echo $cond_index; ?>"
+                                                                style="width: 100%;">
                                                                 <?php
                                                                 if (!empty($values)) {
-                                                                    foreach ($values as $val_index => $value) {
-                                                                        ?>
-                                                                        <span class="wlm-value-tag" style="display: inline-flex; align-items: center; gap: 5px; padding: 5px 10px; background: #0073aa; color: white; border-radius: 3px;">
-                                                                            <?php echo esc_html($value); ?>
-                                                                            <input type="hidden" name="wlm_shipping_methods[<?php echo $index; ?>][attribute_conditions][<?php echo $cond_index; ?>][values][]" value="<?php echo esc_attr($value); ?>">
-                                                                            <button type="button" class="wlm-remove-value-tag" style="background: none; border: none; color: white; cursor: pointer; padding: 0; font-size: 16px;">×</button>
-                                                                        </span>
-                                                                        <?php
+                                                                    foreach ($values as $value) {
+                                                                        echo '<option value="' . esc_attr($value) . '" selected>' . esc_html($value) . '</option>';
                                                                     }
                                                                 }
                                                                 ?>
-                                                            </div>
-                                                            <div style="display: flex; gap: 5px;">
-                                                                <input type="text" 
-                                                                       class="wlm-value-input" 
-                                                                       placeholder="<?php esc_attr_e('Wert eingeben...', 'woo-lieferzeiten-manager'); ?>" 
-                                                                       style="width: 300px;">
-                                                                <button type="button" class="button wlm-add-value"><?php esc_html_e('+ Wert hinzufügen', 'woo-lieferzeiten-manager'); ?></button>
-                                                            </div>
+                                                            </select>
                                                         </div>
                                                     </div>
                                                     <?php
@@ -413,33 +407,49 @@ if (!defined('ABSPATH')) {
     
     <!-- Hidden template for attribute conditions (used by JavaScript) -->
     <script type="text/template" id="wlm-attribute-condition-template">
-        <div class="wlm-attribute-condition-row" style="margin-bottom: 10px; display: flex; gap: 10px; align-items: center;">
-            <select name="wlm_shipping_methods[{{METHOD_INDEX}}][attribute_conditions][{{CONDITION_INDEX}}][attribute]" class="wlm-attribute-select" style="width: 200px;">
-                <option value=""><?php esc_html_e('-- Attribut wählen --', 'woo-lieferzeiten-manager'); ?></option>
-                <optgroup label="<?php esc_attr_e('Produkt-Attribute', 'woo-lieferzeiten-manager'); ?>">
-                    <?php
-                    foreach ($attribute_taxonomies as $tax) {
-                        $attr_name = wc_attribute_taxonomy_name($tax->attribute_name);
-                        echo '<option value="' . esc_attr($attr_name) . '">' . esc_html($tax->attribute_label) . '</option>';
-                    }
-                    ?>
-                </optgroup>
-                <optgroup label="<?php esc_attr_e('Taxonomien', 'woo-lieferzeiten-manager'); ?>">
-                    <option value="product_cat"><?php esc_html_e('Produktkategorie', 'woo-lieferzeiten-manager'); ?></option>
-                    <option value="product_tag"><?php esc_html_e('Produkt-Tag', 'woo-lieferzeiten-manager'); ?></option>
-                </optgroup>
-            </select>
+        <div class="wlm-attribute-condition-row" style="margin-bottom: 15px; padding: 15px; border: 1px solid #ddd; border-radius: 4px; background: #f9f9f9;">
+            <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 10px;">
+                <!-- Logik-Operator -->
+                <select name="wlm_shipping_methods[{{METHOD_INDEX}}][attribute_conditions][{{CONDITION_INDEX}}][logic]" class="wlm-logic-select" style="width: 150px;">
+                    <option value="at_least_one"><?php esc_html_e('at least one of', 'woo-lieferzeiten-manager'); ?></option>
+                    <option value="all"><?php esc_html_e('all of', 'woo-lieferzeiten-manager'); ?></option>
+                    <option value="none"><?php esc_html_e('none of', 'woo-lieferzeiten-manager'); ?></option>
+                    <option value="only"><?php esc_html_e('only', 'woo-lieferzeiten-manager'); ?></option>
+                </select>
+                
+                <!-- Attribut -->
+                <select name="wlm_shipping_methods[{{METHOD_INDEX}}][attribute_conditions][{{CONDITION_INDEX}}][attribute]" class="wlm-attribute-select" style="width: 200px;">
+                    <option value=""><?php esc_html_e('-- Attribut wählen --', 'woo-lieferzeiten-manager'); ?></option>
+                    <optgroup label="<?php esc_attr_e('Produkt-Attribute', 'woo-lieferzeiten-manager'); ?>">
+                        <?php
+                        foreach ($attribute_taxonomies as $tax) {
+                            $attr_name = wc_attribute_taxonomy_name($tax->attribute_name);
+                            echo '<option value="' . esc_attr($attr_name) . '">' . esc_html($tax->attribute_label) . '</option>';
+                        }
+                        ?>
+                    </optgroup>
+                    <optgroup label="<?php esc_attr_e('Taxonomien', 'woo-lieferzeiten-manager'); ?>">
+                        <option value="product_cat"><?php esc_html_e('Produktkategorie', 'woo-lieferzeiten-manager'); ?></option>
+                        <option value="product_tag"><?php esc_html_e('Produkt-Tag', 'woo-lieferzeiten-manager'); ?></option>
+                    </optgroup>
+                </select>
+                
+                <button type="button" class="button wlm-remove-attribute-condition" style="margin-left: auto;"><?php esc_html_e('Entfernen', 'woo-lieferzeiten-manager'); ?></button>
+            </div>
             
-            <span>=</span>
-            
-            <input type="text" 
-                   name="wlm_shipping_methods[{{METHOD_INDEX}}][attribute_conditions][{{CONDITION_INDEX}}][value]" 
-                   value="" 
-                   placeholder="<?php esc_attr_e('Wert', 'woo-lieferzeiten-manager'); ?>" 
-                   class="regular-text" 
-                   style="width: 200px;">
-            
-            <button type="button" class="button wlm-remove-attribute-condition"><?php esc_html_e('Entfernen', 'woo-lieferzeiten-manager'); ?></button>
+            <!-- Werte (Select2 Multiselect) -->
+            <div class="wlm-condition-values" style="margin-top: 10px;">
+                <label style="display: block; margin-bottom: 5px; font-weight: 600;"><?php esc_html_e('Werte:', 'woo-lieferzeiten-manager'); ?></label>
+                <select 
+                    multiple="multiple" 
+                    class="wlm-values-select2" 
+                    name="wlm_shipping_methods[{{METHOD_INDEX}}][attribute_conditions][{{CONDITION_INDEX}}][values][]" 
+                    data-attribute=""
+                    data-method-index="{{METHOD_INDEX}}"
+                    data-condition-index="{{CONDITION_INDEX}}"
+                    style="width: 100%;">
+                </select>
+            </div>
         </div>
     </script>
 </div>
