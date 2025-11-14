@@ -265,32 +265,20 @@
                 }
             }
             
-            // Add CSS rule for this specific row with colored circle
+            // Add CSS rule for this specific row with colored circle via background
             cssRules += `
-.wc-block-cart-items__row:nth-child(${rowIndex}) .wc-block-cart-item__quantity {
-    position: relative;
-    padding-left: 20px;
-}
-
 .wc-block-cart-items__row:nth-child(${rowIndex}) .wc-block-cart-item__quantity::before {
-    content: "";
-    position: absolute;
-    left: 0;
-    top: 2px;
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    background-color: ${color};
-}
-
-.wc-block-cart-items__row:nth-child(${rowIndex}) .wc-block-cart-item__quantity::after {
     content: "${content}";
     display: block;
-    margin-top: -20px;
     margin-bottom: 8px;
     font-size: 12px;
     color: ${color};
     white-space: nowrap;
+    padding-left: 18px;
+    background: radial-gradient(circle, ${color} 5px, transparent 5px);
+    background-size: 10px 10px;
+    background-position: left center;
+    background-repeat: no-repeat;
 }
 `;
         });
