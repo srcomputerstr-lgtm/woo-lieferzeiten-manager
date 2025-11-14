@@ -184,6 +184,8 @@ class WLM_Core {
      * Calculates and updates the calculated availability date for all products with lead time
      */
     public function update_product_availability() {
+        error_log('[WLM Cronjob] Starting product availability update...');
+        
         $args = array(
             'post_type' => array('product', 'product_variation'),
             'posts_per_page' => -1,
@@ -198,6 +200,8 @@ class WLM_Core {
 
         $products = get_posts($args);
         $processed_count = 0;
+        
+        error_log('[WLM Cronjob] Found ' . count($products) . ' products with lead time');
 
         foreach ($products as $product) {
             $lead_time = get_post_meta($product->ID, '_wlm_lead_time_days', true);
@@ -206,11 +210,15 @@ class WLM_Core {
                 // Calculate date: Today + Lead Time (business days)
                 $calculated_date = $this->calculator->calculate_available_from_date($lead_time);
                 
+                error_log('[WLM Cronjob] Product ID ' . $product->ID . ': Lead time=' . $lead_time . ' days, Calculated date=' . $calculated_date);
+                
                 // Save to calculated field (not the manual field!)
                 update_post_meta($product->ID, '_wlm_calculated_available_date', $calculated_date);
                 $processed_count++;
             }
         }
+        
+        error_log('[WLM Cronjob] Processed ' . $processed_count . ' products');
         
         // Update last run timestamp and count
         update_option('wlm_cronjob_last_run', current_time('timestamp'));

@@ -508,20 +508,30 @@ class WLM_Admin {
             return;
         }
         
-        // Run the cronjob
-        WLM_Core::instance()->update_product_availability();
+        // Log start
+        error_log('[WLM AJAX] Running cronjob manually...');
         
-        // Get updated stats
-        $last_run = get_option('wlm_cronjob_last_run', 0);
-        $last_count = get_option('wlm_cronjob_last_count', 0);
-        
-        wp_send_json_success(array(
-            'message' => sprintf(
-                __('Cronjob erfolgreich ausgeführt! %d Produkte verarbeitet.', 'woo-lieferzeiten-manager'),
-                $last_count
-            ),
-            'last_run' => date_i18n(get_option('date_format') . ' ' . get_option('time_format'), $last_run),
-            'count' => $last_count
-        ));
+        try {
+            // Run the cronjob
+            WLM_Core::instance()->update_product_availability();
+            
+            // Get updated stats
+            $last_run = get_option('wlm_cronjob_last_run', 0);
+            $last_count = get_option('wlm_cronjob_last_count', 0);
+            
+            error_log('[WLM AJAX] Cronjob completed. Processed: ' . $last_count . ' products');
+            
+            wp_send_json_success(array(
+                'message' => sprintf(
+                    __('Cronjob erfolgreich ausgeführt! %d Produkte verarbeitet.', 'woo-lieferzeiten-manager'),
+                    $last_count
+                ),
+                'last_run' => date_i18n(get_option('date_format') . ' ' . get_option('time_format'), $last_run),
+                'count' => $last_count
+            ));
+        } catch (Exception $e) {
+            error_log('[WLM AJAX] Cronjob error: ' . $e->getMessage());
+            wp_send_json_error('Fehler beim Ausführen des Cronjobs: ' . $e->getMessage());
+        }
     }
 }
