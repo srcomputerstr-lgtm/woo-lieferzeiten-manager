@@ -363,8 +363,14 @@ class WLM_REST_API {
         $available_from = $request->get_param('available_from');
         $lead_time_days = $request->get_param('lead_time_days');
 
+        error_log('[WLM API] SKU-based update request:');
+        error_log('[WLM API] - SKU: ' . $sku);
+        error_log('[WLM API] - available_from: ' . var_export($available_from, true));
+        error_log('[WLM API] - lead_time_days: ' . var_export($lead_time_days, true));
+
         // Find product by SKU
         $product_id = $this->get_product_id_by_sku($sku);
+        error_log('[WLM API] - Found product_id: ' . var_export($product_id, true));
         
         if (!$product_id) {
             return new WP_REST_Response(array(
@@ -386,15 +392,21 @@ class WLM_REST_API {
 
         // Update available_from if provided
         if ($available_from !== null) {
-            update_post_meta($product_id, '_wlm_available_from', $available_from);
+            error_log('[WLM API] Updating available_from to: ' . $available_from);
+            $result = update_post_meta($product_id, '_wlm_available_from', $available_from);
+            error_log('[WLM API] update_post_meta result: ' . var_export($result, true));
             $updated_fields['available_from'] = $available_from;
         }
 
         // Update lead_time_days if provided
         if ($lead_time_days !== null) {
-            update_post_meta($product_id, '_wlm_lead_time_days', (int) $lead_time_days);
+            error_log('[WLM API] Updating lead_time_days to: ' . $lead_time_days);
+            $result = update_post_meta($product_id, '_wlm_lead_time_days', (int) $lead_time_days);
+            error_log('[WLM API] update_post_meta result: ' . var_export($result, true));
             $updated_fields['lead_time_days'] = (int) $lead_time_days;
         }
+
+        error_log('[WLM API] Updated fields: ' . print_r($updated_fields, true));
 
         return new WP_REST_Response(array(
             'success' => true,
