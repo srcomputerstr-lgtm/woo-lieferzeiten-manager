@@ -595,12 +595,15 @@ class WLM_Calculator {
                 // Backorder needed - calculate available date
                 $backorder_enabled = $product->get_backorders();
                 if ($backorder_enabled && $backorder_enabled !== 'no') {
-                    // Check for manual available_from date
-                    $available_from = get_post_meta($product->get_id(), '_wlm_available_from', true);
-                    if ($available_from) {
+                    // Get available date using proper logic (manual > calculated > lead time)
+                    $available_timestamp = $this->get_product_available_from($product, $requested_quantity);
+                    $current_timestamp = current_time('timestamp');
+                    
+                    // Only show backorder info if date is in the future
+                    if ($available_timestamp > $current_timestamp) {
                         $result['in_stock'] = false;
-                        $result['available_date'] = $available_from;
-                        $result['available_date_formatted'] = $this->format_date(strtotime($available_from));
+                        $result['available_date'] = date('Y-m-d', $available_timestamp);
+                        $result['available_date_formatted'] = $this->format_date($available_timestamp);
                         
                         // Differentiate between partial stock and no stock
                         if ($stock_quantity > 0) {
@@ -617,41 +620,17 @@ class WLM_Calculator {
                             $result['message'] = sprintf(__('Wieder verfügbar ab: %s', 'woo-lieferzeiten-manager'), $result['available_date_formatted']);
                         }
                     } else {
-                        // Calculate based on delivery_days_min
-                        $delivery_days = (int) get_post_meta($product->get_id(), '_wlm_delivery_days_min', true);
-                        if ($delivery_days > 0) {
-                            $available_timestamp = $this->add_business_days(time(), $delivery_days);
-                            $result['in_stock'] = false;
-                            $result['available_date'] = date('Y-m-d', $available_timestamp);
-                            $result['available_date_formatted'] = $this->format_date($available_timestamp);
-                            
-                            // Differentiate between partial stock and no stock
-                            if ($stock_quantity > 0) {
-                                // Partial stock available
-                                $display_quantity = min($stock_quantity, $max_visible);
-                                $result['quantity'] = $display_quantity;
-                                $result['message'] = sprintf(
-                                    __('Auf Lager: %d Stück - Rest ab: %s', 'woo-lieferzeiten-manager'),
-                                    $display_quantity,
-                                    $result['available_date_formatted']
-                                );
-                            } else {
-                                // No stock available
-                                $result['message'] = sprintf(__('Wieder verfügbar ab: %s', 'woo-lieferzeiten-manager'), $result['available_date_formatted']);
-                            }
+                        // Date is not in future (shouldn't happen with proper logic)
+                        $result['in_stock'] = false;
+                        if ($stock_quantity > 0) {
+                            $display_quantity = min($stock_quantity, $max_visible);
+                            $result['quantity'] = $display_quantity;
+                            $result['message'] = sprintf(
+                                __('Auf Lager: %d Stück - Rest zurzeit nicht verfügbar', 'woo-lieferzeiten-manager'),
+                                $display_quantity
+                            );
                         } else {
-                            // No delivery days configured
-                            $result['in_stock'] = false;
-                            if ($stock_quantity > 0) {
-                                $display_quantity = min($stock_quantity, $max_visible);
-                                $result['quantity'] = $display_quantity;
-                                $result['message'] = sprintf(
-                                    __('Auf Lager: %d Stück - Rest zurzeit nicht verfügbar', 'woo-lieferzeiten-manager'),
-                                    $display_quantity
-                                );
-                            } else {
-                                $result['message'] = __('Zurzeit nicht auf Lager', 'woo-lieferzeiten-manager');
-                            }
+                            $result['message'] = __('Zurzeit nicht auf Lager', 'woo-lieferzeiten-manager');
                         }
                     }
                 } else {
