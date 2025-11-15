@@ -288,6 +288,7 @@ class WLM_Frontend {
             require_once WLM_PLUGIN_DIR . 'includes/class-wlm-blocks-integration.php';
             
             $blocks_integration = new WLM_Blocks_Integration();
+            $blocks_integration->initialize(); // Initialize filters and hooks
             
             // Register Store API extension for Cart endpoint
             woocommerce_store_api_register_endpoint_data(
