@@ -90,8 +90,9 @@ class WLM_Blocks_Integration implements IntegrationInterface {
         }
         
         // Calculate and apply surcharges
-        $calculator = WLM_Core::instance()->calculator;
+        error_log('[WLM Package Rates] About to calculate surcharges...');
         $applicable_surcharges = $calculator->calculate_surcharges($package);
+        error_log('[WLM Package Rates] Surcharges calculated: ' . count($applicable_surcharges));
         
         if (!empty($applicable_surcharges)) {
             error_log('[WLM Package Rates] Applying ' . count($applicable_surcharges) . ' surcharges');
