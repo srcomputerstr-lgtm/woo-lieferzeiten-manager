@@ -108,6 +108,12 @@ class WLM_Admin {
             if (isset($_POST['wlm_surcharges'])) {
                 update_option('wlm_surcharges', $_POST['wlm_surcharges']);
             }
+            if (isset($_POST['wlm_surcharge_application_strategy'])) {
+                update_option('wlm_surcharge_application_strategy', sanitize_text_field($_POST['wlm_surcharge_application_strategy']));
+            }
+            if (isset($_POST['wlm_shipping_selection_strategy'])) {
+                update_option('wlm_shipping_selection_strategy', sanitize_text_field($_POST['wlm_shipping_selection_strategy']));
+            }
             
             // Force shipping methods to re-register
             do_action('woocommerce_load_shipping_methods');
@@ -334,6 +340,7 @@ class WLM_Admin {
      */
     private function render_surcharges_tab() {
         $surcharges = get_option('wlm_surcharges', array());
+        $surcharge_application_strategy = get_option('wlm_surcharge_application_strategy', 'all_charges');
         require_once WLM_PLUGIN_DIR . 'admin/views/tab-surcharges.php';
     }
 

@@ -2,6 +2,57 @@
 
 All notable changes to WooCommerce Lieferzeiten Manager will be documented in this file.
 
+## [1.13.0] - 2025-11-15
+
+### 🎉 Vollständige Zuschläge-Implementierung
+
+### Added
+- **Globale Zuschlag-Strategie**
+  - "Alle Zuschläge" - Addiert alle passenden Zuschläge
+  - "Erster Treffer" - Nur erster passender Zuschlag (nach Priorität)
+  - "Kleinster Zuschlag" - Nur günstigster Zuschlag
+  - "Größter Zuschlag" - Nur teuerster Zuschlag
+  - "Deaktiviert" - Keine Zuschläge anwenden
+
+- **Erweiterte Zuschlag-Felder**
+  - Priority (für "Erster Treffer" Strategie)
+  - Cost Type: Pauschalbetrag (€) oder Prozentual (%)
+  - Charge Per: Cart / Shipping class / Product category / Product / Cart item / Quantity unit
+  - Gewicht Min/Max Bedingungen
+  - Warenkorbwert Min/Max Bedingungen
+  - Produktattribute / Taxonomien / **Versandklassen** als Bedingungen
+
+- **Shipping Class als Bedingungstyp**
+  - Dropdown-Option neben "Attribut" und "Taxonomie"
+  - Multiselect mit Logic-Operatoren (at least one / all / none / only)
+  - Funktioniert wie Attribute und Taxonomien
+
+- **Zuschlag-Berechnung**
+  - Alle Bedingungen werden geprüft (Gewicht, Warenkorbwert, Attribute, Taxonomien, Versandklassen)
+  - Berechnung basierend auf "Charge Per" Einstellung
+  - Prozentuale Zuschläge basierend auf Warenkorbsumme
+  - Zuschläge werden unsichtbar zu Versandkosten addiert
+
+### Changed
+- **Zuschläge-UI komplett überarbeitet**
+  - Gleiche Struktur wie Versandarten-UI
+  - Select2-basierte Multiselect für Bedingungen
+  - Card-Design mit Collapsible-Sections
+  - "+ Bedingung hinzufügen" Button
+
+- **JavaScript erweitert**
+  - `addAttributeCondition()` unterstützt jetzt Versandarten UND Zuschläge
+  - Separates Template für Zuschlag-Bedingungen
+  - Select2-Initialisierung für beide Tabs
+
+### Technical
+- Calculator: `calculate_surcharges()`, `calculate_surcharge_cost()`, `apply_surcharge_strategy()`
+- Blocks Integration: Surcharges werden vor Selection Strategy angewendet
+- Admin: Speichert `wlm_surcharge_application_strategy` Option
+- Zuschläge sind für Kunden unsichtbar - nur Gesamtpreis wird angezeigt
+
+---
+
 ## [1.12.2] - 2025-11-14
 
 ### Fixed

@@ -901,4 +901,299 @@ class WLM_Calculator {
 
         return true;
     }
+    
+    /**
+     * Calculate applicable surcharges for cart package
+     *
+     * @param array $package Cart package data.
+     * @return array Array of applicable surcharges with calculated costs.
+     */
+    public function calculate_surcharges($package) {
+        $surcharges = get_option('wlm_surcharges', array());
+        $strategy = get_option('wlm_surcharge_application_strategy', 'all_charges');
+        
+        // If disabled, return empty
+        if ($strategy === 'disabled' || empty($surcharges)) {
+            return array();
+        }
+        
+        $applicable_surcharges = array();
+        
+        // Get cart totals
+        $cart_total = 0;
+        $cart_weight = 0;
+        
+        foreach ($package['contents'] as $item) {
+            $product = $item['data'];
+            $quantity = $item['quantity'];
+            
+            $cart_total += $product->get_price() * $quantity;
+            $weight = $product->get_weight();
+            if ($weight) {
+                $cart_weight += floatval($weight) * $quantity;
+            }
+        }
+        
+        // Check each surcharge
+        foreach ($surcharges as $surcharge) {
+            // Skip if disabled
+            if (isset($surcharge['enabled']) && !$surcharge['enabled']) {
+                continue;
+            }
+            
+            // Check weight conditions
+            if (!empty($surcharge['weight_min']) && $cart_weight < floatval($surcharge['weight_min'])) {
+                continue;
+            }
+            if (!empty($surcharge['weight_max']) && $cart_weight > floatval($surcharge['weight_max'])) {
+                continue;
+            }
+            
+            // Check cart value conditions
+            if (!empty($surcharge['cart_value_min']) && $cart_total < floatval($surcharge['cart_value_min'])) {
+                continue;
+            }
+            if (!empty($surcharge['cart_value_max']) && $cart_total > floatval($surcharge['cart_value_max'])) {
+                continue;
+            }
+            
+            // Check attribute/taxonomy/shipping class conditions
+            if (!empty($surcharge['attribute_conditions']) && is_array($surcharge['attribute_conditions'])) {
+                $all_conditions_met = true;
+                
+                foreach ($surcharge['attribute_conditions'] as $condition) {
+                    $condition_type = $condition['type'] ?? 'attribute';
+                    $attr_slug = $condition['attribute'] ?? '';
+                    $values = $condition['values'] ?? array();
+                    $logic = $condition['logic'] ?? 'at_least_one';
+                    
+                    if (empty($attr_slug) || empty($values)) {
+                        continue;
+                    }
+                    
+                    // Check condition for at least one product in cart
+                    $condition_met_for_any_product = false;
+                    
+                    foreach ($package['contents'] as $item) {
+                        $product = $item['data'];
+                        
+                        // Get product values based on condition type
+                        $product_values = array();
+                        
+                        if ($condition_type === 'shipping_class') {
+                            // Check shipping class
+                            $shipping_class = $product->get_shipping_class();
+                            if ($shipping_class) {
+                                $product_values[] = $shipping_class;
+                            }
+                        } elseif ($condition_type === 'taxonomy') {
+                            // Check taxonomy (category, tag)
+                            $product_id = $product->get_parent_id() ? $product->get_parent_id() : $product->get_id();
+                            $terms = wp_get_post_terms($product_id, $attr_slug, array('fields' => 'slugs'));
+                            if (!is_wp_error($terms)) {
+                                $product_values = $terms;
+                            }
+                        } else {
+                            // Check product attribute
+                            if ($product->is_type('variation')) {
+                                $variation_attrs = $product->get_attributes();
+                                if (isset($variation_attrs[$attr_slug])) {
+                                    $product_values[] = $variation_attrs[$attr_slug];
+                                } else {
+                                    // Try parent product
+                                    $parent = wc_get_product($product->get_parent_id());
+                                    if ($parent) {
+                                        $parent_attr = $parent->get_attribute($attr_slug);
+                                        if ($parent_attr) {
+                                            $product_values = array_map('trim', explode(',', $parent_attr));
+                                        }
+                                    }
+                                }
+                            } else {
+                                $product_attr = $product->get_attribute($attr_slug);
+                                if ($product_attr) {
+                                    $product_values = array_map('trim', explode(',', $product_attr));
+                                }
+                            }
+                        }
+                        
+                        // Check logic
+                        if ($this->check_attribute_logic($product_values, $values, $logic)) {
+                            $condition_met_for_any_product = true;
+                            break;
+                        }
+                    }
+                    
+                    if (!$condition_met_for_any_product) {
+                        $all_conditions_met = false;
+                        break;
+                    }
+                }
+                
+                if (!$all_conditions_met) {
+                    continue;
+                }
+            }
+            
+            // Calculate surcharge cost
+            $cost = $this->calculate_surcharge_cost($surcharge, $package, $cart_total);
+            
+            if ($cost > 0) {
+                $applicable_surcharges[] = array(
+                    'id' => $surcharge['id'] ?? uniqid('surcharge_'),
+                    'name' => $surcharge['name'] ?? 'Zuschlag',
+                    'cost' => $cost,
+                    'priority' => $surcharge['priority'] ?? 10,
+                    'tax_class' => $surcharge['tax_class'] ?? '',
+                );
+            }
+        }
+        
+        // Apply strategy
+        return $this->apply_surcharge_strategy($applicable_surcharges, $strategy);
+    }
+    
+    /**
+     * Calculate cost for a single surcharge
+     *
+     * @param array $surcharge Surcharge configuration.
+     * @param array $package Cart package.
+     * @param float $cart_total Cart total.
+     * @return float Calculated cost.
+     */
+    private function calculate_surcharge_cost($surcharge, $package, $cart_total) {
+        $cost_type = $surcharge['cost_type'] ?? 'flat';
+        $amount = floatval($surcharge['amount'] ?? 0);
+        $charge_per = $surcharge['charge_per'] ?? 'cart';
+        
+        if ($amount <= 0) {
+            return 0;
+        }
+        
+        $cost = 0;
+        
+        switch ($charge_per) {
+            case 'cart':
+                // Once per cart
+                if ($cost_type === 'percentage') {
+                    $cost = $cart_total * ($amount / 100);
+                } else {
+                    $cost = $amount;
+                }
+                break;
+                
+            case 'shipping_class':
+                // Per unique shipping class
+                $shipping_classes = array();
+                foreach ($package['contents'] as $item) {
+                    $shipping_class = $item['data']->get_shipping_class();
+                    if ($shipping_class && !in_array($shipping_class, $shipping_classes)) {
+                        $shipping_classes[] = $shipping_class;
+                    }
+                }
+                $count = count($shipping_classes);
+                if ($cost_type === 'percentage') {
+                    $cost = $cart_total * ($amount / 100) * $count;
+                } else {
+                    $cost = $amount * $count;
+                }
+                break;
+                
+            case 'product_category':
+                // Per unique product category
+                $categories = array();
+                foreach ($package['contents'] as $item) {
+                    $product_id = $item['data']->get_parent_id() ? $item['data']->get_parent_id() : $item['data']->get_id();
+                    $product_cats = wp_get_post_terms($product_id, 'product_cat', array('fields' => 'ids'));
+                    foreach ($product_cats as $cat) {
+                        if (!in_array($cat, $categories)) {
+                            $categories[] = $cat;
+                        }
+                    }
+                }
+                $count = count($categories);
+                if ($cost_type === 'percentage') {
+                    $cost = $cart_total * ($amount / 100) * $count;
+                } else {
+                    $cost = $amount * $count;
+                }
+                break;
+                
+            case 'product':
+                // Per unique product
+                $count = count($package['contents']);
+                if ($cost_type === 'percentage') {
+                    $cost = $cart_total * ($amount / 100) * $count;
+                } else {
+                    $cost = $amount * $count;
+                }
+                break;
+                
+            case 'cart_item':
+                // Per cart item (same as product)
+                $count = count($package['contents']);
+                if ($cost_type === 'percentage') {
+                    $cost = $cart_total * ($amount / 100) * $count;
+                } else {
+                    $cost = $amount * $count;
+                }
+                break;
+                
+            case 'quantity_unit':
+                // Per quantity unit
+                $total_quantity = 0;
+                foreach ($package['contents'] as $item) {
+                    $total_quantity += $item['quantity'];
+                }
+                if ($cost_type === 'percentage') {
+                    $cost = $cart_total * ($amount / 100) * $total_quantity;
+                } else {
+                    $cost = $amount * $total_quantity;
+                }
+                break;
+        }
+        
+        return $cost;
+    }
+    
+    /**
+     * Apply surcharge strategy to filter applicable surcharges
+     *
+     * @param array $surcharges Array of applicable surcharges.
+     * @param string $strategy Strategy (all_charges, first_match, smallest, largest).
+     * @return array Filtered surcharges.
+     */
+    private function apply_surcharge_strategy($surcharges, $strategy) {
+        if (empty($surcharges)) {
+            return array();
+        }
+        
+        switch ($strategy) {
+            case 'first_match':
+                // Sort by priority (lowest first)
+                usort($surcharges, function($a, $b) {
+                    return ($a['priority'] ?? 10) - ($b['priority'] ?? 10);
+                });
+                return array(array_shift($surcharges));
+                
+            case 'smallest':
+                // Return only the smallest surcharge
+                usort($surcharges, function($a, $b) {
+                    return $a['cost'] <=> $b['cost'];
+                });
+                return array(array_shift($surcharges));
+                
+            case 'largest':
+                // Return only the largest surcharge
+                usort($surcharges, function($a, $b) {
+                    return $b['cost'] <=> $a['cost'];
+                });
+                return array(array_shift($surcharges));
+                
+            case 'all_charges':
+            default:
+                // Return all surcharges
+                return $surcharges;
+        }
+    }
 }

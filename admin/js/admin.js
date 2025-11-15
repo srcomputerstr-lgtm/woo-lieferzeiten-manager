@@ -537,16 +537,34 @@
             
             var $button = $(e.currentTarget);
             var methodIndex = $button.data('method-index');
-            var $container = $('.wlm-attribute-conditions[data-method-index="' + methodIndex + '"]');
+            var surchargeIndex = $button.data('surcharge-index');
             
-            // Get template
-            var template = $('#wlm-attribute-condition-template').html();
+            var $container, template, placeholder;
+            
+            // Check if this is for shipping method or surcharge
+            if (typeof methodIndex !== 'undefined') {
+                // Shipping method
+                $container = $('.wlm-attribute-conditions[data-method-index="' + methodIndex + '"]');
+                template = $('#wlm-attribute-condition-template').html();
+                placeholder = '{{METHOD_INDEX}}';
+            } else if (typeof surchargeIndex !== 'undefined') {
+                // Surcharge
+                $container = $('.wlm-attribute-conditions[data-surcharge-index="' + surchargeIndex + '"]');
+                template = $('#wlm-surcharge-condition-template').html();
+                placeholder = '{{SURCHARGE_INDEX}}';
+            } else {
+                return;
+            }
             
             // Get next condition index
             var conditionIndex = $container.find('.wlm-attribute-condition-row').length;
             
             // Replace placeholders
-            template = template.replace(/{{METHOD_INDEX}}/g, methodIndex);
+            if (typeof methodIndex !== 'undefined') {
+                template = template.replace(/{{METHOD_INDEX}}/g, methodIndex);
+            } else {
+                template = template.replace(/{{SURCHARGE_INDEX}}/g, surchargeIndex);
+            }
             template = template.replace(/{{CONDITION_INDEX}}/g, conditionIndex);
             
             // Append to container
