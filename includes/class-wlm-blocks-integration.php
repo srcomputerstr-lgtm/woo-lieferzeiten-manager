@@ -41,6 +41,8 @@ class WLM_Blocks_Integration implements IntegrationInterface {
      * @return array Filtered shipping rates.
      */
     public function filter_package_rates($rates, $package) {
+        error_log('[WLM Package Rates] ===== FILTER CALLED ===== with ' . count($rates) . ' rates');
+        
         $calculator = WLM_Core::instance()->calculator;
         $shipping_methods = WLM_Core::instance()->shipping_methods;
         
