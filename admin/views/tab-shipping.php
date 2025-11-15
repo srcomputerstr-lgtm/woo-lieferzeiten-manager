@@ -17,6 +17,43 @@ if (!defined('ABSPATH')) {
         <?php esc_html_e('Konfigurieren Sie Ihre Versandarten mit individuellen Bedingungen, Kosten und Lieferzeiten. Die Versandarten werden automatisch als WooCommerce-Versandmethoden registriert.', 'woo-lieferzeiten-manager'); ?>
     </p>
 
+    <!-- Global Shipping Selection Strategy -->
+    <div class="wlm-global-settings postbox" style="margin-bottom: 20px;">
+        <div class="postbox-header">
+            <h3 class="hndle"><?php esc_html_e('Globale Einstellungen', 'woo-lieferzeiten-manager'); ?></h3>
+        </div>
+        <div class="inside">
+            <table class="form-table">
+                <tbody>
+                    <tr>
+                        <th scope="row">
+                            <label for="wlm_shipping_selection_strategy"><?php esc_html_e('Versandarten-Auswahl', 'woo-lieferzeiten-manager'); ?></label>
+                        </th>
+                        <td>
+                            <select name="wlm_shipping_selection_strategy" id="wlm_shipping_selection_strategy" class="regular-text">
+                                <option value="customer_choice" <?php selected($shipping_selection_strategy ?? 'customer_choice', 'customer_choice'); ?>>
+                                    <?php esc_html_e('Kunde wählt (alle verfügbaren Versandarten anzeigen)', 'woo-lieferzeiten-manager'); ?>
+                                </option>
+                                <option value="by_priority" <?php selected($shipping_selection_strategy ?? 'customer_choice', 'by_priority'); ?>>
+                                    <?php esc_html_e('Nach Priorität (nur Versandart mit höchster Priorität)', 'woo-lieferzeiten-manager'); ?>
+                                </option>
+                                <option value="cheapest" <?php selected($shipping_selection_strategy ?? 'customer_choice', 'cheapest'); ?>>
+                                    <?php esc_html_e('Günstigste (nur billigste Versandart)', 'woo-lieferzeiten-manager'); ?>
+                                </option>
+                                <option value="most_expensive" <?php selected($shipping_selection_strategy ?? 'customer_choice', 'most_expensive'); ?>>
+                                    <?php esc_html_e('Teuerste (nur teuerste Versandart)', 'woo-lieferzeiten-manager'); ?>
+                                </option>
+                            </select>
+                            <p class="description">
+                                <?php esc_html_e('Legt fest, welche Versandarten dem Kunden angezeigt werden, wenn mehrere Versandarten verfügbar sind. Express-Versandarten werden automatisch mit ihrer Basis-Versandart angezeigt.', 'woo-lieferzeiten-manager'); ?>
+                            </p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
     <div id="wlm-shipping-methods-list">
         <?php
         if (!empty($shipping_methods)) {

@@ -325,6 +325,7 @@ class WLM_Admin {
      */
     private function render_shipping_tab() {
         $shipping_methods = get_option('wlm_shipping_methods', array());
+        $shipping_selection_strategy = get_option('wlm_shipping_selection_strategy', 'customer_choice');
         require_once WLM_PLUGIN_DIR . 'admin/views/tab-shipping.php';
     }
 
@@ -373,6 +374,11 @@ class WLM_Admin {
             error_log('Saving wlm_settings: ' . print_r($data['wlm_settings'], true));
             update_option('wlm_settings', $data['wlm_settings']);
             error_log('After save, wlm_settings from DB: ' . print_r(get_option('wlm_settings'), true));
+        }
+        
+        // Save shipping selection strategy
+        if (isset($data['wlm_shipping_selection_strategy'])) {
+            update_option('wlm_shipping_selection_strategy', sanitize_text_field($data['wlm_shipping_selection_strategy']));
         }
         
         // Save shipping methods

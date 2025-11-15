@@ -87,6 +87,91 @@ class WLM_Blocks_Integration implements IntegrationInterface {
             }
         }
         
+        // Apply shipping selection strategy
+        $strategy = get_option('wlm_shipping_selection_strategy', 'customer_choice');
+        
+        if ($strategy !== 'customer_choice' && count($rates) > 0) {
+            error_log('[WLM Package Rates] Applying strategy: ' . $strategy . ' to ' . count($rates) . ' rates');
+            
+            // Separate base methods from express methods
+            $base_rates = array();
+            $express_rates = array();
+            
+            foreach ($rates as $rate_id => $rate) {
+                if (strpos($rate_id, '_express') !== false) {
+                    $express_rates[$rate_id] = $rate;
+                } else {
+                    $base_rates[$rate_id] = $rate;
+                }
+            }
+            
+            // Apply strategy to base methods only
+            if (count($base_rates) > 1) {
+                $selected_base = null;
+                
+                switch ($strategy) {
+                    case 'by_priority':
+                        // Find method with lowest priority number (highest priority)
+                        $lowest_priority = PHP_INT_MAX;
+                        foreach ($base_rates as $rate_id => $rate) {
+                            // Find method config to get priority
+                            foreach ($methods as $method) {
+                                if (isset($method['id']) && strpos($rate_id, $method['id']) === 0) {
+                                    $priority = (int)($method['priority'] ?? 10);
+                                    if ($priority < $lowest_priority) {
+                                        $lowest_priority = $priority;
+                                        $selected_base = $rate_id;
+                                    }
+                                    break;
+                                }
+                            }
+                        }
+                        break;
+                        
+                    case 'cheapest':
+                        // Find cheapest rate
+                        $lowest_cost = PHP_FLOAT_MAX;
+                        foreach ($base_rates as $rate_id => $rate) {
+                            $cost = (float)$rate->cost;
+                            if ($cost < $lowest_cost) {
+                                $lowest_cost = $cost;
+                                $selected_base = $rate_id;
+                            }
+                        }
+                        break;
+                        
+                    case 'most_expensive':
+                        // Find most expensive rate
+                        $highest_cost = 0;
+                        foreach ($base_rates as $rate_id => $rate) {
+                            $cost = (float)$rate->cost;
+                            if ($cost > $highest_cost) {
+                                $highest_cost = $cost;
+                                $selected_base = $rate_id;
+                            }
+                        }
+                        break;
+                }
+                
+                if ($selected_base) {
+                    error_log('[WLM Package Rates] Selected base method: ' . $selected_base);
+                    
+                    // Keep only selected base method
+                    $filtered_rates = array($selected_base => $base_rates[$selected_base]);
+                    
+                    // Keep express variant of selected method
+                    foreach ($express_rates as $express_id => $express_rate) {
+                        if (strpos($express_id, $selected_base) === 0) {
+                            $filtered_rates[$express_id] = $express_rate;
+                            error_log('[WLM Package Rates] Keeping express variant: ' . $express_id);
+                        }
+                    }
+                    
+                    $rates = $filtered_rates;
+                }
+            }
+        }
+        
         return $rates;
     }
 
