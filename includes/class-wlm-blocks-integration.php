@@ -117,6 +117,7 @@ class WLM_Blocks_Integration implements IntegrationInterface {
         
         // Apply shipping selection strategy
         $strategy = get_option('wlm_shipping_selection_strategy', 'customer_choice');
+        error_log('[WLM Package Rates] Strategy from DB: ' . $strategy . ' | Rates count: ' . count($rates));
         
         if ($strategy !== 'customer_choice' && count($rates) > 0) {
             error_log('[WLM Package Rates] Applying strategy: ' . $strategy . ' to ' . count($rates) . ' rates');
