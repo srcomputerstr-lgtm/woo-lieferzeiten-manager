@@ -112,7 +112,12 @@ class WLM_Admin {
                 update_option('wlm_surcharge_application_strategy', sanitize_text_field($_POST['wlm_surcharge_application_strategy']));
             }
             if (isset($_POST['wlm_shipping_selection_strategy'])) {
-                update_option('wlm_shipping_selection_strategy', sanitize_text_field($_POST['wlm_shipping_selection_strategy']));
+                $strategy_value = sanitize_text_field($_POST['wlm_shipping_selection_strategy']);
+                error_log('[WLM Admin] Saving shipping_selection_strategy: ' . $strategy_value);
+                update_option('wlm_shipping_selection_strategy', $strategy_value);
+                error_log('[WLM Admin] After save, value from DB: ' . get_option('wlm_shipping_selection_strategy'));
+            } else {
+                error_log('[WLM Admin] wlm_shipping_selection_strategy NOT in POST!');
             }
             
             // Force shipping methods to re-register
