@@ -2,6 +2,40 @@
 
 All notable changes to WooCommerce Lieferzeiten Manager will be documented in this file.
 
+## [1.14.0] - 2025-11-17
+
+### Added
+- **Versandklassen-Unterstützung in Bedingungen**
+  - Versandklassen können jetzt als Bedingungstyp ausgewählt werden
+  - Funktioniert bei Versandarten UND Zuschlägen
+  - 3-Dropdown-System: Logic + Typ (Attribut/Taxonomie/Versandklasse) + Auswahl
+  - Multiselect für Versandklassen mit "at least one of" / "all of" / "none of" / "only"
+
+### Fixed
+- **CRITICAL: Produktattribute werden jetzt geladen**
+  - `$attribute_taxonomies` wird jetzt an Views übergeben
+  - Produktattribute erscheinen im Dropdown
+  - Gilt für Versandarten UND Zuschläge
+- **Versandklassen-Loading implementiert**
+  - Versandklassen werden aus DB geladen und an JavaScript übergeben
+  - Multiselect zeigt alle verfügbaren Versandklassen
+  - "No results found" Problem behoben
+
+### Changed
+- **Versandarten-UI komplett überarbeitet**
+  - Gleiche Struktur wie Zuschläge (3 Dropdowns)
+  - Bedingungstyp-Dropdown hinzugefügt
+  - Versandklassen-Optgroup hinzugefügt
+  - Template für neue Bedingungen aktualisiert
+
+### Technical
+- Admin.php: `render_shipping_tab()` und `render_surcharges_tab()` laden `$attribute_taxonomies`
+- Admin.php: `enqueue_admin_scripts()` lädt Versandklassen in `wlmAdmin.shippingClasses`
+- tab-shipping.php: Bedingungstyp-Dropdown und Versandklassen-Optgroup hinzugefügt
+- admin.js: `handleConditionTypeChange()` behandelt alle 3 Typen korrekt
+
+---
+
 ## [1.13.4] - 2025-11-17
 
 ### Fixed

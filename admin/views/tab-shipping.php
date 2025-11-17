@@ -255,7 +255,15 @@ if (!defined('ABSPATH')) {
                                                                 <option value="only" <?php selected($logic, 'only'); ?>><?php esc_html_e('only', 'woo-lieferzeiten-manager'); ?></option>
                                                             </select>
                                                             
-                                                            <!-- Attribut -->
+                                                            <!-- Bedingungstyp -->
+                                                            <?php $condition_type = $condition['type'] ?? 'attribute'; ?>
+                                                            <select name="wlm_shipping_methods[<?php echo $index; ?>][attribute_conditions][<?php echo $cond_index; ?>][type]" class="wlm-condition-type-select" style="width: 150px;">
+                                                                <option value="attribute" <?php selected($condition_type, 'attribute'); ?>><?php esc_html_e('Attribut', 'woo-lieferzeiten-manager'); ?></option>
+                                                                <option value="taxonomy" <?php selected($condition_type, 'taxonomy'); ?>><?php esc_html_e('Taxonomie', 'woo-lieferzeiten-manager'); ?></option>
+                                                                <option value="shipping_class" <?php selected($condition_type, 'shipping_class'); ?>><?php esc_html_e('Versandklasse', 'woo-lieferzeiten-manager'); ?></option>
+                                                            </select>
+                                                            
+                                                            <!-- Attribut/Taxonomie -->
                                                             <select name="wlm_shipping_methods[<?php echo $index; ?>][attribute_conditions][<?php echo $cond_index; ?>][attribute]" class="wlm-attribute-select" style="width: 200px;">
                                                                 <option value=""><?php esc_html_e('-- Attribut wählen --', 'woo-lieferzeiten-manager'); ?></option>
                                                                 <optgroup label="<?php esc_attr_e('Produkt-Attribute', 'woo-lieferzeiten-manager'); ?>">
@@ -270,6 +278,15 @@ if (!defined('ABSPATH')) {
                                                                 <optgroup label="<?php esc_attr_e('Taxonomien', 'woo-lieferzeiten-manager'); ?>">
                                                                     <option value="product_cat" <?php selected($condition['attribute'], 'product_cat'); ?>><?php esc_html_e('Produktkategorie', 'woo-lieferzeiten-manager'); ?></option>
                                                                     <option value="product_tag" <?php selected($condition['attribute'], 'product_tag'); ?>><?php esc_html_e('Produkt-Tag', 'woo-lieferzeiten-manager'); ?></option>
+                                                                </optgroup>
+                                                                <optgroup label="<?php esc_attr_e('Versandklassen', 'woo-lieferzeiten-manager'); ?>">
+                                                                    <?php
+                                                                    $shipping_classes = WC()->shipping()->get_shipping_classes();
+                                                                    foreach ($shipping_classes as $shipping_class) {
+                                                                        $selected = ($condition['attribute'] === $shipping_class->slug) ? 'selected' : '';
+                                                                        echo '<option value="' . esc_attr($shipping_class->slug) . '" ' . $selected . '>' . esc_html($shipping_class->name) . '</option>';
+                                                                    }
+                                                                    ?>
                                                                 </optgroup>
                                                             </select>
                                                             
@@ -454,7 +471,14 @@ if (!defined('ABSPATH')) {
                     <option value="only"><?php esc_html_e('only', 'woo-lieferzeiten-manager'); ?></option>
                 </select>
                 
-                <!-- Attribut -->
+                <!-- Bedingungstyp -->
+                <select name="wlm_shipping_methods[{{METHOD_INDEX}}][attribute_conditions][{{CONDITION_INDEX}}][type]" class="wlm-condition-type-select" style="width: 150px;">
+                    <option value="attribute"><?php esc_html_e('Attribut', 'woo-lieferzeiten-manager'); ?></option>
+                    <option value="taxonomy"><?php esc_html_e('Taxonomie', 'woo-lieferzeiten-manager'); ?></option>
+                    <option value="shipping_class"><?php esc_html_e('Versandklasse', 'woo-lieferzeiten-manager'); ?></option>
+                </select>
+                
+                <!-- Attribut/Taxonomie -->
                 <select name="wlm_shipping_methods[{{METHOD_INDEX}}][attribute_conditions][{{CONDITION_INDEX}}][attribute]" class="wlm-attribute-select" style="width: 200px;">
                     <option value=""><?php esc_html_e('-- Attribut wählen --', 'woo-lieferzeiten-manager'); ?></option>
                     <optgroup label="<?php esc_attr_e('Produkt-Attribute', 'woo-lieferzeiten-manager'); ?>">
@@ -468,6 +492,14 @@ if (!defined('ABSPATH')) {
                     <optgroup label="<?php esc_attr_e('Taxonomien', 'woo-lieferzeiten-manager'); ?>">
                         <option value="product_cat"><?php esc_html_e('Produktkategorie', 'woo-lieferzeiten-manager'); ?></option>
                         <option value="product_tag"><?php esc_html_e('Produkt-Tag', 'woo-lieferzeiten-manager'); ?></option>
+                    </optgroup>
+                    <optgroup label="<?php esc_attr_e('Versandklassen', 'woo-lieferzeiten-manager'); ?>">
+                        <?php
+                        $shipping_classes = WC()->shipping()->get_shipping_classes();
+                        foreach ($shipping_classes as $shipping_class) {
+                            echo '<option value="' . esc_attr($shipping_class->slug) . '">' . esc_html($shipping_class->name) . '</option>';
+                        }
+                        ?>
                     </optgroup>
                 </select>
                 

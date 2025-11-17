@@ -168,10 +168,23 @@ class WLM_Admin {
             }
         }
         
+        // Get shipping classes
+        $shipping_classes = array();
+        $terms = get_terms(array(
+            'taxonomy' => 'product_shipping_class',
+            'hide_empty' => false
+        ));
+        if (!is_wp_error($terms)) {
+            foreach ($terms as $term) {
+                $shipping_classes[$term->slug] = $term->name;
+            }
+        }
+        
         wp_localize_script('wlm-admin', 'wlmAdmin', array(
             'ajaxUrl' => admin_url('admin-ajax.php'),
             'nonce' => wp_create_nonce('wlm-admin-nonce'),
             'attributes' => $attributes,
+            'shippingClasses' => $shipping_classes,
             'i18n' => array(
                 'running' => __('Wird ausgeführt...', 'woo-lieferzeiten-manager'),
                 'runNow' => __('Jetzt ausführen', 'woo-lieferzeiten-manager')
@@ -337,6 +350,7 @@ class WLM_Admin {
     private function render_shipping_tab() {
         $shipping_methods = get_option('wlm_shipping_methods', array());
         $shipping_selection_strategy = get_option('wlm_shipping_selection_strategy', 'customer_choice');
+        $attribute_taxonomies = wc_get_attribute_taxonomies();
         require_once WLM_PLUGIN_DIR . 'admin/views/tab-shipping.php';
     }
 
@@ -346,6 +360,7 @@ class WLM_Admin {
     private function render_surcharges_tab() {
         $surcharges = get_option('wlm_surcharges', array());
         $surcharge_application_strategy = get_option('wlm_surcharge_application_strategy', 'all_charges');
+        $attribute_taxonomies = wc_get_attribute_taxonomies();
         require_once WLM_PLUGIN_DIR . 'admin/views/tab-surcharges.php';
     }
 
