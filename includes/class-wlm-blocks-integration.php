@@ -50,30 +50,44 @@ class WLM_Blocks_Integration implements IntegrationInterface {
         $methods = $shipping_methods->get_configured_methods();
         
         foreach ($rates as $rate_id => $rate) {
+            error_log('[WLM Package Rates] === Processing rate: ' . $rate_id);
+            
             // Find matching method config
+            // For Express rates, strip _express suffix to find base method config
+            $is_express_rate = strpos($rate_id, '_express') !== false;
+            $search_id = $is_express_rate ? str_replace('_express', '', $rate_id) : $rate_id;
+            
+            error_log('[WLM Package Rates] Is Express: ' . ($is_express_rate ? 'YES' : 'NO') . ' | Search ID: ' . $search_id);
+            
             $method_config = null;
             foreach ($methods as $method) {
-                if (isset($method['id']) && strpos($rate_id, $method['id']) === 0) {
+                if (isset($method['id']) && strpos($search_id, $method['id']) === 0) {
                     $method_config = $method;
+                    error_log('[WLM Package Rates] Found matching method config: ' . $method['id']);
                     break;
                 }
             }
             
             if (!$method_config) {
+                error_log('[WLM Package Rates] No method config found - skipping (not our method)');
                 continue; // Not our method
             }
             
             // Check if method has attribute conditions
             if (empty($method_config['attribute_conditions'])) {
+                error_log('[WLM Package Rates] No attribute conditions - skipping check');
                 continue; // No conditions to check
             }
             
             error_log('[WLM Package Rates] Checking conditions for rate: ' . $rate_id);
+            error_log('[WLM Package Rates] Conditions: ' . print_r($method_config['attribute_conditions'], true));
             
             // Check if ANY product in package meets conditions (cart-level check)
             if (!$calculator->check_cart_conditions($package, $method_config)) {
-                error_log('[WLM Package Rates] Cart does not meet conditions - removing rate ' . $rate_id);
+                error_log('[WLM Package Rates] ❌ Cart does not meet conditions - REMOVING rate ' . $rate_id);
                 unset($rates[$rate_id]);
+            } else {
+                error_log('[WLM Package Rates] ✅ Cart meets conditions - KEEPING rate ' . $rate_id);
             }
         }
         

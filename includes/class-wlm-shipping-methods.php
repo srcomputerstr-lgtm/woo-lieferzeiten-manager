@@ -165,12 +165,16 @@ class WLM_Shipping_Methods {
             }
             
             public function calculate_shipping($package = array()) {
+                error_log("WLM: === calculate_shipping CALLED for: " . $this->wlm_method_id);
+                
                 $method_config = $this->get_method_config();
                 
                 if (!$method_config) {
                     error_log("WLM: Method config not found for ID: " . $this->wlm_method_id);
                     return;
                 }
+                
+                error_log("WLM: Method config found. Enabled: " . ($method_config["enabled"] ? 'YES' : 'NO'));
                 
                 if (empty($method_config["enabled"])) {
                     error_log("WLM: Method disabled: " . $this->wlm_method_id);
