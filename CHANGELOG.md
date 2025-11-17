@@ -2,6 +2,20 @@
 
 All notable changes to WooCommerce Lieferzeiten Manager will be documented in this file.
 
+## [1.14.4] - 2025-11-17
+
+### Fixed
+- **CRITICAL: Zuschläge wurden nicht auf Express-Varianten angewendet**
+  - Problem: `apply_to_express` Flag wurde nicht an `filter_package_rates` weitergegeben
+  - `calculate_surcharges()` gab nur `name`, `cost`, `priority` zurück
+  - `filter_package_rates` prüfte `empty($surcharge['apply_to_express'])` → war immer true
+  - Lösung: `apply_to_express` wird jetzt im Zuschlag-Array mitgegeben
+
+### Technical
+- class-wlm-calculator.php: `calculate_surcharges()` fügt jetzt `apply_to_express` zum Array hinzu
+
+---
+
 ## [1.14.3] - 2025-11-17
 
 ### Fixed

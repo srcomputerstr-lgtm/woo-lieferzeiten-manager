@@ -1145,6 +1145,7 @@ class WLM_Calculator {
                     'cost' => $cost,
                     'priority' => $surcharge['priority'] ?? 10,
                     'tax_class' => $surcharge['tax_class'] ?? '',
+                    'apply_to_express' => !empty($surcharge['apply_to_express']), // Pass through Express flag
                 );
             }
         }
