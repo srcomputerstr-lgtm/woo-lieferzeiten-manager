@@ -344,7 +344,16 @@
         initPostboxes: function() {
             // Toggle postbox
             $('.postbox .handlediv').off('click').on('click', function() {
-                $(this).closest('.postbox').find('.inside').slideToggle();
+                var $postbox = $(this).closest('.postbox');
+                var $inside = $postbox.find('.inside');
+                
+                // Toggle visibility
+                $inside.slideToggle();
+                
+                // Toggle closed class
+                $postbox.toggleClass('closed');
+                
+                // Update aria-expanded
                 $(this).attr('aria-expanded', function(i, attr) {
                     return attr === 'true' ? 'false' : 'true';
                 });
