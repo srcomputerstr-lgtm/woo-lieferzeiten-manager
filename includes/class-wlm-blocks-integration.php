@@ -195,10 +195,19 @@ class WLM_Blocks_Integration implements IntegrationInterface {
                     $filtered_rates = array($selected_base => $base_rates[$selected_base]);
                     
                     // Keep express variant of selected method
-                    $expected_express_id = $selected_base . '_express';
-                    if (isset($express_rates[$expected_express_id])) {
-                        $filtered_rates[$expected_express_id] = $express_rates[$expected_express_id];
-                        error_log('[WLM Package Rates] Keeping express variant: ' . $expected_express_id);
+                    // Extract base ID without instance ID (e.g., "wlm_method_1763118746930:12" -> "wlm_method_1763118746930")
+                    $base_id_parts = explode(':', $selected_base);
+                    $base_id_without_instance = $base_id_parts[0];
+                    
+                    error_log('[WLM Package Rates] Looking for express variant of: ' . $base_id_without_instance);
+                    
+                    // Find matching express rate (e.g., "wlm_method_1763118746930_express:14")
+                    foreach ($express_rates as $express_id => $express_rate) {
+                        if (strpos($express_id, $base_id_without_instance . '_express') === 0) {
+                            $filtered_rates[$express_id] = $express_rate;
+                            error_log('[WLM Package Rates] Keeping express variant: ' . $express_id);
+                            break;
+                        }
                     }
                     
                     $rates = $filtered_rates;

@@ -64,6 +64,7 @@
         $(document).on('click', '.wlm-add-attribute-condition', this.addAttributeCondition.bind(this));
         $(document).on('click', '.wlm-remove-attribute-condition', this.removeAttributeCondition.bind(this));
         $(document).on('change', '.wlm-attribute-select', this.loadAttributeValues.bind(this));
+        $(document).on('change', '.wlm-condition-type-select', this.handleConditionTypeChange.bind(this));
         
         // Value tags
         $(document).on('click', '.wlm-add-value', this.addValueTag.bind(this));
@@ -832,6 +833,37 @@
                     $button.prop('disabled', false).text(wlmAdmin.i18n.runNow || 'Jetzt ausführen');
                 }
             });
+        },
+        
+        /**
+         * Handle condition type change
+         */
+        handleConditionTypeChange: function(e) {
+            var $select = $(e.currentTarget);
+            var type = $select.val();
+            var $conditionRow = $select.closest('.wlm-attribute-condition-row');
+            var $valuesContainer = $conditionRow.find('.wlm-condition-values');
+            var $attributeSelect = $conditionRow.find('.wlm-attribute-select');
+            
+            // Show/hide values field based on type
+            if (type === 'shipping_class') {
+                // Hide values field for shipping class
+                $valuesContainer.hide();
+                // Show only shipping classes in attribute select
+                $attributeSelect.find('optgroup').hide();
+                $attributeSelect.find('optgroup[label*="Versandklassen"]').show();
+            } else {
+                // Show values field for attributes and taxonomies
+                $valuesContainer.show();
+                // Show appropriate optgroups
+                if (type === 'attribute') {
+                    $attributeSelect.find('optgroup').hide();
+                    $attributeSelect.find('optgroup[label*="Produkt-Attribute"]').show();
+                } else if (type === 'taxonomy') {
+                    $attributeSelect.find('optgroup').hide();
+                    $attributeSelect.find('optgroup[label*="Taxonomien"]').show();
+                }
+            }
         },
         
         /**

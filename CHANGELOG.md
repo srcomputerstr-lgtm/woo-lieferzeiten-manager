@@ -2,6 +2,26 @@
 
 All notable changes to WooCommerce Lieferzeiten Manager will be documented in this file.
 
+## [1.13.2] - 2025-11-17
+
+### Fixed
+- **CRITICAL: Express-Methoden werden jetzt korrekt angezeigt**
+  - Express-ID Matching berücksichtigt jetzt Instance-ID (`:12`, `:14`)
+  - Extrahiert Base-ID ohne Instance-ID vor Matching
+  - Express-Varianten werden mit Hauptmethode angezeigt bei allen Strategies
+
+- **Versandklassen-Bedingungen UI korrigiert**
+  - Werte-Feld wird bei Versandklassen ausgeblendet
+  - Attribut-Dropdown zeigt nur relevante Optionen je nach Bedingungstyp
+  - JavaScript `handleConditionTypeChange()` reagiert auf Typ-Änderung
+
+### Technical
+- Blocks Integration: Express-ID Matching via `explode(':')` und `strpos()`
+- Admin.js: `handleConditionTypeChange()` zeigt/versteckt Werte-Feld
+- Admin.js: Optgroups werden je nach Bedingungstyp gefiltert
+
+---
+
 ## [1.13.1] - 2025-11-16
 
 ### Fixed
