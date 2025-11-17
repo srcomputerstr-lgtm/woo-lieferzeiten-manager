@@ -20,6 +20,7 @@
          * Initialize condition types on page load
          */
         initConditionTypes: function() {
+            var self = this;
             // Handle all existing condition type selects
             $('.wlm-condition-type-select').each(function() {
                 var $select = $(this);
@@ -30,6 +31,16 @@
                 if (type === 'shipping_class') {
                     // Hide attribute select for shipping class
                     $attributeSelect.hide();
+                    // Enable tags mode for existing values
+                    var $valuesSelect = $conditionRow.find('.wlm-values-select2');
+                    if ($valuesSelect.length && !$valuesSelect.hasClass('select2-hidden-accessible')) {
+                        $valuesSelect.select2({
+                            placeholder: 'Versandklassen-Slugs eingeben (z.B. langgut)...',
+                            tags: true,
+                            allowClear: true,
+                            width: '100%'
+                        });
+                    }
                 }
             });
         },
@@ -913,10 +924,20 @@
             if (type === 'shipping_class') {
                 // Hide attribute select for shipping class
                 $attributeSelect.hide();
-                // Show values field (multiselect) for shipping classes
+                // Show values field for manual tag input
                 $valuesContainer.show();
-                // Load shipping classes into multiselect
-                this.loadShippingClassesIntoMultiselect($conditionRow);
+                // Enable tags mode for shipping classes (manual input)
+                var $select = $conditionRow.find('.wlm-values-select2');
+                if ($select.hasClass('select2-hidden-accessible')) {
+                    $select.select2('destroy');
+                }
+                $select.empty();
+                $select.select2({
+                    placeholder: 'Versandklassen-Slugs eingeben (z.B. langgut)...',
+                    tags: true,
+                    allowClear: true,
+                    width: '100%'
+                });
             } else {
                 // Show attribute select for attributes and taxonomies
                 $attributeSelect.show();

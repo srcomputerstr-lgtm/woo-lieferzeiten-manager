@@ -123,7 +123,10 @@
             // Determine stock status class based on actual stock availability
             var stockClass = 'wlm--in-stock';
             if (data.stock_status) {
-                if (!data.stock_status.in_stock) {
+                if (data.stock_status.insufficient_stock) {
+                    // Insufficient stock (requested > available, no backorder)
+                    stockClass = 'wlm--out-of-stock';
+                } else if (!data.stock_status.in_stock) {
                     // Out of stock or backorder
                     stockClass = 'wlm--restock';
                 } else if (data.stock_status.status === 'instock') {

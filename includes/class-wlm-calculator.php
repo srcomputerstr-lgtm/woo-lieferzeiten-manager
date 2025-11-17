@@ -606,6 +606,7 @@ class WLM_Calculator {
         $result = array(
             'status' => $stock_status,
             'in_stock' => $stock_status === 'instock',
+            'insufficient_stock' => false,
             'quantity' => null,
             'message' => '',
             'available_date' => null,
@@ -659,7 +660,8 @@ class WLM_Calculator {
                 } else {
                     // Backorder not enabled
                     $result['in_stock'] = false;
-                    $result['message'] = __('Nicht genügend auf Lager', 'woo-lieferzeiten-manager');
+                    $result['insufficient_stock'] = true;
+                    $result['message'] = 'Nicht genügend auf Lager';
                 }
             } else {
                 // Enough stock available
@@ -670,13 +672,13 @@ class WLM_Calculator {
                 if ($stock_quantity > $max_visible) {
                     $result['quantity'] = $max_visible;
                     $result['message'] = sprintf(
-                        __('Mehr als %d auf Lager', 'woo-lieferzeiten-manager'),
+                        'Mehr als %d auf Lager',
                         $max_visible
                     );
                 } else {
                     $result['quantity'] = $stock_quantity;
                     $result['message'] = sprintf(
-                        _n('%d Stück auf Lager', '%d Stück auf Lager', $stock_quantity, 'woo-lieferzeiten-manager'),
+                        '%d Stück auf Lager',
                         $stock_quantity
                     );
                 }

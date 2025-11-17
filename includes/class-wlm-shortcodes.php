@@ -62,7 +62,9 @@ class WLM_Shortcodes {
         // Determine stock status class
         $stock_status = $window['stock_status'];
         $stock_class = 'wlm--in-stock';
-        if (!$stock_status['in_stock']) {
+        if (!empty($stock_status['insufficient_stock'])) {
+            $stock_class = 'wlm--out-of-stock';
+        } elseif (!$stock_status['in_stock']) {
             $stock_class = 'wlm--restock';
         }
         
