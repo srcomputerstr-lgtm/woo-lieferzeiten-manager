@@ -2,6 +2,16 @@
 
 All notable changes to WooCommerce Lieferzeiten Manager will be documented in this file.
 
+## [1.16.2] - 2025-11-17
+
+### Fixed
+- **CSS für Icon-im-Kreis Design in frontend-blocks.css**
+  - CSS wurde in die richtige Datei geschrieben die geladen wird
+  - Shortcode-HTML war bereits korrekt
+  - Design sollte jetzt funktionieren
+
+---
+
 ## [1.16.1] - 2025-11-17
 
 ### Fixed

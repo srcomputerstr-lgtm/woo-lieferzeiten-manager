@@ -136,3 +136,163 @@
 .wc-block-components-radio-control-accordion-option .wlm-delivery-info-container {
     padding-left: 2rem;
 }
+
+
+/* ========================================
+   Product Detail Page - Icon im Kreis Design
+   ======================================== */
+
+.wlm-pdp-panel {
+    display: flex !important;
+    align-items: flex-start !important;
+    gap: 16px !important;
+    background: #f8f9fa !important;
+    border: 1px solid #e9ecef !important;
+    border-radius: 8px !important;
+    padding: 16px !important;
+    margin: 16px 0 !important;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+}
+
+/* Icon Circle */
+.wlm-panel-icon {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 48px !important;
+    height: 48px !important;
+    min-width: 48px !important;
+    min-height: 48px !important;
+    border-radius: 50% !important;
+    flex-shrink: 0 !important;
+}
+
+.wlm-panel-icon .wlm-icon {
+    width: 24px !important;
+    height: 24px !important;
+    min-width: 24px !important;
+    min-height: 24px !important;
+    max-width: 24px !important;
+    max-height: 24px !important;
+    color: #ffffff !important;
+}
+
+.wlm-panel-icon .wlm-icon svg {
+    width: 24px !important;
+    height: 24px !important;
+    max-width: 24px !important;
+    max-height: 24px !important;
+}
+
+/* Stock Status Colors for Circle */
+.wlm-pdp-panel.wlm--in-stock .wlm-panel-icon {
+    background: #10b981 !important; /* Green */
+}
+
+.wlm-pdp-panel.wlm--restock .wlm-panel-icon {
+    background: #f59e0b !important; /* Orange */
+}
+
+.wlm-pdp-panel.wlm--out-of-stock .wlm-panel-icon {
+    background: #ef4444 !important; /* Red */
+}
+
+/* Content Area */
+.wlm-panel-content {
+    flex: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 4px !important;
+}
+
+/* Text Lines */
+.wlm-line {
+    font-size: 14px !important;
+    line-height: 1.6 !important;
+    color: #374151 !important;
+}
+
+.wlm-line-stock {
+    font-weight: 600 !important;
+    color: #111827 !important;
+}
+
+.wlm-line-shipping {
+    color: #6b7280 !important;
+}
+
+.wlm-line-shipping strong {
+    color: #111827 !important;
+    font-weight: 600 !important;
+}
+
+.wlm-line-delivery {
+    color: #6b7280 !important;
+}
+
+.wlm-line-delivery strong {
+    color: #111827 !important;
+    font-weight: 600 !important;
+}
+
+/* Calendar Icon in Delivery Line */
+.wlm-calendar-icon {
+    width: 14px !important;
+    height: 14px !important;
+    min-width: 14px !important;
+    min-height: 14px !important;
+    max-width: 14px !important;
+    max-height: 14px !important;
+    color: #6366f1 !important;
+    display: inline-flex !important;
+    vertical-align: middle !important;
+}
+
+.wlm-calendar-icon svg {
+    width: 14px !important;
+    height: 14px !important;
+    max-width: 14px !important;
+    max-height: 14px !important;
+}
+
+/* Tooltip */
+.wlm-tooltip {
+    display: inline-flex !important;
+    align-items: center !important;
+    cursor: help !important;
+    opacity: 0.7 !important;
+    transition: opacity 0.2s ease !important;
+}
+
+.wlm-tooltip:hover {
+    opacity: 1 !important;
+}
+
+.wlm-tooltip .wlm-icon {
+    width: 14px !important;
+    height: 14px !important;
+    min-width: 14px !important;
+    min-height: 14px !important;
+    max-width: 14px !important;
+    max-height: 14px !important;
+    color: #6b7280 !important;
+}
+
+.wlm-tooltip .wlm-icon svg {
+    width: 14px !important;
+    height: 14px !important;
+    max-width: 14px !important;
+    max-height: 14px !important;
+}
+
+/* SVG Icons Base */
+.wlm-icon {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-shrink: 0 !important;
+}
+
+.wlm-icon svg {
+    display: block !important;
+}
