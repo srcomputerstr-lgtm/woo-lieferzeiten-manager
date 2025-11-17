@@ -1411,8 +1411,16 @@ class WLM_Calculator {
         if (!empty($surcharge['attribute_conditions']) && is_array($surcharge['attribute_conditions'])) {
             // Filter out empty conditions
             $valid_conditions = array_filter($surcharge['attribute_conditions'], function($condition) {
+                $condition_type = $condition['type'] ?? 'attribute';
                 $attr_slug = $condition['attribute'] ?? '';
                 $values = $condition['values'] ?? array();
+                
+                // For shipping_class, attribute is not needed (values are the slugs)
+                if ($condition_type === 'shipping_class') {
+                    return !empty($values);
+                }
+                
+                // For attribute and taxonomy, both attribute and values are required
                 return !empty($attr_slug) && !empty($values);
             });
             

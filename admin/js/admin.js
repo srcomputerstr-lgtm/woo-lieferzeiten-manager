@@ -83,6 +83,7 @@
         // Shipping methods
         $(document).on('click', '#wlm-add-shipping-method', this.addShippingMethod.bind(this));
         $(document).on('click', '.wlm-remove-shipping-method', this.removeShippingMethod.bind(this));
+        $(document).on('click', '.wlm-duplicate-method', this.duplicateShippingMethod.bind(this));
         $(document).on('input', '.wlm-method-name-input', this.updateMethodTitle.bind(this));
         
         // Surcharges
@@ -376,6 +377,43 @@
                 $(e.currentTarget).closest('.wlm-shipping-method-item').remove();
                 this.reindexShippingMethods();
             }
+        },
+        
+        /**
+         * Duplicate shipping method
+         */
+        duplicateShippingMethod: function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            var $original = $(e.currentTarget).closest('.wlm-shipping-method-item');
+            var $clone = $original.clone(true);
+            
+            // Update name to indicate it's a copy
+            var $nameInput = $clone.find('.wlm-method-name-input');
+            var originalName = $nameInput.val();
+            $nameInput.val(originalName + ' (Kopie)');
+            
+            // Update title
+            $clone.find('.wlm-method-title').text(originalName + ' (Kopie)');
+            
+            // Open the cloned item
+            $clone.removeClass('closed').addClass('open');
+            $clone.find('.handlediv').attr('aria-expanded', 'true');
+            
+            // Insert after original
+            $original.after($clone);
+            
+            // Reindex all methods
+            this.reindexShippingMethods();
+            
+            // Reinitialize Select2 on cloned selects
+            $clone.find('.wlm-attribute-select, .wlm-values-select2').each(function() {
+                if ($(this).hasClass('select2-hidden-accessible')) {
+                    $(this).select2('destroy');
+                }
+            });
+            this.initSelect2();
         },
 
         /**

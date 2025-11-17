@@ -59,13 +59,16 @@ if (!defined('ABSPATH')) {
         if (!empty($shipping_methods)) {
             foreach ($shipping_methods as $index => $method) {
                 ?>
-                <div class="wlm-shipping-method-item postbox" data-index="<?php echo esc_attr($index); ?>">
+                <div class="wlm-shipping-method-item postbox closed" data-index="<?php echo esc_attr($index); ?>">
                     <div class="postbox-header">
                         <h3 class="hndle">
                             <span class="wlm-method-title"><?php echo esc_html($method['name'] ?? __('Neue Versandart', 'woo-lieferzeiten-manager')); ?></span>
                         </h3>
                         <div class="handle-actions">
-                            <button type="button" class="handlediv button-link" aria-expanded="true">
+                            <button type="button" class="wlm-duplicate-method button button-small" title="<?php esc_attr_e('Versandart duplizieren', 'woo-lieferzeiten-manager'); ?>">
+                                <span class="dashicons dashicons-admin-page"></span>
+                            </button>
+                            <button type="button" class="handlediv button-link" aria-expanded="false">
                                 <span class="screen-reader-text"><?php esc_html_e('Umschalten', 'woo-lieferzeiten-manager'); ?></span>
                                 <span class="toggle-indicator" aria-hidden="true"></span>
                             </button>
