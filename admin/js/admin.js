@@ -858,14 +858,15 @@
                 $attributeSelect.show();
                 // Show values field
                 $valuesContainer.show();
-                // Show appropriate optgroups
+                // Show all optgroups first (reset)
+                $attributeSelect.find('optgroup').show();
+                // Then filter based on type
                 if (type === 'attribute') {
-                    $attributeSelect.find('optgroup').hide();
-                    $attributeSelect.find('optgroup[label*="Produkt-Attribute"]').show();
+                    $attributeSelect.find('optgroup[label*="Taxonomien"]').hide();
                 } else if (type === 'taxonomy') {
-                    $attributeSelect.find('optgroup').hide();
-                    $attributeSelect.find('optgroup[label*="Taxonomien"]').show();
+                    $attributeSelect.find('optgroup[label*="Produkt-Attribute"]').hide();
                 }
+                // If no type selected, show all
             }
         },
         

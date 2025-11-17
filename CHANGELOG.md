@@ -2,6 +2,21 @@
 
 All notable changes to WooCommerce Lieferzeiten Manager will be documented in this file.
 
+## [1.13.4] - 2025-11-17
+
+### Fixed
+- **HOTFIX: Produktattribute wieder sichtbar im Dropdown**
+  - Optgroup-Filterung geändert: Zeigt alle Optgroups initial an
+  - Filtert nur die **anderen** Optgroups aus (nicht alle)
+  - "Produkt-Attribute" und "Taxonomien" sind jetzt immer sichtbar
+  - Bei Typ-Wechsel wird nur die jeweils andere Gruppe ausgeblendet
+
+### Technical
+- Admin.js: `handleConditionTypeChange()` zeigt alle Optgroups, versteckt dann selektiv
+- Verhindert dass Optgroups initial versteckt bleiben
+
+---
+
 ## [1.13.3] - 2025-11-17
 
 ### Fixed
