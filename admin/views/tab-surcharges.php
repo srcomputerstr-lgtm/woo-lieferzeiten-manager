@@ -400,6 +400,35 @@ if (!defined('ABSPATH')) {
                                     </td>
                                 </tr>
 
+                                <!-- Hinweise für Kunden -->
+                                <tr>
+                                    <th scope="row">
+                                        <label><?php esc_html_e('Hinweis Produktseite', 'woo-lieferzeiten-manager'); ?></label>
+                                    </th>
+                                    <td>
+                                        <input type="text" 
+                                               name="wlm_surcharges[<?php echo $index; ?>][notice_product_page]" 
+                                               value="<?php echo esc_attr($surcharge['notice_product_page'] ?? ''); ?>" 
+                                               class="large-text" 
+                                               placeholder="<?php esc_attr_e('z.B. zzgl. 50€ Langgut-Zuschlag', 'woo-lieferzeiten-manager'); ?>">
+                                        <p class="description"><?php esc_html_e('Wird auf der Produktseite unter der Versandart angezeigt, wenn dieser Zuschlag auf das Produkt zutrifft.', 'woo-lieferzeiten-manager'); ?></p>
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <th scope="row">
+                                        <label><?php esc_html_e('Hinweis Warenkorb', 'woo-lieferzeiten-manager'); ?></label>
+                                    </th>
+                                    <td>
+                                        <input type="text" 
+                                               name="wlm_surcharges[<?php echo $index; ?>][notice_cart]" 
+                                               value="<?php echo esc_attr($surcharge['notice_cart'] ?? ''); ?>" 
+                                               class="large-text" 
+                                               placeholder="<?php esc_attr_e('z.B. Langgut-Zuschlag für Artikel über 3m', 'woo-lieferzeiten-manager'); ?>">
+                                        <p class="description"><?php esc_html_e('Wird im Warenkorb/Checkout als Hinweis angezeigt (optional, falls abweichend von Produktseite).', 'woo-lieferzeiten-manager'); ?></p>
+                                    </td>
+                                </tr>
+
                                 <tr>
                                     <td colspan="2">
                                         <input type="hidden" 

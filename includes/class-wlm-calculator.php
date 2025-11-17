@@ -483,9 +483,23 @@ class WLM_Calculator {
             $product_values = array();
             
             if ($product->is_type('variation')) {
+                // Try variation attributes first
                 $variation_attrs = $product->get_attributes();
                 if (isset($variation_attrs[$attr_slug])) {
                     $product_values[] = $variation_attrs[$attr_slug];
+                } else {
+                    // Fallback to parent product attributes
+                    $parent_id = $product->get_parent_id();
+                    if ($parent_id) {
+                        $parent_product = wc_get_product($parent_id);
+                        if ($parent_product) {
+                            $parent_attr = $parent_product->get_attribute($attr_slug);
+                            if ($parent_attr) {
+                                $product_values = array_map('trim', explode(',', $parent_attr));
+                                error_log('[WLM] Variation inherited attribute from parent: ' . $attr_slug . ' = ' . $parent_attr);
+                            }
+                        }
+                    }
                 }
             } else {
                 $product_attr = $product->get_attribute($attr_slug);

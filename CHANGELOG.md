@@ -2,6 +2,29 @@
 
 All notable changes to WooCommerce Lieferzeiten Manager will be documented in this file.
 
+## [1.14.7] - 2025-11-17
+
+### Added
+- **Zuschlag-Hinweise auf Produktseite**
+  - Neue Felder im Backend: "Hinweis Produktseite" und "Hinweis Warenkorb"
+  - Hinweise werden automatisch auf der Produktseite unter der Versandart angezeigt
+  - Nur sichtbar wenn Zuschlag auf das Produkt zutrifft
+  - Beispiel: "⚠️ zzgl. 50€ Langgut-Zuschlag"
+
+### Fixed
+- **Varianten erben jetzt Attribute vom Vater-Produkt**
+  - Problem: Versandarten wurden bei Varianten-Auswahl ausgeblendet
+  - Ursache: Produktattribute (z.B. Versandgruppe) sind am Vater-Produkt definiert
+  - Lösung: Fallback zu Vater-Produkt wenn Variante Attribut nicht hat
+  - Versandarten bleiben jetzt sichtbar nach Varianten-Auswahl
+
+### Technical
+- class-wlm-calculator.php: Attribut-Vererbung in `check_shipping_method_conditions()`
+- class-wlm-shortcodes.php: Neue Methoden `get_applicable_surcharge_notices()` und `check_surcharge_conditions()`
+- admin/views/tab-surcharges.php: Neue Felder für Hinweise
+
+---
+
 ## [1.14.6] - 2025-11-17
 
 ### Fixed
