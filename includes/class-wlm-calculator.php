@@ -1446,11 +1446,14 @@ class WLM_Calculator {
                 } else {
                     // Check product attribute
                     if ($product->is_type('variation')) {
+                        // First try variation-specific attributes
                         $variation_attrs = $product->get_attributes();
                         if (isset($variation_attrs[$attr_slug])) {
                             $product_values[] = $variation_attrs[$attr_slug];
-                        } else {
-                            // Fallback to parent product
+                        }
+                        
+                        // If not found, ALWAYS fallback to parent product
+                        if (empty($product_values)) {
                             $parent_id = $product->get_parent_id();
                             if ($parent_id) {
                                 $parent_product = wc_get_product($parent_id);
@@ -1463,6 +1466,7 @@ class WLM_Calculator {
                             }
                         }
                     } else {
+                        // Simple product - get attribute directly
                         $product_attr = $product->get_attribute($attr_slug);
                         if ($product_attr) {
                             $product_values = array_map('trim', explode(',', $product_attr));

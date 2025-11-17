@@ -76,7 +76,7 @@ class WLM_Shortcodes {
         
         ob_start();
         ?>
-        <div class="wlm-pdp-panel wlm-shortcode <?php echo esc_attr($stock_class); ?>" data-product-id="<?php echo esc_attr($product_id); ?>">
+        <div class="wlm-pdp-panel wlm-shortcode <?php echo esc_attr($stock_class); ?>" data-product-id="<?php echo esc_attr($product_id); ?>" data-product-weight="<?php echo esc_attr($product->get_weight() ?: 0); ?>">
             <div class="wlm-panel-icon">
                 <?php WLM_Icons::icon($shipping_icon); ?>
             </div>

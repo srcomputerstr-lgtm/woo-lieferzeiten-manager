@@ -210,12 +210,8 @@ class WLM_Shipping_Method extends WC_Shipping_Method {
             $cost = $base_cost * $qty;
         }
 
-        // Add surcharges
-        $surcharges = WLM_Core::instance()->surcharges->calculate_surcharges($package);
-        foreach ($surcharges as $surcharge) {
-            $cost += $surcharge['amount'];
-        }
-
+        // Surcharges are added as separate cart fees, not included in shipping cost
+        
         // Add normal rate
         $rate = array(
             'id' => $this->get_rate_id(),
