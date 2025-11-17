@@ -1103,8 +1103,16 @@ class WLM_Calculator {
                     $values = $condition['values'] ?? array();
                     $logic = $condition['logic'] ?? 'at_least_one';
                     
-                    if (empty($attr_slug) || empty($values)) {
-                        continue;
+                    // For shipping_class, attribute is not needed (values are the slugs)
+                    if ($condition_type === 'shipping_class') {
+                        if (empty($values)) {
+                            continue;
+                        }
+                    } else {
+                        // For attribute and taxonomy, both attribute and values are required
+                        if (empty($attr_slug) || empty($values)) {
+                            continue;
+                        }
                     }
                     
                     // Check condition for at least one product in cart
