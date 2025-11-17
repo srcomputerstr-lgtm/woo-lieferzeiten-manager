@@ -2,6 +2,18 @@
 
 All notable changes to WooCommerce Lieferzeiten Manager will be documented in this file.
 
+## [1.16.3] - 2025-11-17
+
+### Fixed
+- **JavaScript verwendet jetzt neues Icon-im-Kreis Design**
+  - `renderProductWindow()` in `frontend.js` wurde komplett umgeschrieben
+  - Verwendet jetzt SVG Icons statt Emojis
+  - Icon-im-Kreis mit Lagerstatus-Farbe
+  - 3 Zeilen Text-Layout wie im PHP-Shortcode
+  - Funktioniert jetzt auch bei Quantity-Änderung und Varianten-Auswahl
+
+---
+
 ## [1.16.2] - 2025-11-17
 
 ### Fixed

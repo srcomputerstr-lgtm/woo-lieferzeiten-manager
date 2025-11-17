@@ -116,32 +116,91 @@
          */
         renderProductWindow: function(data) {
             var $panel = $('.wlm-pdp-panel');
-            var html = '';
-
-            // Stock status
+            
+            // Determine stock status class
+            var stockClass = 'wlm--in-stock';
+            if (data.stock_status && !data.stock_status.in_stock) {
+                stockClass = 'wlm--restock';
+            }
+            
+            // Get shipping icon (default: truck)
+            var shippingIcon = data.shipping_method && data.shipping_method.icon ? data.shipping_method.icon : 'truck';
+            
+            // Build HTML with icon-in-circle design
+            var html = '<div class="wlm-panel-icon">';
+            html += this.getIconSVG(shippingIcon);
+            html += '</div>';
+            
+            html += '<div class="wlm-panel-content">';
+            
+            // Line 1: Stock status
             if (data.stock_status) {
-                var statusClass = data.stock_status.in_stock ? 'wlm--in-stock' : 'wlm--restock';
-                var icon = data.stock_status.in_stock ? '🟢' : '🟡';
-                html += '<div class="wlm-stock-status ' + statusClass + '">';
-                html += icon + ' ' + data.stock_status.message;
+                html += '<div class="wlm-line wlm-line-stock">';
+                html += data.stock_status.message;
                 html += '</div>';
             }
-
-            // Shipping method
+            
+            // Line 2: Shipping method
             if (data.shipping_method) {
-                html += '<div class="wlm-shipping-method">';
-                html += '🚚 Versand via <strong>' + (data.shipping_method.title || 'Paketdienst') + '</strong>';
+                html += '<div class="wlm-line wlm-line-shipping">';
+                html += 'Wysłka za pośrednictwem: ';
+                html += '<strong>(' + (data.shipping_method.title || 'Paketdienst') + ')</strong>';
+                if (data.shipping_method.cost_info) {
+                    html += ' <span class="wlm-tooltip" title="' + data.shipping_method.cost_info + '">';
+                    html += this.getIconSVG('info');
+                    html += '</span>';
+                }
                 html += '</div>';
             }
-
-            // Delivery window
+            
+            // Line 3: Delivery window
             if (data.window_formatted) {
-                html += '<div class="wlm-delivery-window">';
-                html += '📅 Lieferung ca.: <strong>' + data.window_formatted + '</strong>';
+                html += '<div class="wlm-line wlm-line-delivery">';
+                html += 'Szacowana dostawa: ';
+                html += this.getIconSVG('calendar', 'wlm-calendar-icon');
+                html += ' <strong>' + data.window_formatted + '</strong>';
                 html += '</div>';
             }
-
+            
+            html += '</div>';
+            
+            // Update panel class and content
+            $panel.removeClass('wlm--in-stock wlm--restock wlm--out-of-stock');
+            $panel.addClass(stockClass);
             $panel.html(html);
+        },
+        
+        /**
+         * Get SVG icon HTML
+         */
+        getIconSVG: function(iconName, className) {
+            var cls = className || 'wlm-icon';
+            var svg = '';
+            
+            switch(iconName) {
+                case 'truck':
+                    svg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 3h15v13H1z"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>';
+                    break;
+                case 'package':
+                    svg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>';
+                    break;
+                case 'truck-xxl':
+                    svg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 3h15v13H1z"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/><text x="4" y="11" font-size="6" font-weight="bold" fill="currentColor">XXL</text></svg>';
+                    break;
+                case 'calendar':
+                    svg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
+                    break;
+                case 'info':
+                    svg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>';
+                    break;
+                case 'alert':
+                    svg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
+                    break;
+                default:
+                    svg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>';
+            }
+            
+            return '<span class="' + cls + '">' + svg + '</span>';
         },
 
         /**
