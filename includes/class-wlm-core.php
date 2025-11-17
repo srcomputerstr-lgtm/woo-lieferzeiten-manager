@@ -382,8 +382,29 @@ class WLM_Core {
      * @param array $context Additional context.
      */
     public function debug_log($message, $context = array()) {
-        if ($this->is_debug_mode() && current_user_can('manage_options')) {
-            error_log('WLM Debug: ' . $message . ' | Context: ' . print_r($context, true));
+        if ($this->is_debug_mode()) {
+            if (!empty($context)) {
+                error_log('[WLM Debug] ' . $message . ' | Context: ' . print_r($context, true));
+            } else {
+                error_log('[WLM Debug] ' . $message);
+            }
+        }
+    }
+    
+    /**
+     * Static helper for debug logging (can be called from anywhere)
+     *
+     * @param string $message Debug message.
+     * @param array $context Additional context.
+     */
+    public static function log($message, $context = array()) {
+        $instance = self::instance();
+        if ($instance && $instance->is_debug_mode()) {
+            if (!empty($context)) {
+                error_log('[WLM] ' . $message . ' | Context: ' . print_r($context, true));
+            } else {
+                error_log('[WLM] ' . $message);
+            }
         }
     }
 
