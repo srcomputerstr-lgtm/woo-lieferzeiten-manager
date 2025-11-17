@@ -2,6 +2,17 @@
 
 All notable changes to WooCommerce Lieferzeiten Manager will be documented in this file.
 
+## [1.15.1] - 2025-11-17
+
+### Fixed
+- **HOTFIX: Icon-Größe und Layout**
+  - Icons waren viel zu groß (fehlende max-width/max-height)
+  - Layout war vertikal gestapelt statt horizontal
+  - Flexbox mit !important um Theme-Overrides zu verhindern
+  - Icons jetzt fest auf 18x18px begrenzt
+
+---
+
 ## [1.15.0] - 2025-11-17
 
 ### Added
