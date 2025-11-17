@@ -2,6 +2,36 @@
 
 All notable changes to WooCommerce Lieferzeiten Manager will be documented in this file.
 
+## [1.16.0] - 2025-11-17
+
+### Added
+- **Icon-Auswahl für Versandarten im Backend**
+  - 3 Icons zur Auswahl: LKW (Spedition), Paket (Paketdienst), LKW XXL (Langgut)
+  - Icon wird auf Produktseite im farbigen Kreis angezeigt
+  - Neue SVG Icons: `package`, `truck-xxl`
+
+### Changed
+- **Komplett neues Design für Produktseite**
+  - Icon im farbigen Kreis (Farbe = Lagerstatus)
+    - Grün: Auf Lager
+    - Orange: Backorder
+    - Rot: Nicht verfügbar
+  - Icon in weiß (aus Versandart-Auswahl)
+  - 3 Text-Zeilen:
+    - Zeile 1: Lagerstatus
+    - Zeile 2: "Versand via" + Versandart + Tooltip (Preis)
+    - Zeile 3: "Lieferung ca." + Kalender-Icon + Datum
+  - Minimalistisches, kompaktes Layout
+  - Basiert auf User-Design-Vorlage
+
+### Technical
+- `admin/views/tab-shipping.php`: Neue Icon-Auswahl
+- `class-wlm-icons.php`: Neue Icons `package`, `truck-xxl`
+- `class-wlm-shortcodes.php`: Komplett neue HTML-Struktur
+- `assets/css/frontend.css`: Neues CSS für Icon-im-Kreis Design
+
+---
+
 ## [1.15.1] - 2025-11-17
 
 ### Fixed

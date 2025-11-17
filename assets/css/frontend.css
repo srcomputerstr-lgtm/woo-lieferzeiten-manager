@@ -30,113 +30,166 @@
     display: block;
 }
 
-/* Icon Colors */
-.wlm-icon-check {
-    color: #10b981; /* Green */
-}
-
-.wlm-icon-clock {
-    color: #f59e0b; /* Orange */
-}
-
-.wlm-icon-truck {
-    color: #3b82f6; /* Blue */
-}
-
-.wlm-icon-calendar {
-    color: #6366f1; /* Indigo */
-}
-
-.wlm-icon-alert {
-    color: #ef4444; /* Red */
-}
-
-.wlm-icon-info {
-    color: #6b7280; /* Gray */
-}
-
 /* ========================================
-   Product Detail Page Panel
+   Product Detail Page Panel - NEW DESIGN
    ======================================== */
 
 .wlm-pdp-panel {
-    background: #ffffff;
-    border: 1px solid #e5e7eb;
+    display: flex !important;
+    align-items: flex-start;
+    gap: 16px;
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
     border-radius: 8px;
     padding: 16px;
     margin: 16px 0;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
-/* Info Items */
-.wlm-info-item {
-    display: flex !important;
-    flex-direction: row !important;
-    align-items: center !important;
-    gap: 8px;
-    padding: 8px 0;
+/* Icon Circle */
+.wlm-panel-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    min-width: 48px;
+    min-height: 48px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.wlm-panel-icon .wlm-icon {
+    width: 24px;
+    height: 24px;
+    min-width: 24px;
+    min-height: 24px;
+    max-width: 24px;
+    max-height: 24px;
+    color: #ffffff;
+}
+
+.wlm-panel-icon .wlm-icon svg {
+    width: 24px;
+    height: 24px;
+    max-width: 24px;
+    max-height: 24px;
+}
+
+/* Stock Status Colors for Circle */
+.wlm-pdp-panel.wlm--in-stock .wlm-panel-icon {
+    background: #10b981; /* Green */
+}
+
+.wlm-pdp-panel.wlm--restock .wlm-panel-icon {
+    background: #f59e0b; /* Orange */
+}
+
+.wlm-pdp-panel.wlm--out-of-stock .wlm-panel-icon {
+    background: #ef4444; /* Red */
+}
+
+/* Content Area */
+.wlm-panel-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+/* Text Lines */
+.wlm-line {
     font-size: 14px;
-    line-height: 1.5;
+    line-height: 1.6;
     color: #374151;
 }
 
-.wlm-info-item:first-child {
-    padding-top: 0;
+.wlm-line-stock {
+    font-weight: 600;
+    color: #111827;
 }
 
-.wlm-info-item:last-child {
-    padding-bottom: 0;
-}
-
-/* Text Elements */
-.wlm-info-item .wlm-label {
+.wlm-line-shipping {
     color: #6b7280;
 }
 
-.wlm-info-item .wlm-value,
-.wlm-info-item strong {
+.wlm-line-shipping strong {
     color: #111827;
     font-weight: 600;
 }
 
-.wlm-info-item .wlm-text {
-    color: #374151;
+.wlm-line-delivery {
+    color: #6b7280;
 }
 
-/* Stock Status */
-.wlm-stock.wlm--in-stock .wlm-text {
-    color: #059669;
-    font-weight: 500;
+.wlm-line-delivery strong {
+    color: #111827;
+    font-weight: 600;
 }
 
-.wlm-stock.wlm--restock .wlm-text {
-    color: #d97706;
-    font-weight: 500;
-}
-
-/* Surcharge Notice */
-.wlm-surcharge {
+.wlm-line-surcharge {
+    margin-top: 4px;
+    padding: 6px 10px;
     background: #fef2f2;
     border-left: 3px solid #ef4444;
-    padding: 8px 12px;
-    margin: 8px 0;
     border-radius: 4px;
-}
-
-.wlm-surcharge .wlm-text {
-    color: #991b1b;
     font-size: 13px;
+    color: #991b1b;
+    display: flex;
+    align-items: center;
+    gap: 6px;
 }
 
-/* Tooltip Icon */
-.wlm-icon.wlm-tooltip {
+.wlm-line-surcharge .wlm-icon {
+    color: #ef4444;
+}
+
+/* Calendar Icon in Delivery Line */
+.wlm-calendar-icon {
+    width: 14px;
+    height: 14px;
+    min-width: 14px;
+    min-height: 14px;
+    max-width: 14px;
+    max-height: 14px;
+    color: #6366f1;
+}
+
+.wlm-calendar-icon svg {
+    width: 14px;
+    height: 14px;
+    max-width: 14px;
+    max-height: 14px;
+}
+
+/* Tooltip */
+.wlm-tooltip {
+    display: inline-flex;
+    align-items: center;
     cursor: help;
     opacity: 0.7;
     transition: opacity 0.2s ease;
 }
 
-.wlm-icon.wlm-tooltip:hover {
+.wlm-tooltip:hover {
     opacity: 1;
+}
+
+.wlm-tooltip .wlm-icon {
+    width: 14px;
+    height: 14px;
+    min-width: 14px;
+    min-height: 14px;
+    max-width: 14px;
+    max-height: 14px;
+    color: #6b7280;
+}
+
+.wlm-tooltip .wlm-icon svg {
+    width: 14px;
+    height: 14px;
+    max-width: 14px;
+    max-height: 14px;
 }
 
 /* ========================================
@@ -267,17 +320,35 @@
 
 @media (max-width: 768px) {
     .wlm-pdp-panel {
+        gap: 12px;
         padding: 12px;
     }
 
-    .wlm-info-item {
-        font-size: 13px;
-        padding: 6px 0;
+    .wlm-panel-icon {
+        width: 40px;
+        height: 40px;
+        min-width: 40px;
+        min-height: 40px;
     }
 
-    .wlm-icon {
-        width: 16px;
-        height: 16px;
+    .wlm-panel-icon .wlm-icon {
+        width: 20px;
+        height: 20px;
+        min-width: 20px;
+        min-height: 20px;
+        max-width: 20px;
+        max-height: 20px;
+    }
+
+    .wlm-panel-icon .wlm-icon svg {
+        width: 20px;
+        height: 20px;
+        max-width: 20px;
+        max-height: 20px;
+    }
+
+    .wlm-line {
+        font-size: 13px;
     }
 
     .wlm-activate-express {

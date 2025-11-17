@@ -120,6 +120,28 @@ if (!defined('ABSPATH')) {
                                     </td>
                                 </tr>
 
+                                <tr>
+                                    <th scope="row">
+                                        <label><?php esc_html_e('Icon', 'woo-lieferzeiten-manager'); ?></label>
+                                    </th>
+                                    <td>
+                                        <select name="wlm_shipping_methods[<?php echo $index; ?>][icon]" class="regular-text">
+                                            <option value="truck" <?php selected($method['icon'] ?? 'truck', 'truck'); ?>>
+                                                <?php esc_html_e('🚚 LKW (Spedition)', 'woo-lieferzeiten-manager'); ?>
+                                            </option>
+                                            <option value="package" <?php selected($method['icon'] ?? 'truck', 'package'); ?>>
+                                                <?php esc_html_e('📦 Paket (Paketdienst)', 'woo-lieferzeiten-manager'); ?>
+                                            </option>
+                                            <option value="truck-xxl" <?php selected($method['icon'] ?? 'truck', 'truck-xxl'); ?>>
+                                                <?php esc_html_e('🚛 LKW XXL (Langgut)', 'woo-lieferzeiten-manager'); ?>
+                                            </option>
+                                        </select>
+                                        <p class="description">
+                                            <?php esc_html_e('Icon für diese Versandart auf der Produktseite', 'woo-lieferzeiten-manager'); ?>
+                                        </p>
+                                    </td>
+                                </tr>
+
                                 <!-- Kosten -->
                                 <tr>
                                     <th scope="row">
