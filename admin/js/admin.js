@@ -845,15 +845,18 @@
             var $valuesContainer = $conditionRow.find('.wlm-condition-values');
             var $attributeSelect = $conditionRow.find('.wlm-attribute-select');
             
-            // Show/hide values field based on type
+            // Show/hide attribute select and values field based on type
             if (type === 'shipping_class') {
-                // Hide values field for shipping class
-                $valuesContainer.hide();
-                // Show only shipping classes in attribute select
-                $attributeSelect.find('optgroup').hide();
-                $attributeSelect.find('optgroup[label*="Versandklassen"]').show();
+                // Hide attribute select for shipping class
+                $attributeSelect.hide();
+                // Show values field (multiselect) for shipping classes
+                $valuesContainer.show();
+                // Load shipping classes into multiselect
+                this.loadShippingClassesIntoMultiselect($conditionRow);
             } else {
-                // Show values field for attributes and taxonomies
+                // Show attribute select for attributes and taxonomies
+                $attributeSelect.show();
+                // Show values field
                 $valuesContainer.show();
                 // Show appropriate optgroups
                 if (type === 'attribute') {
@@ -864,6 +867,49 @@
                     $attributeSelect.find('optgroup[label*="Taxonomien"]').show();
                 }
             }
+        },
+        
+        /**
+         * Load shipping classes into multiselect
+         */
+        loadShippingClassesIntoMultiselect: function($conditionRow) {
+            var $select = $conditionRow.find('.wlm-values-select2');
+            
+            // Clear existing options
+            $select.empty();
+            
+            // Get shipping classes from global variable (if available)
+            if (typeof wlmAdmin !== 'undefined' && wlmAdmin.shippingClasses) {
+                $.each(wlmAdmin.shippingClasses, function(slug, name) {
+                    $select.append(new Option(name, slug, false, false));
+                });
+            } else {
+                // Fallback: Load via AJAX
+                $.ajax({
+                    url: wlmAdmin.ajaxUrl,
+                    type: 'GET',
+                    data: {
+                        action: 'wlm_get_shipping_classes',
+                        nonce: wlmAdmin.nonce
+                    },
+                    success: function(response) {
+                        if (response.success && response.data) {
+                            $.each(response.data, function(i, item) {
+                                $select.append(new Option(item.label, item.value, false, false));
+                            });
+                        }
+                    }
+                });
+            }
+            
+            // Reinitialize Select2
+            if ($select.hasClass('select2-hidden-accessible')) {
+                $select.select2('destroy');
+            }
+            $select.select2({
+                placeholder: 'Versandklassen wählen...',
+                allowClear: true
+            });
         },
         
         /**

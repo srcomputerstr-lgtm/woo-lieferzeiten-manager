@@ -490,6 +490,75 @@ class WLM_Admin {
         // Save surcharges
         if (isset($data['wlm_surcharges'])) {
             error_log('Saving wlm_surcharges: ' . print_r($data['wlm_surcharges'], true));
+            
+            // Normalize data: Convert flat keys to nested arrays (same as shipping methods)
+            foreach ($data['wlm_surcharges'] as $surcharge_index => &$surcharge) {
+                // Fix flat keys like "attribute_conditions][0][logic" to nested structure
+                $conditions = array();
+                $keys_to_remove = array();
+                
+                foreach ($surcharge as $key => $value) {
+                    // Match: attribute_conditions][INDEX][FIELD] or attribute_conditions][INDEX][FIELD][]
+                    if (preg_match('/^attribute_conditions\]\[(\d+)\]\[([^\]]+)\](\[\])?$/', $key, $matches)) {
+                        $index = (int)$matches[1];
+                        $field = $matches[2];
+                        $is_array = isset($matches[3]) && $matches[3] === '[]';
+                        
+                        if (!isset($conditions[$index])) {
+                            $conditions[$index] = array(
+                                'logic' => 'at_least_one',
+                                'type' => 'attribute',
+                                'attribute' => '',
+                                'values' => array()
+                            );
+                        }
+                        
+                        if ($is_array) {
+                            // It's an array field like values[]
+                            $conditions[$index][$field] = is_array($value) ? $value : array($value);
+                        } else {
+                            $conditions[$index][$field] = $value;
+                        }
+                        
+                        $keys_to_remove[] = $key;
+                    }
+                }
+                
+                // Remove flat keys
+                foreach ($keys_to_remove as $key) {
+                    unset($surcharge[$key]);
+                }
+                
+                // Add normalized conditions if found
+                if (!empty($conditions)) {
+                    $surcharge['attribute_conditions'] = array_values($conditions);
+                    error_log('WLM: Normalized flat keys to attribute_conditions for surcharge ' . $surcharge_index . ': ' . print_r($surcharge['attribute_conditions'], true));
+                }
+                
+                // Validate attribute_conditions structure
+                if (isset($surcharge['attribute_conditions']) && is_array($surcharge['attribute_conditions'])) {
+                    // Filter out empty or invalid conditions
+                    $surcharge['attribute_conditions'] = array_filter($surcharge['attribute_conditions'], function($cond) {
+                        // For shipping class: only type and values needed
+                        if (isset($cond['type']) && $cond['type'] === 'shipping_class') {
+                            return !empty($cond['values']);
+                        }
+                        // For attribute/taxonomy: must have attribute and at least one value
+                        return !empty($cond['attribute']) && !empty($cond['values']);
+                    });
+                    
+                    // Reindex array
+                    $surcharge['attribute_conditions'] = array_values($surcharge['attribute_conditions']);
+                    
+                    // Ensure values is always an array
+                    foreach ($surcharge['attribute_conditions'] as &$cond) {
+                        if (isset($cond['values']) && !is_array($cond['values'])) {
+                            $cond['values'] = array($cond['values']);
+                        }
+                    }
+                }
+            }
+            
             update_option('wlm_surcharges', $data['wlm_surcharges']);
             error_log('After save, wlm_surcharges from DB: ' . print_r(get_option('wlm_surcharges'), true));
         }

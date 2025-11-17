@@ -2,6 +2,29 @@
 
 All notable changes to WooCommerce Lieferzeiten Manager will be documented in this file.
 
+## [1.13.3] - 2025-11-17
+
+### Fixed
+- **CRITICAL: Zuschläge-Bedingungen werden jetzt gespeichert**
+  - Normalisierung für `attribute_conditions` implementiert (wie bei Versandarten)
+  - Flat keys wie `attribute_conditions][0][logic` werden zu nested arrays konvertiert
+  - Validierung: Leere Bedingungen werden gefiltert
+  - Shipping class Bedingungen: Nur `type` und `values` erforderlich
+
+- **Versandklassen-Bedingungen UI komplett überarbeitet**
+  - Attribut-Dropdown wird bei Versandklassen **ausgeblendet**
+  - Multiselect wird bei Versandklassen **angezeigt** und mit Versandklassen befüllt
+  - "at least one of" / "all of" macht jetzt Sinn (Multiselect statt Single-Dropdown)
+  - JavaScript `loadShippingClassesIntoMultiselect()` lädt Versandklassen dynamisch
+
+### Technical
+- Admin.php: Surcharges Normalisierung analog zu Shipping Methods
+- Admin.js: `handleConditionTypeChange()` versteckt Attribut-Select bei Versandklassen
+- Admin.js: `loadShippingClassesIntoMultiselect()` befüllt Select2 mit Versandklassen
+- Validierung: Shipping class braucht kein `attribute` Feld
+
+---
+
 ## [1.13.2] - 2025-11-17
 
 ### Fixed
