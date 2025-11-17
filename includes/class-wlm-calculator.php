@@ -235,6 +235,14 @@ class WLM_Calculator {
         if ($lead_time && is_numeric($lead_time) && $lead_time > 0) {
             return $this->add_business_days(current_time('timestamp'), (int) $lead_time);
         }
+        
+        // Fallback: Use default lead time from settings (Priority 4)
+        $settings = WLM_Core::instance()->get_settings();
+        $default_lead_time = isset($settings['default_lead_time']) ? (int) $settings['default_lead_time'] : 0;
+        
+        if ($default_lead_time > 0) {
+            return $this->add_business_days(current_time('timestamp'), $default_lead_time);
+        }
 
         return current_time('timestamp');
     }

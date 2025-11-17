@@ -186,9 +186,28 @@ class WLM_Core {
      * Ensure cron job is scheduled
      */
     public function ensure_cron_scheduled() {
-        if (!wp_next_scheduled('wlm_daily_availability_update')) {
-            wp_schedule_event(time(), 'daily', 'wlm_daily_availability_update');
-            error_log('[WLM] Cron job scheduled for daily availability updates');
+        $next_scheduled = wp_next_scheduled('wlm_daily_availability_update');
+        $settings = $this->get_settings();
+        $cronjob_time = isset($settings['cronjob_time']) ? $settings['cronjob_time'] : '01:00';
+        
+        // Calculate next run timestamp based on configured time
+        list($hour, $minute) = explode(':', $cronjob_time);
+        $today_run = strtotime('today ' . $cronjob_time, current_time('timestamp'));
+        $tomorrow_run = strtotime('tomorrow ' . $cronjob_time, current_time('timestamp'));
+        
+        // If today's time has passed, schedule for tomorrow
+        $scheduled_time = (current_time('timestamp') < $today_run) ? $today_run : $tomorrow_run;
+        
+        // If not scheduled OR scheduled time doesn't match configured time, reschedule
+        if (!$next_scheduled || abs($next_scheduled - $scheduled_time) > 3600) {
+            // Clear existing schedule
+            if ($next_scheduled) {
+                wp_unschedule_event($next_scheduled, 'wlm_daily_availability_update');
+            }
+            
+            // Schedule new event
+            wp_schedule_event($scheduled_time, 'daily', 'wlm_daily_availability_update');
+            error_log('[WLM] Cron job scheduled for ' . date('Y-m-d H:i:s', $scheduled_time) . ' (configured time: ' . $cronjob_time . ')');
         }
     }
     
@@ -199,26 +218,30 @@ class WLM_Core {
     public function update_product_availability() {
         error_log('[WLM Cronjob] Starting product availability update...');
         
+        // Get ALL products (not just those with _wlm_lead_time_days)
         $args = array(
             'post_type' => array('product', 'product_variation'),
             'posts_per_page' => -1,
-            'post_status' => 'publish',
-            'meta_query' => array(
-                array(
-                    'key' => '_wlm_lead_time_days',
-                    'compare' => 'EXISTS'
-                )
-            )
+            'post_status' => 'publish'
         );
 
         $products = get_posts($args);
         $processed_count = 0;
+        $settings = $this->get_settings();
+        $default_lead_time = isset($settings['default_lead_time']) ? (int) $settings['default_lead_time'] : 0;
         
-        error_log('[WLM Cronjob] Found ' . count($products) . ' products with lead time');
+        error_log('[WLM Cronjob] Found ' . count($products) . ' products total, default_lead_time=' . $default_lead_time . ' days');
 
         foreach ($products as $product) {
+            // Try product-specific lead time first
             $lead_time = get_post_meta($product->ID, '_wlm_lead_time_days', true);
             
+            // Fallback to default lead time if not set
+            if (empty($lead_time) || !is_numeric($lead_time) || $lead_time <= 0) {
+                $lead_time = $default_lead_time;
+            }
+            
+            // Only process if there's a valid lead time (product-specific or default)
             if ($lead_time && is_numeric($lead_time) && $lead_time > 0) {
                 // Calculate date: Today + Lead Time (business days)
                 $calculated_date = $this->calculator->calculate_available_from_date($lead_time);

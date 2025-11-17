@@ -43,6 +43,10 @@ class WLM_Product_Fields {
         ));
 
         // Lead time in days
+        $settings = get_option('wlm_settings', array());
+        $default_lead_time = isset($settings['default_lead_time']) ? $settings['default_lead_time'] : '';
+        $product_lead_time = get_post_meta($product_object->get_id(), '_wlm_lead_time_days', true);
+        
         woocommerce_wp_text_input(array(
             'id' => '_wlm_lead_time_days',
             'label' => __('Lieferzeit (Tage)', 'woo-lieferzeiten-manager'),
@@ -53,7 +57,8 @@ class WLM_Product_Fields {
                 'step' => '1',
                 'min' => '0'
             ),
-            'value' => get_post_meta($product_object->get_id(), '_wlm_lead_time_days', true)
+            'value' => $product_lead_time,
+            'placeholder' => $default_lead_time ? sprintf(__('Standard: %s Tage', 'woo-lieferzeiten-manager'), $default_lead_time) : ''
         ));
         
         // Calculated availability date (read-only)
@@ -77,6 +82,9 @@ class WLM_Product_Fields {
         <?php
 
         // Max visible stock
+        $default_max_visible = isset($settings['max_visible_stock']) ? $settings['max_visible_stock'] : '';
+        $product_max_visible = get_post_meta($product_object->get_id(), '_wlm_max_visible_stock', true);
+        
         woocommerce_wp_text_input(array(
             'id' => '_wlm_max_visible_stock',
             'label' => __('Maximal sichtbarer Bestand', 'woo-lieferzeiten-manager'),
@@ -87,7 +95,8 @@ class WLM_Product_Fields {
                 'step' => '1',
                 'min' => '0'
             ),
-            'value' => get_post_meta($product_object->get_id(), '_wlm_max_visible_stock', true)
+            'value' => $product_max_visible,
+            'placeholder' => $default_max_visible ? sprintf(__('Standard: %s', 'woo-lieferzeiten-manager'), $default_max_visible) : ''
         ));
 
         echo '</div>';
