@@ -2,6 +2,17 @@
 
 All notable changes to WooCommerce Lieferzeiten Manager will be documented in this file.
 
+## [1.16.1] - 2025-11-17
+
+### Fixed
+- **CRITICAL: CSS wurde nicht geladen**
+  - `frontend.css` wurde nicht in `class-wlm-frontend.php` geladen
+  - Nur `frontend-blocks.css` wurde geladen (alte Datei)
+  - Neues Icon-im-Kreis Design konnte nicht angewendet werden
+  - Fix: Lade `frontend.css` statt `frontend-blocks.css`
+
+---
+
 ## [1.16.0] - 2025-11-17
 
 ### Added

@@ -48,28 +48,13 @@ class WLM_Frontend {
     public function enqueue_scripts() {
         if (is_product() || is_cart() || is_checkout()) {
         wp_enqueue_style(
-            'wlm-frontend-blocks',
-            WLM_PLUGIN_URL . 'assets/css/frontend-blocks.css',
-            array(),
-            WLM_VERSION
-        );
-        
-        wp_enqueue_style(
-            'wlm-frontend-shipping',
-            WLM_PLUGIN_URL . 'assets/css/frontend-shipping.css',
+            'wlm-frontend',
+            WLM_PLUGIN_URL . 'assets/css/frontend.css',
             array(),
             WLM_VERSION
         );
             
-            // Enqueue blocks-specific styles for checkout
-            if (is_checkout() || is_cart()) {
-                wp_enqueue_style(
-                    'wlm-frontend-blocks',
-                    WLM_PLUGIN_URL . 'assets/css/frontend-blocks.css',
-                    array('wlm-frontend'),
-                    WLM_VERSION
-                );
-            }
+
 
             // Enqueue simple delivery info script (no React Slot-Fills)
             if (is_checkout() || is_cart()) {
