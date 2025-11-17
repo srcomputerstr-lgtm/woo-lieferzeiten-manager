@@ -127,12 +127,18 @@ class WLM_Blocks_Integration implements IntegrationInterface {
             $express_rates = array();
             
             foreach ($rates as $rate_id => $rate) {
+                error_log('[WLM Package Rates] Processing rate: ' . $rate_id);
                 if (strpos($rate_id, '_express') !== false) {
                     $express_rates[$rate_id] = $rate;
+                    error_log('[WLM Package Rates] -> Classified as EXPRESS');
                 } else {
                     $base_rates[$rate_id] = $rate;
+                    error_log('[WLM Package Rates] -> Classified as BASE');
                 }
             }
+            
+            error_log('[WLM Package Rates] Base rates: ' . implode(', ', array_keys($base_rates)));
+            error_log('[WLM Package Rates] Express rates: ' . implode(', ', array_keys($express_rates)));
             
             // Apply strategy to base methods only
             if (count($base_rates) > 1) {
