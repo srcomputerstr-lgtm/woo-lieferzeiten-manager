@@ -102,8 +102,9 @@ class WLM_Calculator {
             'earliest_formatted' => $this->format_date($earliest_date),
             'latest_formatted' => $this->format_date($latest_date),
             'window_formatted' => $this->format_date_range($earliest_date, $latest_date),
-            'stock_status' => $this->get_stock_status($product),
-            'shipping_method' => $shipping_method
+            'stock_status' => $this->get_stock_status($product, $quantity),
+            'shipping_method' => $shipping_method,
+            'surcharge_notices' => $this->get_applicable_surcharge_notices($product)
         );
 
         $this->cache[$cache_key] = $result;
@@ -1325,5 +1326,144 @@ class WLM_Calculator {
                 // Return all surcharges
                 return $surcharges;
         }
+    }
+    
+    /**
+     * Get applicable surcharge notices for a product
+     *
+     * @param WC_Product $product Product object.
+     * @return array Array of notice strings.
+     */
+    public function get_applicable_surcharge_notices($product) {
+        $notices = array();
+        
+        if (!$product) {
+            return $notices;
+        }
+        
+        $surcharges = get_option('wlm_surcharges', array());
+        
+        if (empty($surcharges)) {
+            return $notices;
+        }
+        
+        foreach ($surcharges as $surcharge) {
+            // Skip if disabled
+            if (isset($surcharge['enabled']) && !$surcharge['enabled']) {
+                continue;
+            }
+            
+            // Skip if no notice for product page
+            if (empty($surcharge['notice_product_page'])) {
+                continue;
+            }
+            
+            // Check if surcharge applies to this product
+            if ($this->check_surcharge_product_conditions($surcharge, $product)) {
+                $notices[] = $surcharge['notice_product_page'];
+            }
+        }
+        
+        return $notices;
+    }
+    
+    /**
+     * Check if surcharge conditions are met for a product
+     *
+     * @param array $surcharge Surcharge configuration.
+     * @param WC_Product $product Product object.
+     * @return bool
+     */
+    private function check_surcharge_product_conditions($surcharge, $product) {
+        // Check weight conditions
+        $weight = $product->get_weight();
+        if ($weight) {
+            if (!empty($surcharge['weight_min']) && $weight < floatval($surcharge['weight_min'])) {
+                return false;
+            }
+            if (!empty($surcharge['weight_max']) && $weight > floatval($surcharge['weight_max'])) {
+                return false;
+            }
+        }
+        
+        // Check cart value conditions (use product price as proxy)
+        $price = $product->get_price();
+        if ($price) {
+            if (!empty($surcharge['cart_value_min']) && $price < floatval($surcharge['cart_value_min'])) {
+                return false;
+            }
+            if (!empty($surcharge['cart_value_max']) && $price > floatval($surcharge['cart_value_max'])) {
+                return false;
+            }
+        }
+        
+        // Check attribute/taxonomy/shipping class conditions
+        if (!empty($surcharge['attribute_conditions']) && is_array($surcharge['attribute_conditions'])) {
+            foreach ($surcharge['attribute_conditions'] as $condition) {
+                $condition_type = $condition['type'] ?? 'attribute';
+                $attr_slug = $condition['attribute'] ?? '';
+                $values = $condition['values'] ?? array();
+                $logic = $condition['logic'] ?? 'at_least_one';
+                
+                if (empty($attr_slug) || empty($values)) {
+                    continue;
+                }
+                
+                // Get product values based on condition type
+                $product_values = array();
+                
+                if ($condition_type === 'shipping_class') {
+                    // Check shipping class
+                    $shipping_class = $product->get_shipping_class();
+                    if ($shipping_class) {
+                        $product_values[] = $shipping_class;
+                    }
+                } elseif ($condition_type === 'taxonomy') {
+                    // Check taxonomy (category, tag)
+                    $product_id = $product->get_parent_id() ? $product->get_parent_id() : $product->get_id();
+                    $terms = wp_get_post_terms($product_id, $attr_slug, array('fields' => 'slugs'));
+                    if (!is_wp_error($terms)) {
+                        $product_values = $terms;
+                    }
+                } else {
+                    // Check product attribute
+                    if ($product->is_type('variation')) {
+                        $variation_attrs = $product->get_attributes();
+                        if (isset($variation_attrs[$attr_slug])) {
+                            $product_values[] = $variation_attrs[$attr_slug];
+                        } else {
+                            // Fallback to parent product
+                            $parent_id = $product->get_parent_id();
+                            if ($parent_id) {
+                                $parent_product = wc_get_product($parent_id);
+                                if ($parent_product) {
+                                    $parent_attr = $parent_product->get_attribute($attr_slug);
+                                    if ($parent_attr) {
+                                        $product_values = array_map('trim', explode(',', $parent_attr));
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        $product_attr = $product->get_attribute($attr_slug);
+                        if ($product_attr) {
+                            $product_values = array_map('trim', explode(',', $product_attr));
+                        }
+                    }
+                }
+                
+                // Check logic
+                $product_values_normalized = array_map('strtolower', array_map('trim', $product_values));
+                $values_normalized = array_map('strtolower', array_map('trim', $values));
+                
+                $condition_met = $this->check_attribute_logic($product_values_normalized, $values_normalized, $logic);
+                
+                if (!$condition_met) {
+                    return false;
+                }
+            }
+        }
+        
+        return true;
     }
 }

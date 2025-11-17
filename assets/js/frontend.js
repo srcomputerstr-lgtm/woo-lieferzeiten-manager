@@ -117,10 +117,27 @@
         renderProductWindow: function(data) {
             var $panel = $('.wlm-pdp-panel');
             
-            // Determine stock status class
+            // Get current quantity from input field
+            var currentQty = parseInt($('input.qty').val()) || 1;
+            
+            // Determine stock status class based on actual stock availability
             var stockClass = 'wlm--in-stock';
-            if (data.stock_status && !data.stock_status.in_stock) {
-                stockClass = 'wlm--restock';
+            if (data.stock_status) {
+                if (!data.stock_status.in_stock) {
+                    // Out of stock or backorder
+                    stockClass = 'wlm--restock';
+                } else if (data.stock_status.status === 'instock') {
+                    // Check if requested quantity exceeds available stock
+                    var requestedQty = currentQty;
+                    var availableQty = data.stock_status.quantity || 999;
+                    
+                    if (requestedQty > availableQty) {
+                        // Not enough stock for requested quantity
+                        stockClass = 'wlm--out-of-stock';
+                    } else {
+                        stockClass = 'wlm--in-stock';
+                    }
+                }
             }
             
             // Get shipping icon (default: truck)
@@ -143,8 +160,8 @@
             // Line 2: Shipping method
             if (data.shipping_method) {
                 html += '<div class="wlm-line wlm-line-shipping">';
-                html += 'Wysłka za pośrednictwem: ';
-                html += '<strong>(' + (data.shipping_method.title || 'Paketdienst') + ')</strong>';
+                html += 'Versand via: ';
+                html += '<strong>' + (data.shipping_method.title || 'Paketdienst') + '</strong>';
                 if (data.shipping_method.cost_info) {
                     html += ' <span class="wlm-tooltip" title="' + data.shipping_method.cost_info + '">';
                     html += this.getIconSVG('info');
@@ -156,10 +173,20 @@
             // Line 3: Delivery window
             if (data.window_formatted) {
                 html += '<div class="wlm-line wlm-line-delivery">';
-                html += 'Szacowana dostawa: ';
+                html += 'Voraussichtliche Lieferung: ';
                 html += this.getIconSVG('calendar', 'wlm-calendar-icon');
                 html += ' <strong>' + data.window_formatted + '</strong>';
                 html += '</div>';
+            }
+            
+            // Surcharge notices
+            if (data.surcharge_notices && data.surcharge_notices.length > 0) {
+                for (var i = 0; i < data.surcharge_notices.length; i++) {
+                    html += '<div class="wlm-line wlm-line-surcharge">';
+                    html += this.getIconSVG('alert');
+                    html += ' ' + data.surcharge_notices[i];
+                    html += '</div>';
+                }
             }
             
             html += '</div>';
