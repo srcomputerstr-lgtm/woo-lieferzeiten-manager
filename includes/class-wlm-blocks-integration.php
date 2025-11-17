@@ -189,11 +189,10 @@ class WLM_Blocks_Integration implements IntegrationInterface {
                     $filtered_rates = array($selected_base => $base_rates[$selected_base]);
                     
                     // Keep express variant of selected method
-                    foreach ($express_rates as $express_id => $express_rate) {
-                        if (strpos($express_id, $selected_base) === 0) {
-                            $filtered_rates[$express_id] = $express_rate;
-                            error_log('[WLM Package Rates] Keeping express variant: ' . $express_id);
-                        }
+                    $expected_express_id = $selected_base . '_express';
+                    if (isset($express_rates[$expected_express_id])) {
+                        $filtered_rates[$expected_express_id] = $express_rates[$expected_express_id];
+                        error_log('[WLM Package Rates] Keeping express variant: ' . $expected_express_id);
                     }
                     
                     $rates = $filtered_rates;

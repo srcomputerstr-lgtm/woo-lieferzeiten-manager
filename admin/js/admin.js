@@ -514,21 +514,65 @@
             html += '<div class="inside">';
             html += '<table class="form-table"><tbody>';
             
+            // Name
             html += '<tr><th scope="row"><label>Name</label></th>';
-            html += '<td><input type="text" name="wlm_surcharges[' + index + '][name]" value="" class="regular-text wlm-surcharge-name-input"></td></tr>';
+            html += '<td><input type="text" name="wlm_surcharges[' + index + '][name]" value="" class="regular-text wlm-surcharge-name-input">';
+            html += '<p class="description">Interner Name des Zuschlags (nicht sichtbar für Kunden)</p></td></tr>';
             
+            // Aktiviert
             html += '<tr><th scope="row">Aktiviert</th>';
             html += '<td><label><input type="checkbox" name="wlm_surcharges[' + index + '][enabled]" value="1" checked> Zuschlag aktivieren</label></td></tr>';
             
-            html += '<tr><th scope="row"><label>Typ</label></th>';
-            html += '<td><select name="wlm_surcharges[' + index + '][type]">';
-            html += '<option value="fixed">Fest</option>';
-            html += '<option value="percentage">Prozentual</option>';
+            // Priorität
+            html += '<tr><th scope="row"><label>Priorität</label></th>';
+            html += '<td><input type="number" name="wlm_surcharges[' + index + '][priority]" value="10" min="0" step="1" class="small-text">';
+            html += '<p class="description">Niedrigere Zahlen = höhere Priorität (für "Erster Treffer" Strategie)</p></td></tr>';
+            
+            // Kostentyp
+            html += '<tr><th scope="row"><label>Kostentyp</label></th>';
+            html += '<td><select name="wlm_surcharges[' + index + '][cost_type]" class="regular-text">';
+            html += '<option value="flat">Pauschalbetrag (€)</option>';
+            html += '<option value="percentage">Prozentual (%)</option>';
             html += '</select></td></tr>';
             
+            // Betrag
             html += '<tr><th scope="row"><label>Betrag</label></th>';
-            html += '<td><input type="number" name="wlm_surcharges[' + index + '][amount]" value="0" min="0" step="0.01" class="small-text"></td></tr>';
+            html += '<td><input type="number" name="wlm_surcharges[' + index + '][amount]" value="0" min="0" step="0.01" class="small-text">';
+            html += '<p class="description">Zuschlag in € oder % (je nach Kostentyp)</p></td></tr>';
             
+            // Charge Per
+            html += '<tr><th scope="row"><label>Berechnung pro</label></th>';
+            html += '<td><select name="wlm_surcharges[' + index + '][charge_per]" class="regular-text">';
+            html += '<option value="cart">Warenkorb (einmalig)</option>';
+            html += '<option value="shipping_class">Versandklasse</option>';
+            html += '<option value="product_category">Produktkategorie</option>';
+            html += '<option value="product">Produkt</option>';
+            html += '<option value="cart_item">Warenkorb-Position</option>';
+            html += '<option value="quantity_unit">Mengeneinheit</option>';
+            html += '</select>';
+            html += '<p class="description">Wie oft wird der Zuschlag berechnet?</p></td></tr>';
+            
+            // Gewicht Min/Max
+            html += '<tr><th scope="row"><label>Gewicht Min/Max (kg)</label></th>';
+            html += '<td><input type="number" name="wlm_surcharges[' + index + '][weight_min]" value="" min="0" step="0.01" class="small-text" placeholder="Min"> – ';
+            html += '<input type="number" name="wlm_surcharges[' + index + '][weight_max]" value="" min="0" step="0.01" class="small-text" placeholder="Max">';
+            html += '<p class="description">Leer lassen für keine Beschränkung</p></td></tr>';
+            
+            // Warenkorbwert Min/Max
+            html += '<tr><th scope="row"><label>Warenkorbwert Min/Max (€)</label></th>';
+            html += '<td><input type="number" name="wlm_surcharges[' + index + '][cart_value_min]" value="" min="0" step="0.01" class="small-text" placeholder="Min"> – ';
+            html += '<input type="number" name="wlm_surcharges[' + index + '][cart_value_max]" value="" min="0" step="0.01" class="small-text" placeholder="Max">';
+            html += '<p class="description">Leer lassen für keine Beschränkung</p></td></tr>';
+            
+            // Bedingungen
+            html += '<tr><th scope="row"><label>Produktattribute / Taxonomien / Versandklassen</label></th>';
+            html += '<td><div class="wlm-attribute-conditions" data-surcharge-index="' + index + '">';
+            html += '<p class="description">Bedingungen für Produktattribute, Taxonomien oder Versandklassen</p>';
+            html += '</div>';
+            html += '<button type="button" class="button wlm-add-attribute-condition" data-surcharge-index="' + index + '">+ Bedingung hinzufügen</button>';
+            html += '<p class="description">Zuschlag wird nur angewendet, wenn ALLE Bedingungen erfüllt sind.</p></td></tr>';
+            
+            // Entfernen Button
             html += '<tr><td colspan="2">';
             html += '<input type="hidden" name="wlm_surcharges[' + index + '][id]" value="' + id + '">';
             html += '<button type="button" class="button wlm-remove-surcharge">Zuschlag entfernen</button>';

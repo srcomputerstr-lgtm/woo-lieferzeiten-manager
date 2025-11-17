@@ -107,6 +107,9 @@ class WLM_Core {
         // Add cron job action
         add_action('wlm_daily_availability_update', array($this, 'update_product_availability'));
         
+        // Ensure cron job is scheduled
+        add_action('init', array($this, 'ensure_cron_scheduled'));
+        
         // Allow HTML in shipping method labels
         add_filter('woocommerce_cart_shipping_method_full_label', array($this, 'allow_html_in_shipping_label'), 10, 2);
         
@@ -179,6 +182,16 @@ class WLM_Core {
         return update_option('wlm_settings', $settings);
     }
 
+    /**
+     * Ensure cron job is scheduled
+     */
+    public function ensure_cron_scheduled() {
+        if (!wp_next_scheduled('wlm_daily_availability_update')) {
+            wp_schedule_event(time(), 'daily', 'wlm_daily_availability_update');
+            error_log('[WLM] Cron job scheduled for daily availability updates');
+        }
+    }
+    
     /**
      * Update product availability (cron job)
      * Calculates and updates the calculated availability date for all products with lead time

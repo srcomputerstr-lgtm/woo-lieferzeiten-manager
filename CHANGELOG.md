@@ -2,6 +2,37 @@
 
 All notable changes to WooCommerce Lieferzeiten Manager will be documented in this file.
 
+## [1.13.1] - 2025-11-16
+
+### Fixed
+- **CRITICAL: Shipping Selection Strategy funktioniert jetzt**
+  - JavaScript sammelt jetzt `wlm_shipping_selection_strategy` und `wlm_surcharge_application_strategy`
+  - Strategies werden korrekt per AJAX gespeichert
+  - "Teuerste", "Günstigste", "Nach Priorität" funktionieren jetzt im Frontend
+
+- **Express-Methoden Filterung korrigiert**
+  - Express-Varianten werden jetzt korrekt mit Hauptmethode angezeigt
+  - Präzise Zuordnung via `_express` Suffix statt `strpos()`
+  - Verhindert falsche Zuordnung bei ähnlichen IDs
+
+- **Cronjob wird automatisch aktiviert**
+  - `ensure_cron_scheduled()` prüft bei jedem Plugin-Load
+  - Cronjob wird registriert, falls nicht vorhanden
+  - Behebt Problem dass Cronjob nur bei Aktivierung registriert wurde
+
+- **Zuschläge-UI komplett**
+  - JavaScript `getSurchargeTemplate()` erstellt jetzt vollständige UI
+  - Alle Felder werden angezeigt: Priorität, Cost Type, Charge Per, Gewicht, Warenkorbwert, Bedingungen
+  - "+ Bedingung hinzufügen" Button funktioniert
+
+### Technical
+- Admin.js: Strategies werden in `saveSettings()` gesammelt
+- Blocks Integration: Express-ID Matching via exakte Suffix-Prüfung
+- Core: `ensure_cron_scheduled()` Hook auf `init`
+- Admin.js: `getSurchargeTemplate()` mit allen Feldern erweitert
+
+---
+
 ## [1.13.0] - 2025-11-15
 
 ### 🎉 Vollständige Zuschläge-Implementierung
