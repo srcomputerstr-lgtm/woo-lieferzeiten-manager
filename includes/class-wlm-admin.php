@@ -28,6 +28,9 @@ class WLM_Admin {
         
         // AJAX handler for running cronjob manually
         add_action('wp_ajax_wlm_run_cronjob', array($this, 'ajax_run_cronjob'));
+        
+        // AJAX handler for getting shipping classes
+        add_action('wp_ajax_wlm_get_shipping_classes', array($this, 'ajax_get_shipping_classes'));
     }
 
     /**
@@ -695,5 +698,35 @@ class WLM_Admin {
             error_log('[WLM AJAX] Cronjob error: ' . $e->getMessage());
             wp_send_json_error('Fehler beim Ausführen des Cronjobs: ' . $e->getMessage());
         }
+    }
+    
+    /**
+     * AJAX handler for getting shipping classes
+     */
+    public function ajax_get_shipping_classes() {
+        // Verify nonce
+        if (!isset($_GET['nonce']) || !wp_verify_nonce($_GET['nonce'], 'wlm-admin-nonce')) {
+            wp_send_json_error('Invalid nonce');
+            return;
+        }
+        
+        // Check permissions
+        if (!current_user_can('manage_woocommerce')) {
+            wp_send_json_error('Insufficient permissions');
+            return;
+        }
+        
+        // Get shipping classes
+        $shipping_classes = WC()->shipping()->get_shipping_classes();
+        $result = array();
+        
+        foreach ($shipping_classes as $class) {
+            $result[] = array(
+                'value' => $class->slug,
+                'label' => $class->name
+            );
+        }
+        
+        wp_send_json_success($result);
     }
 }

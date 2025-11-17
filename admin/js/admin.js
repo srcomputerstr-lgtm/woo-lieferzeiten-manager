@@ -932,11 +932,51 @@
                     $select.select2('destroy');
                 }
                 $select.empty();
-                $select.select2({
-                    placeholder: 'Versandklassen-Slugs eingeben (z.B. langgut)...',
-                    tags: true,
-                    allowClear: true,
-                    width: '100%'
+                
+                // Load shipping classes as options
+                $.ajax({
+                    url: wlmAdmin.ajaxUrl,
+                    type: 'GET',
+                    data: {
+                        action: 'wlm_get_shipping_classes',
+                        nonce: wlmAdmin.nonce
+                    },
+                    success: function(response) {
+                        if (response.success && response.data) {
+                            var options = [];
+                            $.each(response.data, function(i, item) {
+                                options.push({
+                                    id: item.value,
+                                    text: item.label + ' (' + item.value + ')'
+                                });
+                            });
+                            
+                            $select.select2({
+                                placeholder: 'Versandklassen wählen oder eingeben...',
+                                tags: true,
+                                allowClear: true,
+                                width: '100%',
+                                data: options
+                            });
+                        } else {
+                            // Fallback if AJAX fails
+                            $select.select2({
+                                placeholder: 'Versandklassen-Slugs eingeben (z.B. langgut)...',
+                                tags: true,
+                                allowClear: true,
+                                width: '100%'
+                            });
+                        }
+                    },
+                    error: function() {
+                        // Fallback if AJAX fails
+                        $select.select2({
+                            placeholder: 'Versandklassen-Slugs eingeben (z.B. langgut)...',
+                            tags: true,
+                            allowClear: true,
+                            width: '100%'
+                        });
+                    }
                 });
             } else {
                 // Show attribute select for attributes and taxonomies

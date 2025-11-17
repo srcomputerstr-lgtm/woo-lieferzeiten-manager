@@ -104,7 +104,7 @@ class WLM_Calculator {
             'window_formatted' => $this->format_date_range($earliest_date, $latest_date),
             'stock_status' => $this->get_stock_status($product, $quantity),
             'shipping_method' => $shipping_method,
-            'surcharge_notices' => $this->get_applicable_surcharge_notices($product)
+            'surcharge_notices' => $this->get_applicable_surcharge_notices($product, $quantity)
         );
 
         $this->cache[$cache_key] = $result;
@@ -1338,9 +1338,10 @@ class WLM_Calculator {
      * Get applicable surcharge notices for a product
      *
      * @param WC_Product $product Product object.
+     * @param int $quantity Quantity to check (default: 1).
      * @return array Array of notice strings.
      */
-    public function get_applicable_surcharge_notices($product) {
+    public function get_applicable_surcharge_notices($product, $quantity = 1) {
         $notices = array();
         
         if (!$product) {
@@ -1365,7 +1366,7 @@ class WLM_Calculator {
             }
             
             // Check if surcharge applies to this product
-            if ($this->check_surcharge_product_conditions($surcharge, $product)) {
+            if ($this->check_surcharge_product_conditions($surcharge, $product, $quantity)) {
                 $notices[] = $surcharge['notice_product_page'];
             }
         }
@@ -1378,27 +1379,30 @@ class WLM_Calculator {
      *
      * @param array $surcharge Surcharge configuration.
      * @param WC_Product $product Product object.
+     * @param int $quantity Quantity to check (default: 1).
      * @return bool
      */
-    private function check_surcharge_product_conditions($surcharge, $product) {
-        // Check weight conditions
+    private function check_surcharge_product_conditions($surcharge, $product, $quantity = 1) {
+        // Check weight conditions (multiply by quantity for total weight)
         $weight = $product->get_weight();
         if ($weight) {
-            if (!empty($surcharge['weight_min']) && $weight < floatval($surcharge['weight_min'])) {
+            $total_weight = $weight * $quantity;
+            if (!empty($surcharge['weight_min']) && $total_weight < floatval($surcharge['weight_min'])) {
                 return false;
             }
-            if (!empty($surcharge['weight_max']) && $weight > floatval($surcharge['weight_max'])) {
+            if (!empty($surcharge['weight_max']) && $total_weight > floatval($surcharge['weight_max'])) {
                 return false;
             }
         }
         
-        // Check cart value conditions (use product price as proxy)
+        // Check cart value conditions (multiply by quantity for total price)
         $price = $product->get_price();
         if ($price) {
-            if (!empty($surcharge['cart_value_min']) && $price < floatval($surcharge['cart_value_min'])) {
+            $total_price = $price * $quantity;
+            if (!empty($surcharge['cart_value_min']) && $total_price < floatval($surcharge['cart_value_min'])) {
                 return false;
             }
-            if (!empty($surcharge['cart_value_max']) && $price > floatval($surcharge['cart_value_max'])) {
+            if (!empty($surcharge['cart_value_max']) && $total_price > floatval($surcharge['cart_value_max'])) {
                 return false;
             }
         }
