@@ -2,6 +2,26 @@
 
 All notable changes to WooCommerce Lieferzeiten Manager will be documented in this file.
 
+## [1.14.2] - 2025-11-17
+
+### Fixed
+- **CRITICAL: Versandarten wurden gelöscht beim Speichern von Zuschlägen**
+  - Problem: JavaScript sammelte ALLE Tabs, auch leere - PHP speicherte leere Arrays
+  - Lösung: PHP speichert nur noch nicht-leere Arrays
+  - Verhindert versehentliches Löschen von Daten
+
+- **CRITICAL: Zuschläge-Bedingungen wurden nicht gespeichert**
+  - Problem: Zuschläge verwendeten fehlerhafte manuelle Sammlung
+  - Lösung: Zuschläge verwenden jetzt exakt die gleiche Logik wie Versandarten
+  - Alle Felder werden automatisch geparst (verschachtelte Arrays, etc.)
+  - `attribute_conditions` werden jetzt korrekt gespeichert und geladen
+
+### Technical
+- class-wlm-admin.php: `!empty()` Check vor `update_option()` für shipping_methods und surcharges
+- admin.js: Zuschläge-Sammlung verwendet jetzt identische Parsing-Logik wie Versandarten
+
+---
+
 ## [1.14.1] - 2025-11-17
 
 ### Fixed

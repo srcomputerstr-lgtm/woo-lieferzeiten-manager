@@ -172,45 +172,67 @@
                 }
             });
             
-            // Collect wlm_surcharges
+            // Collect wlm_surcharges (using same logic as shipping methods)
             formData.wlm_surcharges = [];
             $('.wlm-surcharge-item').each(function() {
                 var surcharge = {};
-                $(this).find('[name^="wlm_surcharges"]').not('[name*="attribute_conditions"]').each(function() {
+                $(this).find('[name^="wlm_surcharges"]').each(function() {
                     var name = $(this).attr('name');
-                    var match = name.match(/wlm_surcharges\[\d+\]\[(.+)\]/);
-                    if (match) {
-                        var key = match[1];
-                        if ($(this).is(':checkbox')) {
-                            surcharge[key] = $(this).is(':checked');
+                    var value = $(this).is(':checkbox') ? $(this).is(':checked') : $(this).val();
+                    
+                    // Parse: wlm_surcharges[0][path]
+                    // Extract path after surcharge index
+                    var surchargeMatch = name.match(/wlm_surcharges\[\d+\](.*)/);
+                    if (!surchargeMatch) return;
+                    
+                    var fullPath = surchargeMatch[1];
+                    if (!fullPath) return;
+                    
+                    // Parse all bracket segments: [key1][key2][key3][]
+                    var segments = [];
+                    var segmentRegex = /\[([^\]]+)\]/g;
+                    var segmentMatch;
+                    while ((segmentMatch = segmentRegex.exec(fullPath)) !== null) {
+                        segments.push(segmentMatch[1]);
+                    }
+                    
+                    if (segments.length === 0) return;
+                    
+                    // Build nested structure
+                    var current = surcharge;
+                    for (var i = 0; i < segments.length; i++) {
+                        var segment = segments[i];
+                        var isLast = (i === segments.length - 1);
+                        var nextSegment = isLast ? null : segments[i + 1];
+                        
+                        // Check if this is an array index (numeric)
+                        var isIndex = /^\d+$/.test(segment);
+                        
+                        // Check if next segment is empty (indicates array notation [])
+                        var isArrayNotation = (segment === '');
+                        
+                        if (isArrayNotation) {
+                            // This is [], skip it - value should be an array already
+                            break;
+                        }
+                        
+                        if (isLast) {
+                            // Last segment - assign value
+                            current[segment] = value;
                         } else {
-                            surcharge[key] = $(this).val();
-                        }
-                    }
-                });
-                
-                // Collect attribute_conditions separately
-                surcharge['attribute_conditions'] = [];
-                $(this).find('.wlm-condition-item').each(function() {
-                    var condition = {};
-                    $(this).find('[name*="attribute_conditions"]').each(function() {
-                        var name = $(this).attr('name');
-                        // Extract field name from: wlm_surcharges[X][attribute_conditions][Y][FIELD]
-                        var match = name.match(/attribute_conditions\]\[\d+\]\[([^\]]+)\]/);
-                        if (match) {
-                            var field = match[1];
-                            if ($(this).is('select[multiple]')) {
-                                condition[field] = $(this).val() || [];
-                            } else {
-                                condition[field] = $(this).val();
+                            // Not last - create nested structure
+                            if (!current[segment]) {
+                                // Check if next segment is numeric (array index)
+                                if (/^\d+$/.test(nextSegment)) {
+                                    current[segment] = [];
+                                } else {
+                                    current[segment] = {};
+                                }
                             }
+                            current = current[segment];
                         }
-                    });
-                    if (Object.keys(condition).length > 0) {
-                        surcharge['attribute_conditions'].push(condition);
                     }
                 });
-                
                 if (Object.keys(surcharge).length > 0) {
                     formData.wlm_surcharges.push(surcharge);
                 }

@@ -408,8 +408,8 @@ class WLM_Admin {
             update_option('wlm_shipping_selection_strategy', sanitize_text_field($data['wlm_shipping_selection_strategy']));
         }
         
-        // Save shipping methods
-        if (isset($data['wlm_shipping_methods'])) {
+        // Save shipping methods (only if not empty to prevent accidental deletion)
+        if (isset($data['wlm_shipping_methods']) && !empty($data['wlm_shipping_methods'])) {
             // Normalize data: Convert flat keys to nested arrays
             foreach ($data['wlm_shipping_methods'] as $method_index => &$method) {
                 // Fix flat keys like "attribute_conditions][0][logic" to nested structure
@@ -502,8 +502,8 @@ class WLM_Admin {
             error_log('After save, wlm_shipping_methods from DB: ' . print_r(get_option('wlm_shipping_methods'), true));
         }
         
-        // Save surcharges
-        if (isset($data['wlm_surcharges'])) {
+        // Save surcharges (only if not empty to prevent accidental deletion)
+        if (isset($data['wlm_surcharges']) && !empty($data['wlm_surcharges'])) {
             error_log('Saving wlm_surcharges: ' . print_r($data['wlm_surcharges'], true));
             
             // Normalize data: Convert flat keys to nested arrays (same as shipping methods)
