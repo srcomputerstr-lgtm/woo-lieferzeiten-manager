@@ -250,6 +250,73 @@ $debug_mode = isset($settings['debug_mode']) ? $settings['debug_mode'] : false;
 
             <tr>
                 <th scope="row">
+                    <label><?php esc_html_e('Externer Cronjob (All-Inkl, etc.)', 'woo-lieferzeiten-manager'); ?></label>
+                </th>
+                <td>
+                    <?php
+                    // Generate secret key if not exists
+                    $secret_key = isset($settings['cronjob_secret_key']) ? $settings['cronjob_secret_key'] : '';
+                    if (empty($secret_key)) {
+                        $secret_key = wp_generate_password(32, false, false);
+                        $settings['cronjob_secret_key'] = $secret_key;
+                        update_option('wlm_settings', $settings);
+                    }
+                    
+                    $cronjob_url = home_url('/wlm-cronjob/?key=' . $secret_key);
+                    ?>
+                    <p class="description" style="margin-bottom: 10px;">
+                        <?php esc_html_e('Falls WordPress Cron nicht zuverlässig funktioniert, kannst du einen externen Cronjob einrichten (z.B. bei All-Inkl).', 'woo-lieferzeiten-manager'); ?>
+                    </p>
+                    
+                    <div style="background: #f0f0f1; padding: 15px; border-radius: 4px; margin-bottom: 10px;">
+                        <strong><?php esc_html_e('Cronjob-URL:', 'woo-lieferzeiten-manager'); ?></strong><br>
+                        <input type="text" 
+                               id="wlm-cronjob-url" 
+                               value="<?php echo esc_attr($cronjob_url); ?>" 
+                               readonly 
+                               style="width: 100%; margin-top: 5px; font-family: monospace; font-size: 12px;"
+                               onclick="this.select();">
+                        <button type="button" 
+                                class="button button-secondary" 
+                                style="margin-top: 5px;"
+                                onclick="navigator.clipboard.writeText(document.getElementById('wlm-cronjob-url').value); alert('URL kopiert!');">  
+                            <?php esc_html_e('URL kopieren', 'woo-lieferzeiten-manager'); ?>
+                        </button>
+                    </div>
+                    
+                    <div style="background: #fff3cd; padding: 15px; border-left: 4px solid #ffc107; margin-bottom: 10px;">
+                        <strong>⚠️ <?php esc_html_e('Wichtig:', 'woo-lieferzeiten-manager'); ?></strong><br>
+                        <?php esc_html_e('Diese URL enthält einen geheimen Schlüssel. Teile sie nicht öffentlich!', 'woo-lieferzeiten-manager'); ?><br>
+                        <?php esc_html_e('Bei All-Inkl: Gehe zu "Cronjobs" und füge die URL hinzu. Empfohlen: Täglich zur gewünschten Zeit.', 'woo-lieferzeiten-manager'); ?>
+                    </div>
+                    
+                    <details style="margin-top: 10px;">
+                        <summary style="cursor: pointer; font-weight: bold;"><?php esc_html_e('Anleitung für All-Inkl Cronjob', 'woo-lieferzeiten-manager'); ?></summary>
+                        <div style="padding: 10px; background: #f9f9f9; margin-top: 10px; border-radius: 4px;">
+                            <ol style="margin-left: 20px;">
+                                <li><?php esc_html_e('Logge dich in dein All-Inkl KAS ein', 'woo-lieferzeiten-manager'); ?></li>
+                                <li><?php esc_html_e('Gehe zu "Tools" → "Cronjobs"', 'woo-lieferzeiten-manager'); ?></li>
+                                <li><?php esc_html_e('Klicke auf "Neuen Cronjob anlegen"', 'woo-lieferzeiten-manager'); ?></li>
+                                <li><?php esc_html_e('Wähle "URL aufrufen (wget)"', 'woo-lieferzeiten-manager'); ?></li>
+                                <li><?php esc_html_e('Füge die obige URL ein', 'woo-lieferzeiten-manager'); ?></li>
+                                <li><?php esc_html_e('Stelle die Zeit ein (z.B. täglich um 18:00 Uhr)', 'woo-lieferzeiten-manager'); ?></li>
+                                <li><?php esc_html_e('Speichern – Fertig!', 'woo-lieferzeiten-manager'); ?></li>
+                            </ol>
+                        </div>
+                    </details>
+                    
+                    <p style="margin-top: 10px;">
+                        <button type="button" 
+                                class="button button-secondary"
+                                onclick="window.open(document.getElementById('wlm-cronjob-url').value, '_blank'); alert('Cronjob-URL wurde in neuem Tab geöffnet. Du solltest eine JSON-Antwort sehen.');">  
+                            <?php esc_html_e('URL testen', 'woo-lieferzeiten-manager'); ?>
+                        </button>
+                    </p>
+                </td>
+            </tr>
+
+            <tr>
+                <th scope="row">
                     <?php esc_html_e('Debug-Modus', 'woo-lieferzeiten-manager'); ?>
                 </th>
                 <td>

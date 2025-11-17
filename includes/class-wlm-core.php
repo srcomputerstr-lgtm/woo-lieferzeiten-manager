@@ -110,6 +110,10 @@ class WLM_Core {
         // Ensure cron job is scheduled
         add_action('init', array($this, 'ensure_cron_scheduled'));
         
+        // Custom endpoint for external cronjob execution
+        add_action('init', array($this, 'register_cronjob_endpoint'));
+        add_action('template_redirect', array($this, 'handle_cronjob_endpoint'));
+        
         // Allow HTML in shipping method labels
         add_filter('woocommerce_cart_shipping_method_full_label', array($this, 'allow_html_in_shipping_label'), 10, 2);
         
@@ -381,5 +385,59 @@ class WLM_Core {
         if ($this->is_debug_mode() && current_user_can('manage_options')) {
             error_log('WLM Debug: ' . $message . ' | Context: ' . print_r($context, true));
         }
+    }
+
+    /**
+     * Register custom endpoint for cronjob execution
+     */
+    public function register_cronjob_endpoint() {
+        add_rewrite_rule('^wlm-cronjob/?$', 'index.php?wlm_cronjob=1', 'top');
+        add_rewrite_tag('%wlm_cronjob%', '([^&]+)');
+    }
+
+    /**
+     * Handle cronjob endpoint request
+     */
+    public function handle_cronjob_endpoint() {
+        if (!get_query_var('wlm_cronjob')) {
+            return;
+        }
+
+        // Get secret key from settings
+        $settings = $this->get_settings();
+        $secret_key = isset($settings['cronjob_secret_key']) ? $settings['cronjob_secret_key'] : '';
+        
+        // If no secret key is set, generate one
+        if (empty($secret_key)) {
+            $secret_key = wp_generate_password(32, false, false);
+            $settings['cronjob_secret_key'] = $secret_key;
+            $this->update_settings($settings);
+        }
+
+        // Verify secret key
+        $provided_key = isset($_GET['key']) ? sanitize_text_field($_GET['key']) : '';
+        
+        if (empty($provided_key) || $provided_key !== $secret_key) {
+            status_header(403);
+            wp_die('Forbidden: Invalid secret key', 'WLM Cronjob', array('response' => 403));
+        }
+
+        // Execute the cronjob
+        error_log('[WLM] Cronjob triggered via custom endpoint');
+        $this->update_product_availability();
+
+        // Return success response
+        status_header(200);
+        header('Content-Type: application/json');
+        
+        $response = array(
+            'success' => true,
+            'message' => 'WLM Cronjob executed successfully',
+            'timestamp' => current_time('mysql'),
+            'processed_count' => get_option('wlm_cronjob_last_count', 0)
+        );
+        
+        echo json_encode($response);
+        exit;
     }
 }
