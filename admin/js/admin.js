@@ -12,7 +12,26 @@
             this.initPostboxes();
             this.initSortable();
             this.initSelect2();
+            this.initConditionTypes();
             this.bindEvents();
+        },
+        
+        /**
+         * Initialize condition types on page load
+         */
+        initConditionTypes: function() {
+            // Handle all existing condition type selects
+            $('.wlm-condition-type-select').each(function() {
+                var $select = $(this);
+                var type = $select.val();
+                var $conditionRow = $select.closest('.wlm-attribute-condition-row');
+                var $attributeSelect = $conditionRow.find('.wlm-attribute-select');
+                
+                if (type === 'shipping_class') {
+                    // Hide attribute select for shipping class
+                    $attributeSelect.hide();
+                }
+            });
         },
 
         /**

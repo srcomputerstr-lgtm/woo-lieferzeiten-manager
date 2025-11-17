@@ -663,16 +663,20 @@ class WLM_Calculator {
                 }
             } else {
                 // Enough stock available
+                // Store actual stock for internal calculations
+                $result['actual_stock'] = $stock_quantity;
+                
+                // Display message based on max_visible_stock (for customer display only)
                 if ($stock_quantity > $max_visible) {
                     $result['quantity'] = $max_visible;
                     $result['message'] = sprintf(
-                        __('Ponad %d sztuk w magazynie', 'woo-lieferzeiten-manager'),
+                        __('Mehr als %d auf Lager', 'woo-lieferzeiten-manager'),
                         $max_visible
                     );
                 } else {
                     $result['quantity'] = $stock_quantity;
                     $result['message'] = sprintf(
-                        __('Ponad %d sztuk w magazynie', 'woo-lieferzeiten-manager'),
+                        _n('%d Stück auf Lager', '%d Stück auf Lager', $stock_quantity, 'woo-lieferzeiten-manager'),
                         $stock_quantity
                     );
                 }
@@ -1399,15 +1403,23 @@ class WLM_Calculator {
         
         // Check attribute/taxonomy/shipping class conditions
         if (!empty($surcharge['attribute_conditions']) && is_array($surcharge['attribute_conditions'])) {
-            foreach ($surcharge['attribute_conditions'] as $condition) {
+            // Filter out empty conditions
+            $valid_conditions = array_filter($surcharge['attribute_conditions'], function($condition) {
+                $attr_slug = $condition['attribute'] ?? '';
+                $values = $condition['values'] ?? array();
+                return !empty($attr_slug) && !empty($values);
+            });
+            
+            // If no valid conditions, skip this surcharge
+            if (empty($valid_conditions)) {
+                return false;
+            }
+            
+            foreach ($valid_conditions as $condition) {
                 $condition_type = $condition['type'] ?? 'attribute';
                 $attr_slug = $condition['attribute'] ?? '';
                 $values = $condition['values'] ?? array();
                 $logic = $condition['logic'] ?? 'at_least_one';
-                
-                if (empty($attr_slug) || empty($values)) {
-                    continue;
-                }
                 
                 // Get product values based on condition type
                 $product_values = array();

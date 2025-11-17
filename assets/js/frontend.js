@@ -127,11 +127,11 @@
                     // Out of stock or backorder
                     stockClass = 'wlm--restock';
                 } else if (data.stock_status.status === 'instock') {
-                    // Check if requested quantity exceeds available stock
+                    // Check if requested quantity exceeds ACTUAL available stock (not max_visible)
                     var requestedQty = currentQty;
-                    var availableQty = data.stock_status.quantity || 999;
+                    var actualStock = data.stock_status.actual_stock || data.stock_status.quantity || 999;
                     
-                    if (requestedQty > availableQty) {
+                    if (requestedQty > actualStock) {
                         // Not enough stock for requested quantity
                         stockClass = 'wlm--out-of-stock';
                     } else {
