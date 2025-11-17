@@ -342,21 +342,23 @@
          * Initialize postboxes
          */
         initPostboxes: function() {
-            // Toggle postbox
-            $('.postbox .handlediv').off('click').on('click', function() {
+            // Toggle postbox using event delegation
+            $(document).off('click', '.postbox .handlediv').on('click', '.postbox .handlediv', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                
                 var $postbox = $(this).closest('.postbox');
                 var $inside = $postbox.find('.inside');
                 
-                // Toggle visibility
-                $inside.slideToggle();
-                
-                // Toggle closed class
+                // Toggle closed class first
                 $postbox.toggleClass('closed');
                 
+                // Then toggle visibility
+                $inside.slideToggle(200);
+                
                 // Update aria-expanded
-                $(this).attr('aria-expanded', function(i, attr) {
-                    return attr === 'true' ? 'false' : 'true';
-                });
+                var isExpanded = !$postbox.hasClass('closed');
+                $(this).attr('aria-expanded', isExpanded);
             });
         },
 
