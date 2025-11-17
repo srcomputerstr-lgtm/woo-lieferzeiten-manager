@@ -6,7 +6,7 @@
 (function() {
     'use strict';
     
-    console.log('[WLM CSS] Script loaded');
+    (window.wlm_params?.debug) && console.log('[WLM CSS] Script loaded');
     
     // Create style element for dynamic CSS rules
     let styleElement = null;
@@ -15,17 +15,17 @@
      * Add CSS ::after rules for delivery info
      */
     function addDeliveryInfoCSS() {
-        console.log('[WLM CSS] Adding delivery info CSS rules...');
+        (window.wlm_params?.debug) && console.log('[WLM CSS] Adding delivery info CSS rules...');
         
         // Get delivery info from Store API Extension
         if (!window.wp || !window.wp.data) {
-            console.log('[WLM CSS] wp.data not available yet');
+            (window.wlm_params?.debug) && console.log('[WLM CSS] wp.data not available yet');
             return;
         }
         
         const store = window.wp.data.select('wc/store/cart');
         if (!store) {
-            console.log('[WLM CSS] Store not available yet');
+            (window.wlm_params?.debug) && console.log('[WLM CSS] Store not available yet');
             return;
         }
         
@@ -33,37 +33,37 @@
         const extensions = cartData?.extensions || {};
         const wlmExtension = extensions['woo-lieferzeiten-manager'];
         
-        console.log('[WLM CSS] WLM Extension:', wlmExtension);
+        (window.wlm_params?.debug) && console.log('[WLM CSS] WLM Extension:', wlmExtension);
         
         if (!wlmExtension || !wlmExtension.delivery_info) {
-            console.log('[WLM CSS] No delivery info available');
+            (window.wlm_params?.debug) && console.log('[WLM CSS] No delivery info available');
             return;
         }
         
         const deliveryInfo = wlmExtension.delivery_info;
         const cartItemsStock = wlmExtension.cart_items_stock || {};
-        console.log('[WLM CSS] Delivery info:', deliveryInfo);
-        console.log('[WLM CSS] Cart items stock:', cartItemsStock);
+        (window.wlm_params?.debug) && console.log('[WLM CSS] Delivery info:', deliveryInfo);
+        (window.wlm_params?.debug) && console.log('[WLM CSS] Cart items stock:', cartItemsStock);
         
         // DEBUG: Show all methods with their data
-        console.log('[WLM DEBUG] === ALLE VERSANDMETHODEN IN DATEN ===');
+        (window.wlm_params?.debug) && console.log('[WLM DEBUG] === ALLE VERSANDMETHODEN IN DATEN ===');
         Object.keys(deliveryInfo).forEach(function(methodId) {
             const info = deliveryInfo[methodId];
-            console.log('[WLM DEBUG] Method ID: ' + methodId);
-            console.log('[WLM DEBUG]   - Name: ' + (info.method_name || 'NICHT GESETZT'));
-            console.log('[WLM DEBUG]   - Lieferzeitraum: ' + (info.delivery_window || 'NICHT GESETZT'));
-            console.log('[WLM DEBUG]   - Express: ' + (info.express_window || 'NICHT GESETZT'));
-            console.log('[WLM DEBUG]   - Alle Daten:', info);
+            (window.wlm_params?.debug) && console.log('[WLM DEBUG] Method ID: ' + methodId);
+            (window.wlm_params?.debug) && console.log('[WLM DEBUG]   - Name: ' + (info.method_name || 'NICHT GESETZT'));
+            (window.wlm_params?.debug) && console.log('[WLM DEBUG]   - Lieferzeitraum: ' + (info.delivery_window || 'NICHT GESETZT'));
+            (window.wlm_params?.debug) && console.log('[WLM DEBUG]   - Express: ' + (info.express_window || 'NICHT GESETZT'));
+            (window.wlm_params?.debug) && console.log('[WLM DEBUG]   - Alle Daten:', info);
         });
-        console.log('[WLM DEBUG] === ENDE ===');
+        (window.wlm_params?.debug) && console.log('[WLM DEBUG] === ENDE ===');
         
         // Find all shipping method labels in totals section
         const totalsLabels = document.querySelectorAll('.wc-block-components-totals-item__label');
-        console.log('[WLM CSS] Found ' + totalsLabels.length + ' totals labels');
+        (window.wlm_params?.debug) && console.log('[WLM CSS] Found ' + totalsLabels.length + ' totals labels');
         
         // Find all shipping option labels (radio buttons)
         const shippingLabels = document.querySelectorAll('label[for^="radio-control-"]');
-        console.log('[WLM CSS] Found ' + shippingLabels.length + ' shipping option labels');
+        (window.wlm_params?.debug) && console.log('[WLM CSS] Found ' + shippingLabels.length + ' shipping option labels');
         
         // Create or update style element
         if (!styleElement) {
@@ -91,7 +91,7 @@
             // Remove instance ID suffix (e.g. ":10")
             const methodId = methodPart.split(':')[0];
             
-            console.log('[WLM CSS] Shipping label for="' + forAttr + '" -> methodId="' + methodId + '"');
+            (window.wlm_params?.debug) && console.log('[WLM CSS] Shipping label for="' + forAttr + '" -> methodId="' + methodId + '"');
             
             // Find matching delivery info
             const info = deliveryInfo[methodId];
@@ -100,7 +100,7 @@
                 const icon = isExpressRate ? '⚡' : '📦';
                 const prefix = isExpressRate ? 'Express-Lieferung' : 'Voraussichtliche Lieferung';
                 
-                console.log('[WLM CSS] ✅ Match for shipping option: ' + methodId + ' - ' + info.delivery_window);
+                (window.wlm_params?.debug) && console.log('[WLM CSS] ✅ Match for shipping option: ' + methodId + ' - ' + info.delivery_window);
                 
                 // Add CSS rule for this specific label using for attribute
                 cssRules += 'label[for="' + forAttr + '"] {\n';
@@ -129,7 +129,7 @@
         // Process totals labels (for summary section)
         totalsLabels.forEach(function(label, index) {
             const labelText = label.textContent.trim();
-            console.log('[WLM CSS] Label ' + index + ': "' + labelText + '"');
+            (window.wlm_params?.debug) && console.log('[WLM CSS] Label ' + index + ': "' + labelText + '"');
             
             // Try to find matching method in delivery info
             Object.keys(deliveryInfo).forEach(function(methodId) {
@@ -138,17 +138,17 @@
                 
                 // Only log if method name exists
                 if (methodName) {
-                    console.log('[WLM CSS] Comparing "' + labelText + '" with "' + methodName + '"');
+                    (window.wlm_params?.debug) && console.log('[WLM CSS] Comparing "' + labelText + '" with "' + methodName + '"');
                 }
                 
                 // Match by exact method name
                 if (labelText === methodName) {
                     const isExpressRate = info.is_express_rate || false;
-                    console.log('[WLM DEBUG] ✅ MATCH GEFUNDEN!');
-                    console.log('[WLM DEBUG]   - Label im Checkout: "' + labelText + '"');
-                    console.log('[WLM DEBUG]   - Method Name: "' + methodName + '"');
-                    console.log('[WLM DEBUG]   - Lieferzeitraum: ' + (info.delivery_window || 'FEHLT'));
-                    console.log('[WLM DEBUG]   - Express: ' + (info.express_window || 'FEHLT'));
+                    (window.wlm_params?.debug) && console.log('[WLM DEBUG] ✅ MATCH GEFUNDEN!');
+                    (window.wlm_params?.debug) && console.log('[WLM DEBUG]   - Label im Checkout: "' + labelText + '"');
+                    (window.wlm_params?.debug) && console.log('[WLM DEBUG]   - Method Name: "' + methodName + '"');
+                    (window.wlm_params?.debug) && console.log('[WLM DEBUG]   - Lieferzeitraum: ' + (info.delivery_window || 'FEHLT'));
+                    (window.wlm_params?.debug) && console.log('[WLM DEBUG]   - Express: ' + (info.express_window || 'FEHLT'));
                     
                     // Build content string
                     let content = '';
@@ -197,8 +197,8 @@
                             });
                             
                             if (position > 0) {
-                                console.log('[WLM DEBUG]   - CSS Position: nth-child(' + position + ')');
-                                console.log('[WLM DEBUG]   - CSS Content wird gesetzt: ' + content);
+                                (window.wlm_params?.debug) && console.log('[WLM DEBUG]   - CSS Position: nth-child(' + position + ')');
+                                (window.wlm_params?.debug) && console.log('[WLM DEBUG]   - CSS Content wird gesetzt: ' + content);
                                 
                                 // Add CSS rules using nth-child
                                 cssRules += `
@@ -231,7 +231,7 @@
         
         // Add cart stock status CSS
         const cartItems = document.querySelectorAll('.wc-block-cart-items__row');
-        console.log('[WLM CSS] Found ' + cartItems.length + ' cart items');
+        (window.wlm_params?.debug) && console.log('[WLM CSS] Found ' + cartItems.length + ' cart items');
         
         const cartItemKeys = Object.keys(cartItemsStock);
         cartItemKeys.forEach(function(cartItemKey, index) {
@@ -239,7 +239,7 @@
             if (!stock) return;
             
             const rowIndex = index + 1; // nth-child is 1-indexed
-            console.log('[WLM CSS] Adding stock status for row ' + rowIndex + ':', stock);
+            (window.wlm_params?.debug) && console.log('[WLM CSS] Adding stock status for row ' + rowIndex + ':', stock);
             
             let content = '';
             let color = '';
@@ -291,14 +291,14 @@
         
         // Apply CSS rules
         styleElement.textContent = cssRules;
-        console.log('[WLM CSS] CSS rules applied (' + matchedCount + ' matches + ' + cartItemKeys.length + ' stock statuses):', cssRules);
+        (window.wlm_params?.debug) && console.log('[WLM CSS] CSS rules applied (' + matchedCount + ' matches + ' + cartItemKeys.length + ' stock statuses):', cssRules);
     }
     
     /**
      * Initialize
      */
     function init() {
-        console.log('[WLM CSS] Initializing...');
+        (window.wlm_params?.debug) && console.log('[WLM CSS] Initializing...');
         
         // Wait for DOM to be ready
         if (document.readyState === 'loading') {
@@ -321,7 +321,7 @@
                     // Check if cart data changed
                     if (JSON.stringify(cartData) !== JSON.stringify(previousCartData)) {
                         previousCartData = cartData;
-                        console.log('[WLM CSS] Cart data changed, re-adding CSS...');
+                        (window.wlm_params?.debug) && console.log('[WLM CSS] Cart data changed, re-adding CSS...');
                         setTimeout(addDeliveryInfoCSS, 300);
                     }
                 }

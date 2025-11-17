@@ -282,7 +282,7 @@
             }
             
             // DEBUG: Log collected data
-            console.log('Collected formData:', formData);
+            (window.wlm_params?.debug) && console.log('Collected formData:', formData);
             
             // Show spinner
             $button.prop('disabled', true);

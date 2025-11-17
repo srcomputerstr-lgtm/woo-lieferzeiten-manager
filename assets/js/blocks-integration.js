@@ -84,7 +84,7 @@ const DeliveryInfoComponent = () => {
                         style: { padding: '10px 15px', cursor: 'pointer' },
                         onClick: () => {
                             // Express activation would require AJAX call
-                            console.log('Express activation clicked');
+                            (window.wlm_params?.debug) && console.log('Express activation clicked');
                         }
                     },
                     '⚡ Express-Versand verfügbar'
@@ -154,19 +154,19 @@ if (typeof wc !== 'undefined' && wc.blocksCheckout && wc.blocksCheckout.__experi
     
     __experimentalRegisterCheckoutFilters('woo-lieferzeiten-manager', {
         shippingMethods: (shippingMethods, extensions, args) => {
-            console.log('[WLM] Filtering shipping methods', shippingMethods);
+            (window.wlm_params?.debug) && console.log('[WLM] Filtering shipping methods', shippingMethods);
             
             // Get cart items with attributes
             const cartData = extensions?.['woo-lieferzeiten-manager'] || {};
             const cartItemsStock = cartData.cart_items_stock || {};
             const deliveryInfo = cartData.delivery_info || {};
             
-            console.log('[WLM] Cart items stock:', cartItemsStock);
-            console.log('[WLM] Delivery info:', deliveryInfo);
+            (window.wlm_params?.debug) && console.log('[WLM] Cart items stock:', cartItemsStock);
+            (window.wlm_params?.debug) && console.log('[WLM] Delivery info:', deliveryInfo);
             
             // Filter shipping methods based on conditions
             return shippingMethods.filter(method => {
-                console.log('[WLM] Checking method:', method.id, method);
+                (window.wlm_params?.debug) && console.log('[WLM] Checking method:', method.id, method);
                 
                 // Find method config in delivery_info
                 const methodConfig = Object.values(deliveryInfo).find(info => 
@@ -175,24 +175,24 @@ if (typeof wc !== 'undefined' && wc.blocksCheckout && wc.blocksCheckout.__experi
                 );
                 
                 if (!methodConfig) {
-                    console.log('[WLM] No config found for method:', method.id);
+                    (window.wlm_params?.debug) && console.log('[WLM] No config found for method:', method.id);
                     return true; // Keep method if no config
                 }
                 
-                console.log('[WLM] Method config:', methodConfig);
+                (window.wlm_params?.debug) && console.log('[WLM] Method config:', methodConfig);
                 
                 // Check if method has attribute conditions
                 const conditions = methodConfig.attribute_conditions || [];
                 if (conditions.length === 0) {
-                    console.log('[WLM] No conditions for method:', method.id);
+                    (window.wlm_params?.debug) && console.log('[WLM] No conditions for method:', method.id);
                     return true; // Keep method if no conditions
                 }
                 
-                console.log('[WLM] Checking', conditions.length, 'conditions');
+                (window.wlm_params?.debug) && console.log('[WLM] Checking', conditions.length, 'conditions');
                 
                 // Check each product in cart against all conditions
                 for (const [cartItemKey, itemData] of Object.entries(cartItemsStock)) {
-                    console.log('[WLM] Checking product:', itemData);
+                    (window.wlm_params?.debug) && console.log('[WLM] Checking product:', itemData);
                     
                     const productAttrs = itemData.attributes || {};
                     const productCats = itemData.categories || [];
@@ -203,7 +203,7 @@ if (typeof wc !== 'undefined' && wc.blocksCheckout && wc.blocksCheckout.__experi
                         const requiredValues = (condition.values || []).map(v => v.toLowerCase());
                         const logic = condition.logic || 'at_least_one';
                         
-                        console.log('[WLM] Condition:', logic, attrSlug, requiredValues);
+                        (window.wlm_params?.debug) && console.log('[WLM] Condition:', logic, attrSlug, requiredValues);
                         
                         // Get product values for this attribute
                         let productValues = [];
@@ -217,7 +217,7 @@ if (typeof wc !== 'undefined' && wc.blocksCheckout && wc.blocksCheckout.__experi
                         // Normalize to lowercase
                         productValues = productValues.map(v => String(v).toLowerCase());
                         
-                        console.log('[WLM] Product values:', productValues);
+                        (window.wlm_params?.debug) && console.log('[WLM] Product values:', productValues);
                         
                         // Check logic
                         let conditionMet = false;
@@ -237,16 +237,16 @@ if (typeof wc !== 'undefined' && wc.blocksCheckout && wc.blocksCheckout.__experi
                                 break;
                         }
                         
-                        console.log('[WLM] Condition met:', conditionMet);
+                        (window.wlm_params?.debug) && console.log('[WLM] Condition met:', conditionMet);
                         
                         if (!conditionMet) {
-                            console.log('[WLM] Product does not meet condition - hiding method:', method.id);
+                            (window.wlm_params?.debug) && console.log('[WLM] Product does not meet condition - hiding method:', method.id);
                             return false; // Hide this shipping method
                         }
                     }
                 }
                 
-                console.log('[WLM] All conditions met - showing method:', method.id);
+                (window.wlm_params?.debug) && console.log('[WLM] All conditions met - showing method:', method.id);
                 return true; // Show this shipping method
             });
         }

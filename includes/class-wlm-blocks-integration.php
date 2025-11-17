@@ -41,7 +41,7 @@ class WLM_Blocks_Integration implements IntegrationInterface {
      * @return array Filtered shipping rates.
      */
     public function filter_package_rates($rates, $package) {
-        error_log('[WLM Package Rates] ===== FILTER CALLED ===== with ' . count($rates) . ' rates');
+        WLM_Core::log('[WLM Package Rates] ===== FILTER CALLED ===== with ' . count($rates) . ' rates');
         
         $calculator = WLM_Core::instance()->calculator;
         $shipping_methods = WLM_Core::instance()->shipping_methods;
@@ -50,57 +50,57 @@ class WLM_Blocks_Integration implements IntegrationInterface {
         $methods = $shipping_methods->get_configured_methods();
         
         foreach ($rates as $rate_id => $rate) {
-            error_log('[WLM Package Rates] === Processing rate: ' . $rate_id);
+            WLM_Core::log('[WLM Package Rates] === Processing rate: ' . $rate_id);
             
             // Find matching method config
             // For Express rates, strip _express suffix to find base method config
             $is_express_rate = strpos($rate_id, '_express') !== false;
             $search_id = $is_express_rate ? str_replace('_express', '', $rate_id) : $rate_id;
             
-            error_log('[WLM Package Rates] Is Express: ' . ($is_express_rate ? 'YES' : 'NO') . ' | Search ID: ' . $search_id);
+            WLM_Core::log('[WLM Package Rates] Is Express: ' . ($is_express_rate ? 'YES' : 'NO') . ' | Search ID: ' . $search_id);
             
             $method_config = null;
             foreach ($methods as $method) {
                 if (isset($method['id']) && strpos($search_id, $method['id']) === 0) {
                     $method_config = $method;
-                    error_log('[WLM Package Rates] Found matching method config: ' . $method['id']);
+                    WLM_Core::log('[WLM Package Rates] Found matching method config: ' . $method['id']);
                     break;
                 }
             }
             
             if (!$method_config) {
-                error_log('[WLM Package Rates] No method config found - skipping (not our method)');
+                WLM_Core::log('[WLM Package Rates] No method config found - skipping (not our method)');
                 continue; // Not our method
             }
             
             // Check if method has attribute conditions
             if (empty($method_config['attribute_conditions'])) {
-                error_log('[WLM Package Rates] No attribute conditions - skipping check');
+                WLM_Core::log('[WLM Package Rates] No attribute conditions - skipping check');
                 continue; // No conditions to check
             }
             
-            error_log('[WLM Package Rates] Checking conditions for rate: ' . $rate_id);
-            error_log('[WLM Package Rates] Conditions: ' . print_r($method_config['attribute_conditions'], true));
+            WLM_Core::log('[WLM Package Rates] Checking conditions for rate: ' . $rate_id);
+            WLM_Core::log('[WLM Package Rates] Conditions: ' . print_r($method_config['attribute_conditions'], true));
             
             // Check if ANY product in package meets conditions (cart-level check)
             if (!$calculator->check_cart_conditions($package, $method_config)) {
-                error_log('[WLM Package Rates] ❌ Cart does not meet conditions - REMOVING rate ' . $rate_id);
+                WLM_Core::log('[WLM Package Rates] ❌ Cart does not meet conditions - REMOVING rate ' . $rate_id);
                 unset($rates[$rate_id]);
             } else {
-                error_log('[WLM Package Rates] ✅ Cart meets conditions - KEEPING rate ' . $rate_id);
+                WLM_Core::log('[WLM Package Rates] ✅ Cart meets conditions - KEEPING rate ' . $rate_id);
             }
         }
         
         // Surcharges are added as separate cart fees via add_surcharges_to_cart()
         // DO NOT add them to shipping rates to avoid double charging
-        error_log('[WLM Package Rates] Surcharges handled separately as cart fees');
+        WLM_Core::log('[WLM Package Rates] Surcharges handled separately as cart fees');
         
         // Apply shipping selection strategy
         $strategy = get_option('wlm_shipping_selection_strategy', 'customer_choice');
-        error_log('[WLM Package Rates] Strategy from DB: ' . $strategy . ' | Rates count: ' . count($rates));
+        WLM_Core::log('[WLM Package Rates] Strategy from DB: ' . $strategy . ' | Rates count: ' . count($rates));
         
         if ($strategy !== 'customer_choice' && count($rates) > 0) {
-            error_log('[WLM Package Rates] Applying strategy: ' . $strategy . ' to ' . count($rates) . ' rates');
+            WLM_Core::log('[WLM Package Rates] Applying strategy: ' . $strategy . ' to ' . count($rates) . ' rates');
             
             // Separate WLM base methods from express methods (exclude non-WLM methods)
             $base_rates = array();
@@ -108,7 +108,7 @@ class WLM_Blocks_Integration implements IntegrationInterface {
             $other_rates = array(); // Non-WLM methods (e.g., pickup_location)
             
             foreach ($rates as $rate_id => $rate) {
-                error_log('[WLM Package Rates] Processing rate: ' . $rate_id);
+                WLM_Core::log('[WLM Package Rates] Processing rate: ' . $rate_id);
                 
                 // Check if this is a WLM method
                 $is_wlm_method = false;
@@ -122,18 +122,18 @@ class WLM_Blocks_Integration implements IntegrationInterface {
                 if (!$is_wlm_method) {
                     // Not a WLM method - keep it but don't apply strategy
                     $other_rates[$rate_id] = $rate;
-                    error_log('[WLM Package Rates] -> Classified as OTHER (non-WLM)');
+                    WLM_Core::log('[WLM Package Rates] -> Classified as OTHER (non-WLM)');
                 } elseif (strpos($rate_id, '_express') !== false) {
                     $express_rates[$rate_id] = $rate;
-                    error_log('[WLM Package Rates] -> Classified as EXPRESS');
+                    WLM_Core::log('[WLM Package Rates] -> Classified as EXPRESS');
                 } else {
                     $base_rates[$rate_id] = $rate;
-                    error_log('[WLM Package Rates] -> Classified as BASE');
+                    WLM_Core::log('[WLM Package Rates] -> Classified as BASE');
                 }
             }
             
-            error_log('[WLM Package Rates] Base rates: ' . implode(', ', array_keys($base_rates)));
-            error_log('[WLM Package Rates] Express rates: ' . implode(', ', array_keys($express_rates)));
+            WLM_Core::log('[WLM Package Rates] Base rates: ' . implode(', ', array_keys($base_rates)));
+            WLM_Core::log('[WLM Package Rates] Express rates: ' . implode(', ', array_keys($express_rates)));
             
             // Apply strategy to base methods only
             if (count($base_rates) > 1) {
@@ -184,7 +184,7 @@ class WLM_Blocks_Integration implements IntegrationInterface {
                 }
                 
                 if ($selected_base) {
-                    error_log('[WLM Package Rates] Selected base method: ' . $selected_base);
+                    WLM_Core::log('[WLM Package Rates] Selected base method: ' . $selected_base);
                     
                     // Keep only selected base method
                     $filtered_rates = array($selected_base => $base_rates[$selected_base]);
@@ -194,13 +194,13 @@ class WLM_Blocks_Integration implements IntegrationInterface {
                     $base_id_parts = explode(':', $selected_base);
                     $base_id_without_instance = $base_id_parts[0];
                     
-                    error_log('[WLM Package Rates] Looking for express variant of: ' . $base_id_without_instance);
+                    WLM_Core::log('[WLM Package Rates] Looking for express variant of: ' . $base_id_without_instance);
                     
                     // Find matching express rate (e.g., "wlm_method_1763118746930_express:14")
                     foreach ($express_rates as $express_id => $express_rate) {
                         if (strpos($express_id, $base_id_without_instance . '_express') === 0) {
                             $filtered_rates[$express_id] = $express_rate;
-                            error_log('[WLM Package Rates] Keeping express variant: ' . $express_id);
+                            WLM_Core::log('[WLM Package Rates] Keeping express variant: ' . $express_id);
                             break;
                         }
                     }
@@ -208,7 +208,7 @@ class WLM_Blocks_Integration implements IntegrationInterface {
                     // Add back non-WLM methods (e.g., pickup_location)
                     foreach ($other_rates as $other_id => $other_rate) {
                         $filtered_rates[$other_id] = $other_rate;
-                        error_log('[WLM Package Rates] Keeping non-WLM method: ' . $other_id);
+                        WLM_Core::log('[WLM Package Rates] Keeping non-WLM method: ' . $other_id);
                     }
                     
                     $rates = $filtered_rates;
@@ -345,7 +345,7 @@ class WLM_Blocks_Integration implements IntegrationInterface {
         $delivery_info = array();
         
         // DEBUG: Log method configs
-        error_log('[WLM DEBUG] Method configs: ' . print_r($methods, true));
+        WLM_Core::log('[WLM DEBUG] Method configs: ' . print_r($methods, true));
         
         foreach ($methods as $method_config) {
             // Get the actual method ID from config
@@ -356,7 +356,7 @@ class WLM_Blocks_Integration implements IntegrationInterface {
             
             // Check cart-level attribute conditions
             if (!empty($method_config['attribute_conditions'])) {
-                error_log('[WLM Blocks] Checking cart-level attribute conditions for method: ' . $method_id);
+                WLM_Core::log('[WLM Blocks] Checking cart-level attribute conditions for method: ' . $method_id);
                 
                 // Build package from cart
                 $package = array('contents' => array());
@@ -367,7 +367,7 @@ class WLM_Blocks_Integration implements IntegrationInterface {
                 }
                 
                 if (!$calculator->check_cart_conditions($package, $method_config)) {
-                    error_log('[WLM Blocks] Cart does not meet conditions - skipping method ' . $method_id);
+                    WLM_Core::log('[WLM Blocks] Cart does not meet conditions - skipping method ' . $method_id);
                     continue;
                 }
             }
@@ -383,10 +383,10 @@ class WLM_Blocks_Integration implements IntegrationInterface {
                 'is_express_rate' => false
             );
             
-            error_log('[WLM Blocks] Added normal method: ' . $method_id . ' - ' . ($window ? $window['window_formatted'] : 'no window'));
+            WLM_Core::log('[WLM Blocks] Added normal method: ' . $method_id . ' - ' . ($window ? $window['window_formatted'] : 'no window'));
             
             // If Express is enabled, check if all products are in stock
-            error_log('[WLM Blocks] Checking Express for ' . $method_id . ': enabled=' . ($method_config['express_enabled'] ?? 'NOT SET'));
+            WLM_Core::log('[WLM Blocks] Checking Express for ' . $method_id . ': enabled=' . ($method_config['express_enabled'] ?? 'NOT SET'));
             
             // Check if all cart items are in stock (with sufficient quantity)
             $all_in_stock = true;
@@ -404,7 +404,7 @@ class WLM_Blocks_Integration implements IntegrationInterface {
                     
                     if (!$stock_status['in_stock']) {
                         $all_in_stock = false;
-                        error_log('[WLM Blocks] Product ' . $product_id . ' not fully in stock (requested: ' . $quantity . ') - Express not available');
+                        WLM_Core::log('[WLM Blocks] Product ' . $product_id . ' not fully in stock (requested: ' . $quantity . ') - Express not available');
                         break;
                     }
                 }
@@ -426,7 +426,7 @@ class WLM_Blocks_Integration implements IntegrationInterface {
                     // Add 1 day to transit times if after cutoff
                     $express_config['transit_min'] += 1;
                     $express_config['transit_max'] += 1;
-                    error_log('[WLM Blocks] After cutoff - added 1 day to transit times');
+                    WLM_Core::log('[WLM Blocks] After cutoff - added 1 day to transit times');
                 }
                 
                 $express_window = $calculator->calculate_cart_window($express_config, true);
@@ -438,7 +438,7 @@ class WLM_Blocks_Integration implements IntegrationInterface {
                     'is_express_rate' => true
                 );
                 
-                error_log('[WLM Blocks] Added express method: ' . $express_method_id . ' - ' . ($express_window ? $express_window['window_formatted'] : 'no window'));
+                WLM_Core::log('[WLM Blocks] Added express method: ' . $express_method_id . ' - ' . ($express_window ? $express_window['window_formatted'] : 'no window'));
             }
         }
         

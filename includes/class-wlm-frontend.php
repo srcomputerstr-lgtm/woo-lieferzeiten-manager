@@ -82,10 +82,14 @@ class WLM_Frontend {
                 true
             );
 
+            $settings = WLM_Core::instance()->get_settings();
+            $debug_mode = isset($settings['debug_mode']) ? (bool) $settings['debug_mode'] : false;
+            
             wp_localize_script('wlm-frontend', 'wlm_params', array(
                 'ajax_url' => admin_url('admin-ajax.php'),
                 'nonce' => wp_create_nonce('wlm-frontend-nonce'),
-                'express_nonce' => wp_create_nonce('wlm-express-nonce')
+                'express_nonce' => wp_create_nonce('wlm-express-nonce'),
+                'debug' => $debug_mode
             ));
         }
     }

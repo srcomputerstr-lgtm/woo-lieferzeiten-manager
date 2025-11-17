@@ -14,8 +14,8 @@
     const { __ } = wp.i18n;
     const { useSelect } = wp.data;
     
-    console.log('[WLM Blocks] Script loaded');
-    console.log('[WLM Blocks] Available globals:', {
+    (window.wlm_params?.debug) && console.log('[WLM Blocks] Script loaded');
+    (window.wlm_params?.debug) && console.log('[WLM Blocks] Available globals:', {
         wp: typeof wp,
         wc: typeof wc,
         'wp.data': typeof wp.data,
@@ -28,15 +28,15 @@
      * Renders delivery window and express option for selected shipping method
      */
     const DeliveryInfoSlotFill = () => {
-        console.log('[WLM Blocks] DeliveryInfoSlotFill render started');
+        (window.wlm_params?.debug) && console.log('[WLM Blocks] DeliveryInfoSlotFill render started');
         
         // Get cart data from WooCommerce store
         const cartData = useSelect((select) => {
-            console.log('[WLM Blocks] useSelect callback running');
+            (window.wlm_params?.debug) && console.log('[WLM Blocks] useSelect callback running');
             
             // Check if store is available
             const storeSelect = select('wc/store/cart');
-            console.log('[WLM Blocks] Store select:', storeSelect);
+            (window.wlm_params?.debug) && console.log('[WLM Blocks] Store select:', storeSelect);
             
             if (!storeSelect) {
                 console.warn('[WLM Blocks] wc/store/cart not available');
@@ -45,19 +45,19 @@
             
             // Get cart data
             const cart = storeSelect.getCartData();
-            console.log('[WLM Blocks] Cart data from store:', cart);
+            (window.wlm_params?.debug) && console.log('[WLM Blocks] Cart data from store:', cart);
             
             return cart;
         }, []);
         
         // Debug effect
         useEffect(() => {
-            console.log('[WLM Blocks] Component mounted/updated');
-            console.log('[WLM Blocks] Cart data:', cartData);
+            (window.wlm_params?.debug) && console.log('[WLM Blocks] Component mounted/updated');
+            (window.wlm_params?.debug) && console.log('[WLM Blocks] Cart data:', cartData);
         }, [cartData]);
         
         if (!cartData) {
-            console.log('[WLM Blocks] No cart data available yet');
+            (window.wlm_params?.debug) && console.log('[WLM Blocks] No cart data available yet');
             return null;
         }
         
@@ -65,11 +65,11 @@
         const cart = cartData;
         const extensions = cartData.extensions || {};
         
-        console.log('[WLM Blocks] Extensions:', extensions);
-        console.log('[WLM Blocks] WLM Extension:', extensions['woo-lieferzeiten-manager']);
+        (window.wlm_params?.debug) && console.log('[WLM Blocks] Extensions:', extensions);
+        (window.wlm_params?.debug) && console.log('[WLM Blocks] WLM Extension:', extensions['woo-lieferzeiten-manager']);
         
         if (!cart) {
-            console.log('[WLM Blocks] No cart data available');
+            (window.wlm_params?.debug) && console.log('[WLM Blocks] No cart data available');
             return null;
         }
         
@@ -77,22 +77,22 @@
         const shippingRates = cart.shippingRates?.[0]?.shipping_rates || [];
         const selectedMethod = shippingRates.find(rate => rate.selected);
         
-        console.log('[WLM Blocks] Shipping rates:', shippingRates);
-        console.log('[WLM Blocks] Selected method:', selectedMethod);
+        (window.wlm_params?.debug) && console.log('[WLM Blocks] Shipping rates:', shippingRates);
+        (window.wlm_params?.debug) && console.log('[WLM Blocks] Selected method:', selectedMethod);
         
         if (!selectedMethod) {
-            console.log('[WLM Blocks] No shipping method selected');
+            (window.wlm_params?.debug) && console.log('[WLM Blocks] No shipping method selected');
             return null;
         }
         
         // Extract method ID from rate ID (format: "wlm_method_123:1")
         const methodId = selectedMethod.rate_id.split(':')[0];
         
-        console.log('[WLM Blocks] Method ID:', methodId);
+        (window.wlm_params?.debug) && console.log('[WLM Blocks] Method ID:', methodId);
         
         // Check if this is a WLM method
         if (!methodId.startsWith('wlm_method_')) {
-            console.log('[WLM Blocks] Not a WLM method, skipping');
+            (window.wlm_params?.debug) && console.log('[WLM Blocks] Not a WLM method, skipping');
             return null;
         }
         
@@ -100,15 +100,15 @@
         const allDeliveryInfo = extensions?.['woo-lieferzeiten-manager']?.delivery_info || {};
         const deliveryInfo = allDeliveryInfo[methodId] || {};
         
-        console.log('[WLM Blocks] All delivery info:', allDeliveryInfo);
-        console.log('[WLM Blocks] Delivery info for method:', deliveryInfo);
+        (window.wlm_params?.debug) && console.log('[WLM Blocks] All delivery info:', allDeliveryInfo);
+        (window.wlm_params?.debug) && console.log('[WLM Blocks] Delivery info for method:', deliveryInfo);
         
         if (!deliveryInfo.delivery_window && !deliveryInfo.express_available) {
-            console.log('[WLM Blocks] No delivery info available for this method');
+            (window.wlm_params?.debug) && console.log('[WLM Blocks] No delivery info available for this method');
             return null;
         }
         
-        console.log('[WLM Blocks] Rendering delivery info UI');
+        (window.wlm_params?.debug) && console.log('[WLM Blocks] Rendering delivery info UI');
         
         // Render delivery window using Slot Fill
         return el(
@@ -196,7 +196,7 @@
                                         fontSize: '14px'
                                     },
                                     onClick: () => {
-                                        console.log('[WLM Blocks] Express button clicked for method:', methodId);
+                                        (window.wlm_params?.debug) && console.log('[WLM Blocks] Express button clicked for method:', methodId);
                                         // Trigger AJAX to activate express
                                         if (window.WLM_Frontend) {
                                             window.WLM_Frontend.activateExpress(methodId);
@@ -220,13 +220,13 @@
     /**
      * Register the plugin
      */
-    console.log('[WLM Blocks] Registering plugin...');
+    (window.wlm_params?.debug) && console.log('[WLM Blocks] Registering plugin...');
     
     registerPlugin('wlm-delivery-info-slot-fill', {
         render: DeliveryInfoSlotFill,
         scope: 'woocommerce-checkout'
     });
     
-    console.log('[WLM Blocks] Plugin registered: wlm-delivery-info-slot-fill');
+    (window.wlm_params?.debug) && console.log('[WLM Blocks] Plugin registered: wlm-delivery-info-slot-fill');
     
 })();

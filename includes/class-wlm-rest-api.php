@@ -379,19 +379,19 @@ class WLM_REST_API {
         $sku = sanitize_text_field($request->get_param('sku'));
         
         // DEBUG: Log all request data
-        error_log('[WLM API DEBUG] Request method: ' . $request->get_method());
-        error_log('[WLM API DEBUG] Request route: ' . $request->get_route());
-        error_log('[WLM API DEBUG] Content-Type: ' . $request->get_content_type());
-        error_log('[WLM API DEBUG] Body params: ' . print_r($request->get_body_params(), true));
-        error_log('[WLM API DEBUG] JSON params: ' . print_r($request->get_json_params(), true));
-        error_log('[WLM API DEBUG] All params: ' . print_r($request->get_params(), true));
-        error_log('[WLM API DEBUG] Raw body: ' . $request->get_body());
+        WLM_Core::log('[WLM API DEBUG] Request method: ' . $request->get_method());
+        WLM_Core::log('[WLM API DEBUG] Request route: ' . $request->get_route());
+        WLM_Core::log('[WLM API DEBUG] Content-Type: ' . $request->get_content_type());
+        WLM_Core::log('[WLM API DEBUG] Body params: ' . print_r($request->get_body_params(), true));
+        WLM_Core::log('[WLM API DEBUG] JSON params: ' . print_r($request->get_json_params(), true));
+        WLM_Core::log('[WLM API DEBUG] All params: ' . print_r($request->get_params(), true));
+        WLM_Core::log('[WLM API DEBUG] Raw body: ' . $request->get_body());
         
         // Get parameters from JSON body - manually parse since get_json_params() doesn't work with URL params
         $raw_body = $request->get_body();
         $json_params = json_decode($raw_body, true);
         
-        error_log('[WLM API DEBUG] Parsed JSON: ' . print_r($json_params, true));
+        WLM_Core::log('[WLM API DEBUG] Parsed JSON: ' . print_r($json_params, true));
         
         $available_from = isset($json_params['available_from']) ? $json_params['available_from'] : null;
         $lead_time_days = isset($json_params['lead_time_days']) ? $json_params['lead_time_days'] : null;
@@ -406,14 +406,14 @@ class WLM_REST_API {
             $lead_time_days = (int) $lead_time_days;
         }
 
-        error_log('[WLM API] SKU-based update request:');
-        error_log('[WLM API] - SKU: ' . $sku);
-        error_log('[WLM API] - available_from: ' . var_export($available_from, true));
-        error_log('[WLM API] - lead_time_days: ' . var_export($lead_time_days, true));
+        WLM_Core::log('[WLM API] SKU-based update request:');
+        WLM_Core::log('[WLM API] - SKU: ' . $sku);
+        WLM_Core::log('[WLM API] - available_from: ' . var_export($available_from, true));
+        WLM_Core::log('[WLM API] - lead_time_days: ' . var_export($lead_time_days, true));
 
         // Find product by SKU
         $product_id = $this->get_product_id_by_sku($sku);
-        error_log('[WLM API] - Found product_id: ' . var_export($product_id, true));
+        WLM_Core::log('[WLM API] - Found product_id: ' . var_export($product_id, true));
         
         if (!$product_id) {
             return new WP_REST_Response(array(
@@ -435,21 +435,21 @@ class WLM_REST_API {
 
         // Update available_from if provided
         if ($available_from !== null) {
-            error_log('[WLM API] Updating available_from to: ' . $available_from);
+            WLM_Core::log('[WLM API] Updating available_from to: ' . $available_from);
             $result = update_post_meta($product_id, '_wlm_available_from', $available_from);
-            error_log('[WLM API] update_post_meta result: ' . var_export($result, true));
+            WLM_Core::log('[WLM API] update_post_meta result: ' . var_export($result, true));
             $updated_fields['available_from'] = $available_from;
         }
 
         // Update lead_time_days if provided
         if ($lead_time_days !== null) {
-            error_log('[WLM API] Updating lead_time_days to: ' . $lead_time_days);
+            WLM_Core::log('[WLM API] Updating lead_time_days to: ' . $lead_time_days);
             $result = update_post_meta($product_id, '_wlm_lead_time_days', (int) $lead_time_days);
-            error_log('[WLM API] update_post_meta result: ' . var_export($result, true));
+            WLM_Core::log('[WLM API] update_post_meta result: ' . var_export($result, true));
             $updated_fields['lead_time_days'] = (int) $lead_time_days;
         }
 
-        error_log('[WLM API] Updated fields: ' . print_r($updated_fields, true));
+        WLM_Core::log('[WLM API] Updated fields: ' . print_r($updated_fields, true));
 
         return new WP_REST_Response(array(
             'success' => true,
@@ -591,11 +591,11 @@ class WLM_REST_API {
             return null;
         }
 
-        error_log('[WLM API] sanitize_date_param input: ' . $date);
+        WLM_Core::log('[WLM API] sanitize_date_param input: ' . $date);
 
         // Already in YYYY-MM-DD format
         if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
-            error_log('[WLM API] Date already in YYYY-MM-DD format: ' . $date);
+            WLM_Core::log('[WLM API] Date already in YYYY-MM-DD format: ' . $date);
             return $date;
         }
 
@@ -605,11 +605,11 @@ class WLM_REST_API {
             $month = $matches[2];
             $year = $matches[3];
             $converted = sprintf('%s-%s-%s', $year, $month, $day);
-            error_log('[WLM API] Converted German date to: ' . $converted);
+            WLM_Core::log('[WLM API] Converted German date to: ' . $converted);
             return $converted;
         }
 
-        error_log('[WLM API] Could not parse date format: ' . $date);
+        WLM_Core::log('[WLM API] Could not parse date format: ' . $date);
         return null;
     }
 }

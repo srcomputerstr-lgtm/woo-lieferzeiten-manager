@@ -235,12 +235,12 @@ class WLM_Surcharges {
 
         // Get shipping packages
         $packages = WC()->shipping()->get_packages();
-        error_log('[WLM Cart Fees] Processing ' . count($packages) . ' packages');
+        WLM_Core::log('[WLM Cart Fees] Processing ' . count($packages) . ' packages');
 
         foreach ($packages as $package_key => $package) {
             // Use Calculator's calculate_surcharges which supports shipping class conditions
             $surcharges = WLM_Core::instance()->calculator->calculate_surcharges($package);
-            error_log('[WLM Cart Fees] Package #' . $package_key . ' returned ' . count($surcharges) . ' surcharges: ' . print_r($surcharges, true));
+            WLM_Core::log('[WLM Cart Fees] Package #' . $package_key . ' returned ' . count($surcharges) . ' surcharges: ' . print_r($surcharges, true));
 
             foreach ($surcharges as $surcharge) {
                 // Check if should apply to express
@@ -264,7 +264,7 @@ class WLM_Surcharges {
                 $fee_taxable = isset($surcharge['taxable']) ? $surcharge['taxable'] : true;
                 $fee_tax_class = $surcharge['tax_class'] ?? '';
                 
-                error_log('[WLM Cart Fees] Adding fee: ' . $surcharge['name'] . ' = ' . $fee_amount . ' (taxable: ' . ($fee_taxable ? 'yes' : 'no') . ', tax_class: ' . $fee_tax_class . ')');
+                WLM_Core::log('[WLM Cart Fees] Adding fee: ' . $surcharge['name'] . ' = ' . $fee_amount . ' (taxable: ' . ($fee_taxable ? 'yes' : 'no') . ', tax_class: ' . $fee_tax_class . ')');
                 
                 WC()->cart->add_fee(
                     $surcharge['name'],
@@ -272,7 +272,7 @@ class WLM_Surcharges {
                     $fee_taxable,
                     $fee_tax_class
                 );
-                error_log('[WLM Cart Fees] Fee added successfully');
+                WLM_Core::log('[WLM Cart Fees] Fee added successfully');
             }
         }
     }

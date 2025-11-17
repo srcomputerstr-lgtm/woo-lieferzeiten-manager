@@ -68,7 +68,7 @@ class WLM_Calculator {
         // If shipping_zone is an array, it's a method config
         if (is_array($shipping_zone)) {
             $shipping_method = $shipping_zone;
-            error_log('[WLM DEBUG Calculator] Using method config: ' . ($shipping_method['name'] ?? 'unknown'));
+            WLM_Core::log('[WLM DEBUG Calculator] Using method config: ' . ($shipping_method['name'] ?? 'unknown'));
         } else {
             $shipping_method = $this->get_applicable_shipping_method($product, $quantity, $shipping_zone);
         }
@@ -89,7 +89,7 @@ class WLM_Calculator {
             } else {
                 $transit_min = (int) ($shipping_method['transit_min'] ?? 1);
                 $transit_max = (int) ($shipping_method['transit_max'] ?? 3);
-                error_log('[WLM DEBUG Calculator] Method: ' . ($shipping_method['name'] ?? 'unknown') . ', transit_min=' . $transit_min . ', transit_max=' . $transit_max);
+                WLM_Core::log('[WLM DEBUG Calculator] Method: ' . ($shipping_method['name'] ?? 'unknown') . ', transit_min=' . $transit_min . ', transit_max=' . $transit_max);
             }
             
             $earliest_date = $this->add_business_days($earliest_date, $transit_min);
@@ -471,7 +471,7 @@ class WLM_Calculator {
         }
         
         // Check each attribute condition
-        error_log('[WLM] Checking ' . count($required_attrs) . ' attribute conditions for product: ' . $product->get_name());
+        WLM_Core::log('[WLM] Checking ' . count($required_attrs) . ' attribute conditions for product: ' . $product->get_name());
         
         foreach ($required_attrs as $condition) {
             // Convert old format to new format if needed
@@ -505,7 +505,7 @@ class WLM_Calculator {
                             $parent_attr = $parent_product->get_attribute($attr_slug);
                             if ($parent_attr) {
                                 $product_values = array_map('trim', explode(',', $parent_attr));
-                                error_log('[WLM] Variation inherited attribute from parent: ' . $attr_slug . ' = ' . $parent_attr);
+                                WLM_Core::log('[WLM] Variation inherited attribute from parent: ' . $attr_slug . ' = ' . $parent_attr);
                             }
                         }
                     }
@@ -521,10 +521,10 @@ class WLM_Calculator {
             // Apply logic operator
             $condition_met = $this->check_attribute_logic($product_values, $values, $logic);
             
-            error_log('[WLM] Condition check - Attribute: ' . $attr_slug . ', Logic: ' . $logic . ', Required: ' . implode(',', $values) . ', Product has: ' . implode(',', $product_values) . ', Met: ' . ($condition_met ? 'YES' : 'NO'));
+            WLM_Core::log('[WLM] Condition check - Attribute: ' . $attr_slug . ', Logic: ' . $logic . ', Required: ' . implode(',', $values) . ', Product has: ' . implode(',', $product_values) . ', Met: ' . ($condition_met ? 'YES' : 'NO'));
             
             if (!$condition_met) {
-                error_log('[WLM] Condition NOT met - returning false');
+                WLM_Core::log('[WLM] Condition NOT met - returning false');
                 return false;
             }
         }
@@ -869,7 +869,7 @@ class WLM_Calculator {
             return true; // No conditions = always show
         }
         
-        error_log('[WLM] Checking ' . count($required_attrs) . ' cart-level attribute conditions');
+        WLM_Core::log('[WLM] Checking ' . count($required_attrs) . ' cart-level attribute conditions');
         
         // Check each condition
         foreach ($required_attrs as $condition) {
@@ -939,10 +939,10 @@ class WLM_Calculator {
             // Apply logic operator to cart-level values
             $condition_met = $this->check_attribute_logic($cart_values, $required_values_normalized, $logic);
             
-            error_log('[WLM] Cart condition - Type: ' . $type . ', Attribute: ' . $attr_slug . ', Logic: ' . $logic . ', Required: ' . implode(',', $required_values) . ', Cart has: ' . implode(',', $cart_values) . ', Met: ' . ($condition_met ? 'YES' : 'NO'));
+            WLM_Core::log('[WLM] Cart condition - Type: ' . $type . ', Attribute: ' . $attr_slug . ', Logic: ' . $logic . ', Required: ' . implode(',', $required_values) . ', Cart has: ' . implode(',', $cart_values) . ', Met: ' . ($condition_met ? 'YES' : 'NO'));
             
             if (!$condition_met) {
-                error_log('[WLM] Cart condition NOT met - returning false');
+                WLM_Core::log('[WLM] Cart condition NOT met - returning false');
                 return false;
             }
         }
@@ -970,7 +970,7 @@ class WLM_Calculator {
         }
         
         // Check each attribute condition
-        error_log('[WLM] Checking ' . count($required_attrs) . ' attribute conditions for product: ' . $product->get_name());
+        WLM_Core::log('[WLM] Checking ' . count($required_attrs) . ' attribute conditions for product: ' . $product->get_name());
         
         foreach ($required_attrs as $condition) {
             // Convert old format to new format if needed
@@ -1019,10 +1019,10 @@ class WLM_Calculator {
             // Apply logic operator
             $condition_met = $this->check_attribute_logic($product_values, $values, $logic);
             
-            error_log('[WLM] Condition check - Attribute: ' . $attr_slug . ', Logic: ' . $logic . ', Required: ' . implode(',', $values) . ', Product has: ' . implode(',', $product_values) . ', Met: ' . ($condition_met ? 'YES' : 'NO'));
+            WLM_Core::log('[WLM] Condition check - Attribute: ' . $attr_slug . ', Logic: ' . $logic . ', Required: ' . implode(',', $values) . ', Product has: ' . implode(',', $product_values) . ', Met: ' . ($condition_met ? 'YES' : 'NO'));
             
             if (!$condition_met) {
-                error_log('[WLM] Condition NOT met - returning false');
+                WLM_Core::log('[WLM] Condition NOT met - returning false');
                 return false;
             }
         }
@@ -1105,7 +1105,7 @@ class WLM_Calculator {
             if (!empty($surcharge['attribute_conditions']) && is_array($surcharge['attribute_conditions'])) {
                 $all_conditions_met = true;
                 
-                error_log('[WLM Surcharge] Checking conditions for: ' . ($surcharge['name'] ?? 'Unknown'));
+                WLM_Core::log('[WLM Surcharge] Checking conditions for: ' . ($surcharge['name'] ?? 'Unknown'));
                 
                 foreach ($surcharge['attribute_conditions'] as $condition) {
                     $condition_type = $condition['type'] ?? 'attribute';
@@ -1113,18 +1113,18 @@ class WLM_Calculator {
                     $values = $condition['values'] ?? array();
                     $logic = $condition['logic'] ?? 'at_least_one';
                     
-                    error_log('[WLM Surcharge] Condition - Type: ' . $condition_type . ', Attribute: ' . $attr_slug . ', Values: ' . print_r($values, true));
+                    WLM_Core::log('[WLM Surcharge] Condition - Type: ' . $condition_type . ', Attribute: ' . $attr_slug . ', Values: ' . print_r($values, true));
                     
                     // For shipping_class, attribute is not needed (values are the slugs)
                     if ($condition_type === 'shipping_class') {
                         if (empty($values)) {
-                            error_log('[WLM Surcharge] Skipping - empty values for shipping_class');
+                            WLM_Core::log('[WLM Surcharge] Skipping - empty values for shipping_class');
                             continue;
                         }
                     } else {
                         // For attribute and taxonomy, both attribute and values are required
                         if (empty($attr_slug) || empty($values)) {
-                            error_log('[WLM Surcharge] Skipping - empty attr_slug or values');
+                            WLM_Core::log('[WLM Surcharge] Skipping - empty attr_slug or values');
                             continue;
                         }
                     }
@@ -1141,7 +1141,7 @@ class WLM_Calculator {
                         if ($condition_type === 'shipping_class') {
                             // Check shipping class
                             $shipping_class = $product->get_shipping_class();
-                            error_log('[WLM Surcharge] Product shipping class: ' . ($shipping_class ?: '(none)'));
+                            WLM_Core::log('[WLM Surcharge] Product shipping class: ' . ($shipping_class ?: '(none)'));
                             if ($shipping_class) {
                                 $product_values[] = $shipping_class;
                             }
@@ -1178,7 +1178,7 @@ class WLM_Calculator {
                         
                         // Check logic
                         $logic_result = $this->check_attribute_logic($product_values, $values, $logic);
-                        error_log('[WLM Surcharge] Logic check - Product values: ' . print_r($product_values, true) . ', Required: ' . print_r($values, true) . ', Logic: ' . $logic . ', Result: ' . ($logic_result ? 'PASS' : 'FAIL'));
+                        WLM_Core::log('[WLM Surcharge] Logic check - Product values: ' . print_r($product_values, true) . ', Required: ' . print_r($values, true) . ', Logic: ' . $logic . ', Result: ' . ($logic_result ? 'PASS' : 'FAIL'));
                         if ($logic_result) {
                             $condition_met_for_any_product = true;
                             break;
@@ -1186,17 +1186,17 @@ class WLM_Calculator {
                     }
                     
                     if (!$condition_met_for_any_product) {
-                        error_log('[WLM Surcharge] Condition NOT met for any product - skipping surcharge');
+                        WLM_Core::log('[WLM Surcharge] Condition NOT met for any product - skipping surcharge');
                         $all_conditions_met = false;
                         break;
                     }
                 }
                 
                 if (!$all_conditions_met) {
-                    error_log('[WLM Surcharge] Not all conditions met - skipping surcharge');
+                    WLM_Core::log('[WLM Surcharge] Not all conditions met - skipping surcharge');
                     continue;
                 }
-                error_log('[WLM Surcharge] All conditions met - adding surcharge!');
+                WLM_Core::log('[WLM Surcharge] All conditions met - adding surcharge!');
             }
             
             // Calculate surcharge cost

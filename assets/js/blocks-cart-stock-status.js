@@ -6,25 +6,25 @@
 (function() {
     'use strict';
 
-    console.log('[WLM Stock] Script loaded');
+    (window.wlm_params?.debug) && console.log('[WLM Stock] Script loaded');
 
     function addStockStatusCSS() {
         const cartData = wp.data.select('wc/store/cart').getCartData();
         
         if (!cartData || !cartData.extensions || !cartData.extensions['woo-lieferzeiten-manager']) {
-            console.log('[WLM Stock] No cart data available yet');
+            (window.wlm_params?.debug) && console.log('[WLM Stock] No cart data available yet');
             return;
         }
 
         const stockData = cartData.extensions['woo-lieferzeiten-manager'].cart_items_stock || {};
-        console.log('[WLM Stock] Stock data:', stockData);
+        (window.wlm_params?.debug) && console.log('[WLM Stock] Stock data:', stockData);
 
         // Find all cart item rows
         const cartItems = document.querySelectorAll('.wc-block-cart-items__row');
-        console.log('[WLM Stock] Found ' + cartItems.length + ' cart items');
+        (window.wlm_params?.debug) && console.log('[WLM Stock] Found ' + cartItems.length + ' cart items');
 
         if (cartItems.length === 0) {
-            console.log('[WLM Stock] No cart items found yet');
+            (window.wlm_params?.debug) && console.log('[WLM Stock] No cart items found yet');
             return;
         }
 
@@ -48,7 +48,7 @@
 
             const rowIndex = index + 1; // nth-child is 1-indexed
             
-            console.log('[WLM Stock] Processing item ' + rowIndex + ':', stock);
+            (window.wlm_params?.debug) && console.log('[WLM Stock] Processing item ' + rowIndex + ':', stock);
 
             let content = '';
             let color = '';
@@ -85,13 +85,13 @@
         style.textContent = css;
         document.head.appendChild(style);
         
-        console.log('[WLM Stock] Added CSS rules for ' + cartItemKeys.length + ' items');
-        console.log('[WLM Stock] CSS:\\n' + css);
+        (window.wlm_params?.debug) && console.log('[WLM Stock] Added CSS rules for ' + cartItemKeys.length + ' items');
+        (window.wlm_params?.debug) && console.log('[WLM Stock] CSS:\\n' + css);
     }
 
     // Run when DOM is ready and after cart updates
     function init() {
-        console.log('[WLM Stock] Initializing...');
+        (window.wlm_params?.debug) && console.log('[WLM Stock] Initializing...');
         
         // Initial run
         setTimeout(addStockStatusCSS, 500);

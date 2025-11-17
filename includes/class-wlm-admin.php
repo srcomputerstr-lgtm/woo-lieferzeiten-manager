@@ -116,11 +116,11 @@ class WLM_Admin {
             }
             if (isset($_POST['wlm_shipping_selection_strategy'])) {
                 $strategy_value = sanitize_text_field($_POST['wlm_shipping_selection_strategy']);
-                error_log('[WLM Admin] Saving shipping_selection_strategy: ' . $strategy_value);
+                WLM_Core::log('[WLM Admin] Saving shipping_selection_strategy: ' . $strategy_value);
                 update_option('wlm_shipping_selection_strategy', $strategy_value);
-                error_log('[WLM Admin] After save, value from DB: ' . get_option('wlm_shipping_selection_strategy'));
+                WLM_Core::log('[WLM Admin] After save, value from DB: ' . get_option('wlm_shipping_selection_strategy'));
             } else {
-                error_log('[WLM Admin] wlm_shipping_selection_strategy NOT in POST!');
+                WLM_Core::log('[WLM Admin] wlm_shipping_selection_strategy NOT in POST!');
             }
             
             // Force shipping methods to re-register
@@ -458,7 +458,7 @@ class WLM_Admin {
                 // Add normalized conditions if found
                 if (!empty($conditions)) {
                     $method['attribute_conditions'] = array_values($conditions);
-                    error_log('WLM: Normalized flat keys to attribute_conditions for method ' . $method_index . ': ' . print_r($method['attribute_conditions'], true));
+                    WLM_Core::log('WLM: Normalized flat keys to attribute_conditions for method ' . $method_index . ': ' . print_r($method['attribute_conditions'], true));
                 }
                 
                 // Validate attribute_conditions structure
@@ -495,7 +495,7 @@ class WLM_Admin {
                     }
                     unset($cond);
                     
-                    error_log('WLM: Validated attribute_conditions for method ' . $method_index . ': ' . print_r($method['attribute_conditions'], true));
+                    WLM_Core::log('WLM: Validated attribute_conditions for method ' . $method_index . ': ' . print_r($method['attribute_conditions'], true));
                 }
             }
             unset($method); // Break reference
@@ -550,7 +550,7 @@ class WLM_Admin {
                 // Add normalized conditions if found
                 if (!empty($conditions)) {
                     $surcharge['attribute_conditions'] = array_values($conditions);
-                    error_log('WLM: Normalized flat keys to attribute_conditions for surcharge ' . $surcharge_index . ': ' . print_r($surcharge['attribute_conditions'], true));
+                    WLM_Core::log('WLM: Normalized flat keys to attribute_conditions for surcharge ' . $surcharge_index . ': ' . print_r($surcharge['attribute_conditions'], true));
                 }
                 
                 // Validate attribute_conditions structure
@@ -637,7 +637,7 @@ class WLM_Admin {
                         $express_method_id = $method_id . '_express';
                         if (!in_array($express_method_id, $existing_method_ids)) {
                             $zone->add_shipping_method($express_method_id);
-                            error_log('WLM: Added EXPRESS method ' . $express_method_id . ' to zone ' . $zone_id);
+                            WLM_Core::log('WLM: Added EXPRESS method ' . $express_method_id . ' to zone ' . $zone_id);
                         }
                     }
                     continue;
@@ -645,13 +645,13 @@ class WLM_Admin {
                 
                 // Add base method to zone
                 $zone->add_shipping_method($method_id);
-                error_log('WLM: Added method ' . $method_id . ' to zone ' . $zone_id);
+                WLM_Core::log('WLM: Added method ' . $method_id . ' to zone ' . $zone_id);
                 
                 // If Express is enabled, also add Express variant
                 if (!empty($method_config['express_enabled'])) {
                     $express_method_id = $method_id . '_express';
                     $zone->add_shipping_method($express_method_id);
-                    error_log('WLM: Added EXPRESS method ' . $express_method_id . ' to zone ' . $zone_id);
+                    WLM_Core::log('WLM: Added EXPRESS method ' . $express_method_id . ' to zone ' . $zone_id);
                 }
             }
         }
@@ -674,7 +674,7 @@ class WLM_Admin {
         }
         
         // Log start
-        error_log('[WLM AJAX] Running cronjob manually...');
+        WLM_Core::log('[WLM AJAX] Running cronjob manually...');
         
         try {
             // Run the cronjob
@@ -684,7 +684,7 @@ class WLM_Admin {
             $last_run = get_option('wlm_cronjob_last_run', 0);
             $last_count = get_option('wlm_cronjob_last_count', 0);
             
-            error_log('[WLM AJAX] Cronjob completed. Processed: ' . $last_count . ' products');
+            WLM_Core::log('[WLM AJAX] Cronjob completed. Processed: ' . $last_count . ' products');
             
             wp_send_json_success(array(
                 'message' => sprintf(
@@ -695,7 +695,7 @@ class WLM_Admin {
                 'count' => $last_count
             ));
         } catch (Exception $e) {
-            error_log('[WLM AJAX] Cronjob error: ' . $e->getMessage());
+            WLM_Core::log('[WLM AJAX] Cronjob error: ' . $e->getMessage());
             wp_send_json_error('Fehler beim Ausführen des Cronjobs: ' . $e->getMessage());
         }
     }

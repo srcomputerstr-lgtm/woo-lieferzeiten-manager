@@ -57,7 +57,7 @@ class WLM_Shipping_Methods {
                 $express_class_name = 'WLM_Shipping_Method_' . str_replace('wlm_method_', '', $express_method_id);
                 $methods[$express_method_id] = $express_class_name;
                 
-                error_log('[WLM] Registered Express method: ' . $express_method_id);
+                WLM_Core::log('[WLM] Registered Express method: ' . $express_method_id);
             }
         }
         
@@ -165,26 +165,26 @@ class WLM_Shipping_Methods {
             }
             
             public function calculate_shipping($package = array()) {
-                error_log("WLM: === calculate_shipping CALLED for: " . $this->wlm_method_id);
+                WLM_Core::log("WLM: === calculate_shipping CALLED for: " . $this->wlm_method_id);
                 
                 $method_config = $this->get_method_config();
                 
                 if (!$method_config) {
-                    error_log("WLM: Method config not found for ID: " . $this->wlm_method_id);
+                    WLM_Core::log("WLM: Method config not found for ID: " . $this->wlm_method_id);
                     return;
                 }
                 
-                error_log("WLM: Method config found. Enabled: " . ($method_config["enabled"] ? "YES" : "NO"));
+                WLM_Core::log("WLM: Method config found. Enabled: " . ($method_config["enabled"] ? "YES" : "NO"));
                 
                 if (empty($method_config["enabled"])) {
-                    error_log("WLM: Method disabled: " . $this->wlm_method_id);
+                    WLM_Core::log("WLM: Method disabled: " . $this->wlm_method_id);
                     return;
                 }
                 
                 $methods_handler = WLM_Core::instance()->shipping_methods;
                 
                 if (!$methods_handler->check_method_conditions($method_config, $package)) {
-                    error_log("WLM: Method conditions not met: " . $this->wlm_method_id);
+                    WLM_Core::log("WLM: Method conditions not met: " . $this->wlm_method_id);
                     return;
                 }
                 
@@ -205,14 +205,14 @@ class WLM_Shipping_Methods {
                         
                         if (!$stock_status["in_stock"]) {
                             $all_in_stock = false;
-                            error_log("WLM: Express not available - Product " . $product->get_id() . " insufficient stock (requested: " . $quantity . ")");
+                            WLM_Core::log("WLM: Express not available - Product " . $product->get_id() . " insufficient stock (requested: " . $quantity . ")");
                             break;
                         }
                     }
                     
                     // If not all items are in stock, do not offer Express
                     if (!$all_in_stock) {
-                        error_log("WLM: Express method hidden due to insufficient stock: " . $this->wlm_method_id);
+                        WLM_Core::log("WLM: Express method hidden due to insufficient stock: " . $this->wlm_method_id);
                         return;
                     }
                 }
@@ -223,7 +223,7 @@ class WLM_Shipping_Methods {
                 if (!empty($method_config["is_express"])) {
                     $express_cost = floatval($method_config["express_cost"] ?? 0);
                     $cost += $express_cost;
-                    error_log("WLM: Express surcharge added: " . $express_cost);
+                    WLM_Core::log("WLM: Express surcharge added: " . $express_cost);
                 }
                 
                 $rate = array(
@@ -235,7 +235,7 @@ class WLM_Shipping_Methods {
                 
                 $this->add_rate($rate);
                 
-                error_log("WLM: Added rate for method: " . $this->wlm_method_id . " - Cost: " . $cost);
+                WLM_Core::log("WLM: Added rate for method: " . $this->wlm_method_id . " - Cost: " . $cost);
             }
         }
         ';
@@ -570,11 +570,11 @@ class WLM_Shipping_Methods {
      * @return array Shipping rates.
      */
     public function debug_final_rates($rates, $package) {
-        error_log('WLM: === FINAL RATES (Priority 999) ===');
-        error_log('WLM: Total rates: ' . count($rates));
+        WLM_Core::log('WLM: === FINAL RATES (Priority 999) ===');
+        WLM_Core::log('WLM: Total rates: ' . count($rates));
         
         foreach ($rates as $rate_id => $rate) {
-            error_log('WLM: Rate ID: ' . $rate_id . ' - Label: ' . $rate->get_label());
+            WLM_Core::log('WLM: Rate ID: ' . $rate_id . ' - Label: ' . $rate->get_label());
         }
         
         return $rates;

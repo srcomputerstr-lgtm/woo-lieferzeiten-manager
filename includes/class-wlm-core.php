@@ -211,7 +211,7 @@ class WLM_Core {
             
             // Schedule new event
             wp_schedule_event($scheduled_time, 'daily', 'wlm_daily_availability_update');
-            error_log('[WLM] Cron job scheduled for ' . date('Y-m-d H:i:s', $scheduled_time) . ' (configured time: ' . $cronjob_time . ')');
+            WLM_Core::log('[WLM] Cron job scheduled for ' . date('Y-m-d H:i:s', $scheduled_time) . ' (configured time: ' . $cronjob_time . ')');
         }
     }
     
@@ -220,7 +220,7 @@ class WLM_Core {
      * Calculates and updates the calculated availability date for all products with lead time
      */
     public function update_product_availability() {
-        error_log('[WLM Cronjob] Starting product availability update...');
+        WLM_Core::log('[WLM Cronjob] Starting product availability update...');
         
         // Get ALL products (not just those with _wlm_lead_time_days)
         $args = array(
@@ -234,7 +234,7 @@ class WLM_Core {
         $settings = $this->get_settings();
         $default_lead_time = isset($settings['default_lead_time']) ? (int) $settings['default_lead_time'] : 0;
         
-        error_log('[WLM Cronjob] Found ' . count($products) . ' products total, default_lead_time=' . $default_lead_time . ' days');
+        WLM_Core::log('[WLM Cronjob] Found ' . count($products) . ' products total, default_lead_time=' . $default_lead_time . ' days');
 
         foreach ($products as $product) {
             // Try product-specific lead time first
@@ -250,7 +250,7 @@ class WLM_Core {
                 // Calculate date: Today + Lead Time (business days)
                 $calculated_date = $this->calculator->calculate_available_from_date($lead_time);
                 
-                error_log('[WLM Cronjob] Product ID ' . $product->ID . ': Lead time=' . $lead_time . ' days, Calculated date=' . $calculated_date);
+                WLM_Core::log('[WLM Cronjob] Product ID ' . $product->ID . ': Lead time=' . $lead_time . ' days, Calculated date=' . $calculated_date);
                 
                 // Save to calculated field (not the manual field!)
                 update_post_meta($product->ID, '_wlm_calculated_available_date', $calculated_date);
@@ -258,7 +258,7 @@ class WLM_Core {
             }
         }
         
-        error_log('[WLM Cronjob] Processed ' . $processed_count . ' products');
+        WLM_Core::log('[WLM Cronjob] Processed ' . $processed_count . ' products');
         
         // Update last run timestamp and count
         update_option('wlm_cronjob_last_run', current_time('timestamp'));
@@ -346,7 +346,7 @@ class WLM_Core {
                         $express_method_id = $method_id . '_express';
                         if (!in_array($express_method_id, $existing_method_ids)) {
                             $zone->add_shipping_method($express_method_id);
-                            error_log('WLM: Added EXPRESS method ' . $express_method_id . ' to zone ' . $zone_id);
+                            WLM_Core::log('WLM: Added EXPRESS method ' . $express_method_id . ' to zone ' . $zone_id);
                         }
                     }
                     continue;
@@ -354,13 +354,13 @@ class WLM_Core {
                 
                 // Add base method to zone
                 $zone->add_shipping_method($method_id);
-                error_log('WLM: Added method ' . $method_id . ' to zone ' . $zone_id);
+                WLM_Core::log('WLM: Added method ' . $method_id . ' to zone ' . $zone_id);
                 
                 // If Express is enabled, also add Express variant
                 if (!empty($method_config['express_enabled'])) {
                     $express_method_id = $method_id . '_express';
                     $zone->add_shipping_method($express_method_id);
-                    error_log('WLM: Added EXPRESS method ' . $express_method_id . ' to zone ' . $zone_id);
+                    WLM_Core::log('WLM: Added EXPRESS method ' . $express_method_id . ' to zone ' . $zone_id);
                 }
             }
         }
@@ -384,9 +384,9 @@ class WLM_Core {
     public function debug_log($message, $context = array()) {
         if ($this->is_debug_mode()) {
             if (!empty($context)) {
-                error_log('[WLM Debug] ' . $message . ' | Context: ' . print_r($context, true));
+                WLM_Core::log('[WLM Debug] ' . $message . ' | Context: ' . print_r($context, true));
             } else {
-                error_log('[WLM Debug] ' . $message);
+                WLM_Core::log('[WLM Debug] ' . $message);
             }
         }
     }
@@ -401,9 +401,9 @@ class WLM_Core {
         $instance = self::instance();
         if ($instance && $instance->is_debug_mode()) {
             if (!empty($context)) {
-                error_log('[WLM] ' . $message . ' | Context: ' . print_r($context, true));
+                WLM_Core::log('[WLM] ' . $message . ' | Context: ' . print_r($context, true));
             } else {
-                error_log('[WLM] ' . $message);
+                WLM_Core::log('[WLM] ' . $message);
             }
         }
     }
@@ -444,7 +444,7 @@ class WLM_Core {
         }
 
         // Execute the cronjob
-        error_log('[WLM] Cronjob triggered via custom endpoint');
+        WLM_Core::log('[WLM] Cronjob triggered via custom endpoint');
         $this->update_product_availability();
 
         // Return success response
