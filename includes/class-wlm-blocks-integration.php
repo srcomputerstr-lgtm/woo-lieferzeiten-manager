@@ -91,31 +91,9 @@ class WLM_Blocks_Integration implements IntegrationInterface {
             }
         }
         
-        // Calculate and apply surcharges
-        error_log('[WLM Package Rates] About to calculate surcharges...');
-        $applicable_surcharges = $calculator->calculate_surcharges($package);
-        error_log('[WLM Package Rates] Surcharges calculated: ' . count($applicable_surcharges));
-        
-        if (!empty($applicable_surcharges)) {
-            error_log('[WLM Package Rates] Applying ' . count($applicable_surcharges) . ' surcharges');
-            
-            foreach ($rates as $rate_id => $rate) {
-                // Check if surcharge should apply to express
-                $is_express = strpos($rate_id, '_express') !== false;
-                
-                foreach ($applicable_surcharges as $surcharge) {
-                    // Skip if express and surcharge doesn't apply to express
-                    if ($is_express && empty($surcharge['apply_to_express'])) {
-                        continue;
-                    }
-                    
-                    // Add surcharge cost to rate
-                    $rate->cost += $surcharge['cost'];
-                    
-                    error_log('[WLM Package Rates] Added surcharge "' . $surcharge['name'] . '" (' . $surcharge['cost'] . ') to rate ' . $rate_id);
-                }
-            }
-        }
+        // Surcharges are added as separate cart fees via add_surcharges_to_cart()
+        // DO NOT add them to shipping rates to avoid double charging
+        error_log('[WLM Package Rates] Surcharges handled separately as cart fees');
         
         // Apply shipping selection strategy
         $strategy = get_option('wlm_shipping_selection_strategy', 'customer_choice');
