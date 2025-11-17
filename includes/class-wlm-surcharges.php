@@ -237,7 +237,8 @@ class WLM_Surcharges {
         $packages = WC()->shipping()->get_packages();
 
         foreach ($packages as $package_key => $package) {
-            $surcharges = $this->calculate_surcharges($package);
+            // Use Calculator's calculate_surcharges which supports shipping class conditions
+            $surcharges = WLM_Core::instance()->calculator->calculate_surcharges($package);
 
             foreach ($surcharges as $surcharge) {
                 // Check if should apply to express
