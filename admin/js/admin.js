@@ -192,6 +192,18 @@
                 }
             });
             
+            // Collect shipping selection strategy
+            var shippingStrategy = $('#wlm_shipping_selection_strategy').val();
+            if (shippingStrategy) {
+                formData.wlm_shipping_selection_strategy = shippingStrategy;
+            }
+            
+            // Collect surcharge application strategy
+            var surchargeStrategy = $('#wlm_surcharge_application_strategy').val();
+            if (surchargeStrategy) {
+                formData.wlm_surcharge_application_strategy = surchargeStrategy;
+            }
+            
             // DEBUG: Log collected data
             console.log('Collected formData:', formData);
             
