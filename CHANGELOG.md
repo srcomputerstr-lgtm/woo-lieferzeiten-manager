@@ -2,6 +2,24 @@
 
 All notable changes to WooCommerce Lieferzeiten Manager will be documented in this file.
 
+## [1.14.6] - 2025-11-17
+
+### Fixed
+- **CRITICAL: Strategie-Filterung (Günstigste/Teuerste) wendete sich auf ALLE Versandarten an**
+  - Problem: Strategie klassifizierte pickup_location und andere Drittanbieter-Methoden als "BASE"
+  - Bei "Günstigste" wurde pickup_location (0€) ausgewählt statt WLM-Methoden
+  - WLM-Methoden wurden dadurch entfernt, obwohl sie die einzigen passenden waren
+  - Lösung: Strategie wird jetzt NUR auf WLM-Methoden angewendet
+  - Drittanbieter-Methoden (pickup_location, etc.) bleiben immer verfügbar
+
+### Technical
+- class-wlm-blocks-integration.php: `filter_package_rates()` trennt jetzt WLM-Methoden von anderen
+- Neue Klassifizierung: BASE (WLM), EXPRESS (WLM), OTHER (non-WLM)
+- Strategie wird nur auf BASE + EXPRESS angewendet
+- OTHER werden nach Filterung wieder hinzugefügt
+
+---
+
 ## [1.14.5] - 2025-11-17
 
 ### Fixed

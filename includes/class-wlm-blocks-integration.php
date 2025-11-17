@@ -124,13 +124,28 @@ class WLM_Blocks_Integration implements IntegrationInterface {
         if ($strategy !== 'customer_choice' && count($rates) > 0) {
             error_log('[WLM Package Rates] Applying strategy: ' . $strategy . ' to ' . count($rates) . ' rates');
             
-            // Separate base methods from express methods
+            // Separate WLM base methods from express methods (exclude non-WLM methods)
             $base_rates = array();
             $express_rates = array();
+            $other_rates = array(); // Non-WLM methods (e.g., pickup_location)
             
             foreach ($rates as $rate_id => $rate) {
                 error_log('[WLM Package Rates] Processing rate: ' . $rate_id);
-                if (strpos($rate_id, '_express') !== false) {
+                
+                // Check if this is a WLM method
+                $is_wlm_method = false;
+                foreach ($methods as $method) {
+                    if (isset($method['id']) && strpos($rate_id, $method['id']) === 0) {
+                        $is_wlm_method = true;
+                        break;
+                    }
+                }
+                
+                if (!$is_wlm_method) {
+                    // Not a WLM method - keep it but don't apply strategy
+                    $other_rates[$rate_id] = $rate;
+                    error_log('[WLM Package Rates] -> Classified as OTHER (non-WLM)');
+                } elseif (strpos($rate_id, '_express') !== false) {
                     $express_rates[$rate_id] = $rate;
                     error_log('[WLM Package Rates] -> Classified as EXPRESS');
                 } else {
@@ -210,6 +225,12 @@ class WLM_Blocks_Integration implements IntegrationInterface {
                             error_log('[WLM Package Rates] Keeping express variant: ' . $express_id);
                             break;
                         }
+                    }
+                    
+                    // Add back non-WLM methods (e.g., pickup_location)
+                    foreach ($other_rates as $other_id => $other_rate) {
+                        $filtered_rates[$other_id] = $other_rate;
+                        error_log('[WLM Package Rates] Keeping non-WLM method: ' . $other_id);
                     }
                     
                     $rates = $filtered_rates;
