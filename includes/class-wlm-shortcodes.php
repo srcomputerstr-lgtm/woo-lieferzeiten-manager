@@ -67,12 +67,14 @@ class WLM_Shortcodes {
             if ($show_all || in_array('stock', $show_parts)) {
                 $stock_status = $window['stock_status'];
                 if ($stock_status['in_stock']) {
-                    echo '<div class="wlm-stock-status wlm--in-stock">';
-                    echo '🟢 ' . esc_html($stock_status['message']);
+                    echo '<div class="wlm-info-item wlm-stock wlm--in-stock">';
+                    WLM_Icons::icon('check');
+                    echo '<span class="wlm-text">' . esc_html($stock_status['message']) . '</span>';
                     echo '</div>';
                 } else {
-                    echo '<div class="wlm-stock-status wlm--restock">';
-                    echo '🟡 ' . esc_html($stock_status['message']);
+                    echo '<div class="wlm-info-item wlm-stock wlm--restock">';
+                    WLM_Icons::icon('clock');
+                    echo '<span class="wlm-text">' . esc_html($stock_status['message']) . '</span>';
                     echo '</div>';
                 }
             }
@@ -80,12 +82,14 @@ class WLM_Shortcodes {
             // Shipping method
             if (($show_all || in_array('shipping', $show_parts)) && !empty($window['shipping_method']) && !empty($window['shipping_method']['title'])) {
                 $method = $window['shipping_method'];
-                echo '<div class="wlm-shipping-method">';
-                echo '🚚 ' . esc_html__('Versand via', 'woo-lieferzeiten-manager') . ' ';
-                echo '<strong>' . esc_html($method['title']) . '</strong>';
+                echo '<div class="wlm-info-item wlm-shipping">';
+                WLM_Icons::icon('truck');
+                echo '<span class="wlm-label">' . esc_html__('Versand via', 'woo-lieferzeiten-manager') . '</span> ';
+                echo '<strong class="wlm-value">' . esc_html($method['title']) . '</strong>';
                 
                 if (!empty($method['cost_info'])) {
-                    echo ' <span class="wlm-info-icon" title="' . esc_attr($method['cost_info']) . '">ℹ️</span>';
+                    echo ' ';
+                    WLM_Icons::icon('info', 'wlm-tooltip');
                 }
                 echo '</div>';
                 
@@ -93,8 +97,9 @@ class WLM_Shortcodes {
                 $surcharge_notices = $this->get_applicable_surcharge_notices($product);
                 if (!empty($surcharge_notices)) {
                     foreach ($surcharge_notices as $notice) {
-                        echo '<div class="wlm-surcharge-notice" style="font-size: 0.9em; color: #666; margin-top: 5px;">';
-                        echo '⚠️ ' . esc_html($notice);
+                        echo '<div class="wlm-info-item wlm-surcharge">';
+                        WLM_Icons::icon('alert');
+                        echo '<span class="wlm-text">' . esc_html($notice) . '</span>';
                         echo '</div>';
                     }
                 }
@@ -102,9 +107,10 @@ class WLM_Shortcodes {
 
             // Delivery window
             if ($show_all || in_array('delivery', $show_parts)) {
-                echo '<div class="wlm-delivery-window">';
-                echo '📅 ' . esc_html__('Lieferung ca.:', 'woo-lieferzeiten-manager') . ' ';
-                echo '<strong>' . esc_html($window['window_formatted']) . '</strong>';
+                echo '<div class="wlm-info-item wlm-delivery">';
+                WLM_Icons::icon('calendar');
+                echo '<span class="wlm-label">' . esc_html__('Lieferung ca.:', 'woo-lieferzeiten-manager') . '</span> ';
+                echo '<strong class="wlm-value">' . esc_html($window['window_formatted']) . '</strong>';
                 echo '</div>';
             }
             ?>

@@ -2,6 +2,31 @@
 
 All notable changes to WooCommerce Lieferzeiten Manager will be documented in this file.
 
+## [1.15.0] - 2025-11-17
+
+### Added
+- **Minimalistisches Design mit SVG Icons**
+  - Neue Icon-Klasse mit professionellen SVG Icons
+  - Icons: Check (Lager), Truck (Versand), Calendar (Lieferung), Alert (Zuschlag), Info (Tooltip), Clock (Nachschub)
+  - Saubere, konsistente Darstellung auf allen Geräten
+  - Keine Emojis mehr - professionelles Erscheinungsbild
+
+### Changed
+- **Komplett überarbeitetes Frontend-Design**
+  - Neue HTML-Struktur mit `.wlm-info-item` Komponenten
+  - Minimalistisches, modernes CSS
+  - Tailwind-inspirierte Farbpalette
+  - Verbesserte Lesbarkeit und Spacing
+  - Responsive Design optimiert
+
+### Technical
+- Neue Datei: `class-wlm-icons.php` - SVG Icon Helper
+- `class-wlm-shortcodes.php`: Komplett neue HTML-Struktur
+- `assets/css/frontend.css`: Komplettes Redesign
+- Icons verwenden `currentColor` für einfaches Theming
+
+---
+
 ## [1.14.7] - 2025-11-17
 
 ### Added
