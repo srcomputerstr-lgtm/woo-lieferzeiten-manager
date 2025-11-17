@@ -120,6 +120,12 @@ class WLM_Core {
         // Ensure our methods are added to all zones
         add_action('woocommerce_shipping_init', array($this, 'ensure_methods_in_zones'));
         add_action('woocommerce_init', array($this, 'ensure_methods_in_zones'));
+        
+        // Save delivery timeframe to order meta
+        add_action('woocommerce_checkout_create_order', array($this, 'save_delivery_timeframe_to_order'), 10, 2);
+        
+        // Display delivery timeframe in order details (admin)
+        add_action('woocommerce_admin_order_data_after_shipping_address', array($this, 'display_order_delivery_timeframe'));
     }
     
     /**
@@ -460,5 +466,142 @@ class WLM_Core {
         
         echo json_encode($response);
         exit;
+    }
+    
+    /**
+     * Save delivery timeframe to order meta
+     *
+     * @param WC_Order $order Order object.
+     * @param array $data Posted data.
+     */
+    public function save_delivery_timeframe_to_order($order, $data) {
+        // Get chosen shipping method
+        $shipping_methods = $order->get_shipping_methods();
+        
+        if (empty($shipping_methods)) {
+            WLM_Core::log('No shipping method found for order ' . $order->get_id());
+            return;
+        }
+        
+        // Get first shipping method
+        $shipping_method = reset($shipping_methods);
+        $method_id = $shipping_method->get_method_id();
+        
+        WLM_Core::log('Saving delivery timeframe for order ' . $order->get_id() . ' with method: ' . $method_id);
+        
+        // Check if it's a WLM method
+        if (strpos($method_id, 'wlm_method_') !== 0) {
+            WLM_Core::log('Not a WLM method, skipping delivery timeframe save');
+            return;
+        }
+        
+        // Get cart items to calculate delivery window
+        $items = $order->get_items();
+        $cart_items = array();
+        
+        foreach ($items as $item) {
+            $product = $item->get_product();
+            if ($product) {
+                $cart_items[] = array(
+                    'product' => $product,
+                    'quantity' => $item->get_quantity()
+                );
+            }
+        }
+        
+        if (empty($cart_items)) {
+            WLM_Core::log('No cart items found for order ' . $order->get_id());
+            return;
+        }
+        
+        // Get shipping method config
+        $methods = $this->get_shipping_methods();
+        $method_config = null;
+        
+        foreach ($methods as $method) {
+            if (isset($method['id']) && $method['id'] === $method_id) {
+                $method_config = $method;
+                break;
+            }
+        }
+        
+        if (!$method_config) {
+            WLM_Core::log('Method config not found for: ' . $method_id);
+            return;
+        }
+        
+        // Calculate delivery window using Calculator
+        $window = $this->calculator->calculate_delivery_window($cart_items, $method_config);
+        
+        if (!$window || empty($window['earliest_date']) || empty($window['latest_date'])) {
+            WLM_Core::log('Could not calculate delivery window for order ' . $order->get_id());
+            return;
+        }
+        
+        // Save to order meta
+        $order->update_meta_data('_wlm_earliest_delivery', $window['earliest_date']);
+        $order->update_meta_data('_wlm_latest_delivery', $window['latest_date']);
+        $order->update_meta_data('_wlm_delivery_window', $window['window_formatted']);
+        $order->update_meta_data('_wlm_shipping_method_name', $method_config['name'] ?? '');
+        
+        $order->save();
+        
+        WLM_Core::log('Saved delivery timeframe for order ' . $order->get_id() . ': ' . $window['earliest_date'] . ' - ' . $window['latest_date']);
+    }
+    
+    /**
+     * Display delivery timeframe in order details (admin)
+     *
+     * @param WC_Order $order Order object.
+     */
+    public function display_order_delivery_timeframe($order) {
+        $earliest = $order->get_meta('_wlm_earliest_delivery');
+        $latest = $order->get_meta('_wlm_latest_delivery');
+        $window = $order->get_meta('_wlm_delivery_window');
+        $method_name = $order->get_meta('_wlm_shipping_method_name');
+        
+        if (empty($earliest) || empty($latest)) {
+            return;
+        }
+        
+        // Format dates for display
+        $earliest_formatted = date_i18n(get_option('date_format'), strtotime($earliest));
+        $latest_formatted = date_i18n(get_option('date_format'), strtotime($latest));
+        
+        ?>
+        <div class="wlm-order-delivery-timeframe" style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-left: 4px solid #2271b1;">
+            <h3 style="margin-top: 0;"><?php esc_html_e('Lieferzeitraum', 'woo-lieferzeiten-manager'); ?></h3>
+            
+            <?php if ($method_name): ?>
+            <p style="margin: 5px 0;">
+                <strong><?php esc_html_e('Versandart:', 'woo-lieferzeiten-manager'); ?></strong>
+                <?php echo esc_html($method_name); ?>
+            </p>
+            <?php endif; ?>
+            
+            <?php if ($window): ?>
+            <p style="margin: 5px 0;">
+                <strong><?php esc_html_e('Lieferzeitraum:', 'woo-lieferzeiten-manager'); ?></strong>
+                <?php echo esc_html($window); ?>
+            </p>
+            <?php endif; ?>
+            
+            <p style="margin: 5px 0;">
+                <strong><?php esc_html_e('Früheste Zustellung:', 'woo-lieferzeiten-manager'); ?></strong>
+                <?php echo esc_html($earliest_formatted); ?>
+                <code style="margin-left: 10px; background: #fff; padding: 2px 6px; border-radius: 3px;"><?php echo esc_html($earliest); ?></code>
+            </p>
+            
+            <p style="margin: 5px 0;">
+                <strong><?php esc_html_e('Späteste Zustellung:', 'woo-lieferzeiten-manager'); ?></strong>
+                <?php echo esc_html($latest_formatted); ?>
+                <code style="margin-left: 10px; background: #fff; padding: 2px 6px; border-radius: 3px;"><?php echo esc_html($latest); ?></code>
+            </p>
+            
+            <p style="margin: 10px 0 0 0; font-size: 12px; color: #666;">
+                <em><?php esc_html_e('Diese Daten werden automatisch an das ERP-System übertragen.', 'woo-lieferzeiten-manager'); ?></em>
+            </p>
+        </div>
+        <?php
     }
 }

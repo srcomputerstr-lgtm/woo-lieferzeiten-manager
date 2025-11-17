@@ -169,6 +169,67 @@ class WLM_REST_API {
                 )
             )
         ));
+        
+        // Get order delivery timeframe
+        register_rest_route(self::NAMESPACE, '/orders/(?P<id>\d+)/delivery-timeframe', array(
+            'methods' => 'GET',
+            'callback' => array($this, 'get_order_delivery_timeframe'),
+            'permission_callback' => array($this, 'check_permission'),
+            'args' => array(
+                'id' => array(
+                    'required' => true,
+                    'validate_callback' => function($param) {
+                        return is_numeric($param);
+                    }
+                )
+            )
+        ));
+        
+        // Get multiple orders delivery timeframes
+        register_rest_route(self::NAMESPACE, '/orders/delivery-timeframes', array(
+            'methods' => 'GET',
+            'callback' => array($this, 'get_orders_delivery_timeframes'),
+            'permission_callback' => array($this, 'check_permission'),
+            'args' => array(
+                'order_ids' => array(
+                    'required' => false,
+                    'validate_callback' => function($param) {
+                        if (empty($param)) return true;
+                        $ids = explode(',', $param);
+                        foreach ($ids as $id) {
+                            if (!is_numeric(trim($id))) return false;
+                        }
+                        return true;
+                    },
+                    'sanitize_callback' => 'sanitize_text_field'
+                ),
+                'status' => array(
+                    'required' => false,
+                    'sanitize_callback' => 'sanitize_text_field'
+                ),
+                'date_from' => array(
+                    'required' => false,
+                    'validate_callback' => function($param) {
+                        return empty($param) || preg_match('/^\d{4}-\d{2}-\d{2}$/', $param);
+                    },
+                    'sanitize_callback' => 'sanitize_text_field'
+                ),
+                'date_to' => array(
+                    'required' => false,
+                    'validate_callback' => function($param) {
+                        return empty($param) || preg_match('/^\d{4}-\d{2}-\d{2}$/', $param);
+                    },
+                    'sanitize_callback' => 'sanitize_text_field'
+                ),
+                'limit' => array(
+                    'required' => false,
+                    'default' => 100,
+                    'validate_callback' => function($param) {
+                        return is_numeric($param) && $param > 0 && $param <= 1000;
+                    }
+                )
+            )
+        ));
     }
 
     /**
@@ -611,5 +672,140 @@ class WLM_REST_API {
 
         WLM_Core::log('[WLM API] Could not parse date format: ' . $date);
         return null;
+    }
+    
+    /**
+     * Get order delivery timeframe
+     *
+     * @param WP_REST_Request $request Request object.
+     * @return WP_REST_Response|WP_Error
+     */
+    public function get_order_delivery_timeframe($request) {
+        $order_id = $request->get_param('id');
+        
+        $order = wc_get_order($order_id);
+        
+        if (!$order) {
+            return new WP_Error(
+                'order_not_found',
+                'Order not found',
+                array('status' => 404)
+            );
+        }
+        
+        $earliest = $order->get_meta('_wlm_earliest_delivery');
+        $latest = $order->get_meta('_wlm_latest_delivery');
+        $window = $order->get_meta('_wlm_delivery_window');
+        $method_name = $order->get_meta('_wlm_shipping_method_name');
+        
+        // Get shipping method from order
+        $shipping_methods = $order->get_shipping_methods();
+        $shipping_method = !empty($shipping_methods) ? reset($shipping_methods) : null;
+        
+        $response = array(
+            'order_id' => $order_id,
+            'order_number' => $order->get_order_number(),
+            'order_status' => $order->get_status(),
+            'order_date' => $order->get_date_created() ? $order->get_date_created()->format('Y-m-d H:i:s') : null,
+            'earliest_delivery' => $earliest ?: null,
+            'latest_delivery' => $latest ?: null,
+            'delivery_window' => $window ?: null,
+            'shipping_method' => array(
+                'id' => $shipping_method ? $shipping_method->get_method_id() : null,
+                'name' => $method_name ?: ($shipping_method ? $shipping_method->get_name() : null)
+            )
+        );
+        
+        return rest_ensure_response($response);
+    }
+    
+    /**
+     * Get multiple orders delivery timeframes
+     *
+     * @param WP_REST_Request $request Request object.
+     * @return WP_REST_Response|WP_Error
+     */
+    public function get_orders_delivery_timeframes($request) {
+        $order_ids = $request->get_param('order_ids');
+        $status = $request->get_param('status');
+        $date_from = $request->get_param('date_from');
+        $date_to = $request->get_param('date_to');
+        $limit = $request->get_param('limit') ?: 100;
+        
+        $args = array(
+            'limit' => $limit,
+            'return' => 'ids'
+        );
+        
+        // Filter by specific order IDs
+        if (!empty($order_ids)) {
+            $ids = array_map('trim', explode(',', $order_ids));
+            $args['post__in'] = $ids;
+        }
+        
+        // Filter by status
+        if (!empty($status)) {
+            $args['status'] = $status;
+        }
+        
+        // Filter by date range
+        if (!empty($date_from)) {
+            $args['date_created'] = '>=' . $date_from;
+        }
+        if (!empty($date_to)) {
+            $args['date_created'] = '<=' . $date_to . ' 23:59:59';
+        }
+        
+        $orders = wc_get_orders($args);
+        
+        $results = array();
+        
+        foreach ($orders as $order_id) {
+            $order = wc_get_order($order_id);
+            
+            if (!$order) {
+                continue;
+            }
+            
+            $earliest = $order->get_meta('_wlm_earliest_delivery');
+            $latest = $order->get_meta('_wlm_latest_delivery');
+            $window = $order->get_meta('_wlm_delivery_window');
+            $method_name = $order->get_meta('_wlm_shipping_method_name');
+            
+            // Only include orders with delivery timeframe data
+            if (empty($earliest) && empty($latest)) {
+                continue;
+            }
+            
+            $shipping_methods = $order->get_shipping_methods();
+            $shipping_method = !empty($shipping_methods) ? reset($shipping_methods) : null;
+            
+            $results[] = array(
+                'order_id' => $order_id,
+                'order_number' => $order->get_order_number(),
+                'order_status' => $order->get_status(),
+                'order_date' => $order->get_date_created() ? $order->get_date_created()->format('Y-m-d H:i:s') : null,
+                'earliest_delivery' => $earliest ?: null,
+                'latest_delivery' => $latest ?: null,
+                'delivery_window' => $window ?: null,
+                'shipping_method' => array(
+                    'id' => $shipping_method ? $shipping_method->get_method_id() : null,
+                    'name' => $method_name ?: ($shipping_method ? $shipping_method->get_name() : null)
+                ),
+                'customer' => array(
+                    'email' => $order->get_billing_email(),
+                    'first_name' => $order->get_billing_first_name(),
+                    'last_name' => $order->get_billing_last_name()
+                )
+            );
+        }
+        
+        $response = array(
+            'total' => count($results),
+            'limit' => $limit,
+            'orders' => $results
+        );
+        
+        return rest_ensure_response($response);
     }
 }
