@@ -597,7 +597,10 @@ class WLM_Calculator {
         $stock_status = $product->get_stock_status();
         $stock_quantity = $product->get_stock_quantity();
         $settings = WLM_Core::instance()->get_settings();
-        $max_visible = $settings['max_visible_stock'] ?? 100;
+        
+        // Get max visible stock (product-specific or global)
+        $product_max_visible = get_post_meta($product->get_id(), '_wlm_max_visible_stock', true);
+        $max_visible = !empty($product_max_visible) ? absint($product_max_visible) : ($settings['max_visible_stock'] ?? 100);
 
         $result = array(
             'status' => $stock_status,
@@ -659,7 +662,19 @@ class WLM_Calculator {
                 }
             } else {
                 // Enough stock available
-                $result['message'] = __('Auf Lager', 'woo-lieferzeiten-manager');
+                if ($stock_quantity > $max_visible) {
+                    $result['quantity'] = $max_visible;
+                    $result['message'] = sprintf(
+                        __('Ponad %d sztuk w magazynie', 'woo-lieferzeiten-manager'),
+                        $max_visible
+                    );
+                } else {
+                    $result['quantity'] = $stock_quantity;
+                    $result['message'] = sprintf(
+                        __('Ponad %d sztuk w magazynie', 'woo-lieferzeiten-manager'),
+                        $stock_quantity
+                    );
+                }
             }
         } elseif ($stock_status === 'onbackorder') {
             $available_from = get_post_meta($product->get_id(), '_wlm_available_from', true);
