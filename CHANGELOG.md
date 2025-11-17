@@ -2,6 +2,22 @@
 
 All notable changes to WooCommerce Lieferzeiten Manager will be documented in this file.
 
+## [1.14.3] - 2025-11-17
+
+### Fixed
+- **CRITICAL: Express-Varianten wurden nicht automatisch in Shipping Zones registriert**
+  - Problem: Basis-Methoden wurden automatisch zu Zones hinzugefügt, Express-Varianten nicht
+  - Benutzer mussten Express-Varianten manuell in jeder Zone aktivieren
+  - Lösung: Express-Varianten werden jetzt automatisch hinzugefügt wenn Express aktiviert ist
+  - Gilt für neue Methoden UND bestehende Methoden (retroaktiv)
+
+### Technical
+- class-wlm-core.php: `ensure_methods_in_zones()` fügt jetzt auch Express-Varianten hinzu
+- class-wlm-admin.php: `update_zones_after_save()` fügt jetzt auch Express-Varianten hinzu
+- Beide Funktionen prüfen ob Express aktiviert ist und fügen `{method_id}_express` hinzu
+
+---
+
 ## [1.14.2] - 2025-11-17
 
 ### Fixed

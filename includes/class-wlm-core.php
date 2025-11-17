@@ -314,13 +314,27 @@ class WLM_Core {
                 
                 // Skip if already in zone
                 if (in_array($method_id, $existing_method_ids)) {
+                    // Base method exists, but check if Express variant needs to be added
+                    if (!empty($method_config['express_enabled'])) {
+                        $express_method_id = $method_id . '_express';
+                        if (!in_array($express_method_id, $existing_method_ids)) {
+                            $zone->add_shipping_method($express_method_id);
+                            error_log('WLM: Added EXPRESS method ' . $express_method_id . ' to zone ' . $zone_id);
+                        }
+                    }
                     continue;
                 }
                 
-                // Add method to zone
+                // Add base method to zone
                 $zone->add_shipping_method($method_id);
-                
                 error_log('WLM: Added method ' . $method_id . ' to zone ' . $zone_id);
+                
+                // If Express is enabled, also add Express variant
+                if (!empty($method_config['express_enabled'])) {
+                    $express_method_id = $method_id . '_express';
+                    $zone->add_shipping_method($express_method_id);
+                    error_log('WLM: Added EXPRESS method ' . $express_method_id . ' to zone ' . $zone_id);
+                }
             }
         }
     }
