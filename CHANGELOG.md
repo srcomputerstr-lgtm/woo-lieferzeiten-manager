@@ -2,6 +2,30 @@
 
 All notable changes to WooCommerce Lieferzeiten Manager will be documented in this file.
 
+## [1.14.1] - 2025-11-17
+
+### Fixed
+- **CRITICAL: Bedingungen-Logik komplett überarbeitet**
+  - **Problem:** Versandarten wurden ausgeblendet, wenn EIN Produkt die Bedingung nicht erfüllt
+  - **Alte Logik:** Prüfte JEDES Produkt einzeln - wenn eines nicht matched, wurde Versandart ausgeblendet
+  - **Neue Logik:** Prüft GESAMTEN Warenkorb - sammelt alle Werte aus allen Produkten
+  - **"at least one of"** bedeutet jetzt: Mindestens ein Produkt im Warenkorb hat diesen Wert
+  - Neue Methode: `check_cart_conditions()` ersetzt produkt-basierte Prüfung
+  - Unterstützt: Attribute, Taxonomien, Versandklassen
+  - Gilt für Versandarten UND Zuschläge
+
+- **Zuschläge-Bedingungen werden jetzt gespeichert**
+  - JavaScript sammelt jetzt `attribute_conditions` korrekt
+  - Bedingungen bleiben nach Reload erhalten
+  - Gleiche Logik wie bei Versandarten
+
+### Technical
+- Calculator.php: Neue Methode `check_cart_conditions()` für warenkorb-basierte Bedingungsprüfung
+- Blocks-Integration.php: Verwendet `check_cart_conditions()` statt `check_product_conditions()`
+- admin.js: Erweitert Surcharges-Sammlung um `attribute_conditions`
+
+---
+
 ## [1.14.0] - 2025-11-17
 
 ### Added

@@ -806,6 +806,106 @@ class WLM_Calculator {
      * @param array $method Method configuration with attribute_conditions and required_categories.
      * @return bool Whether product meets all conditions.
      */
+    /**
+     * Check if cart meets attribute conditions (cart-level check)
+     * 
+     * @param array $package Cart package
+     * @param array $method Method configuration
+     * @return bool True if conditions are met
+     */
+    public function check_cart_conditions($package, $method) {
+        $required_attrs = array();
+        
+        // New format: attribute_conditions array
+        if (!empty($method['attribute_conditions']) && is_array($method['attribute_conditions'])) {
+            $required_attrs = $method['attribute_conditions'];
+        }
+        
+        if (empty($required_attrs)) {
+            return true; // No conditions = always show
+        }
+        
+        error_log('[WLM] Checking ' . count($required_attrs) . ' cart-level attribute conditions');
+        
+        // Check each condition
+        foreach ($required_attrs as $condition) {
+            $attr_slug = $condition['attribute'] ?? '';
+            $required_values = $condition['values'] ?? array();
+            $logic = $condition['logic'] ?? 'at_least_one';
+            $type = $condition['type'] ?? 'attribute';
+            
+            if (empty($required_values)) {
+                continue;
+            }
+            
+            // Collect all values from all products in cart
+            $cart_values = array();
+            foreach ($package['contents'] as $item) {
+                $product = $item['data'];
+                if (!$product) continue;
+                
+                $product_values = array();
+                
+                if ($type === 'shipping_class') {
+                    // Get shipping class
+                    $shipping_class = $product->get_shipping_class();
+                    if ($shipping_class) {
+                        $product_values[] = $shipping_class;
+                    }
+                } elseif ($type === 'taxonomy') {
+                    // Get taxonomy terms (categories, tags)
+                    $product_id = $product->get_parent_id() ? $product->get_parent_id() : $product->get_id();
+                    $terms = wp_get_post_terms($product_id, $attr_slug, array('fields' => 'slugs'));
+                    if (!is_wp_error($terms)) {
+                        $product_values = $terms;
+                    }
+                } else {
+                    // Get product attribute
+                    $product_id = $product->get_parent_id() ? $product->get_parent_id() : $product->get_id();
+                    
+                    if ($product->is_type('variation')) {
+                        $variation_attrs = $product->get_attributes();
+                        if (isset($variation_attrs[$attr_slug]) && !empty($variation_attrs[$attr_slug])) {
+                            $product_values[] = $variation_attrs[$attr_slug];
+                        } else {
+                            $parent_product = wc_get_product($product_id);
+                            if ($parent_product) {
+                                $parent_attr = $parent_product->get_attribute($attr_slug);
+                                if ($parent_attr) {
+                                    $product_values = array_map('trim', explode(',', $parent_attr));
+                                }
+                            }
+                        }
+                    } else {
+                        $product_attr = $product->get_attribute($attr_slug);
+                        if ($product_attr) {
+                            $product_values = array_map('trim', explode(',', $product_attr));
+                        }
+                    }
+                }
+                
+                // Add to cart values
+                $cart_values = array_merge($cart_values, $product_values);
+            }
+            
+            // Remove duplicates and normalize
+            $cart_values = array_unique(array_map('strtolower', array_map('trim', $cart_values)));
+            $required_values_normalized = array_map('strtolower', array_map('trim', $required_values));
+            
+            // Apply logic operator to cart-level values
+            $condition_met = $this->check_attribute_logic($cart_values, $required_values_normalized, $logic);
+            
+            error_log('[WLM] Cart condition - Type: ' . $type . ', Attribute: ' . $attr_slug . ', Logic: ' . $logic . ', Required: ' . implode(',', $required_values) . ', Cart has: ' . implode(',', $cart_values) . ', Met: ' . ($condition_met ? 'YES' : 'NO'));
+            
+            if (!$condition_met) {
+                error_log('[WLM] Cart condition NOT met - returning false');
+                return false;
+            }
+        }
+        
+        return true;
+    }
+    
     public function check_product_conditions($product, $method) {
         // Check required attributes
         $required_attrs = array();

@@ -70,21 +70,9 @@ class WLM_Blocks_Integration implements IntegrationInterface {
             
             error_log('[WLM Package Rates] Checking conditions for rate: ' . $rate_id);
             
-            // Check each product in package
-            $should_show = true;
-            foreach ($package['contents'] as $item) {
-                $product = $item['data'];
-                if (!$product) continue;
-                
-                if (!$calculator->check_product_conditions($product, $method_config)) {
-                    error_log('[WLM Package Rates] Product ' . $product->get_name() . ' does not meet conditions - removing rate ' . $rate_id);
-                    $should_show = false;
-                    break;
-                }
-            }
-            
-            // Remove rate if conditions not met
-            if (!$should_show) {
+            // Check if ANY product in package meets conditions (cart-level check)
+            if (!$calculator->check_cart_conditions($package, $method_config)) {
+                error_log('[WLM Package Rates] Cart does not meet conditions - removing rate ' . $rate_id);
                 unset($rates[$rate_id]);
             }
         }
@@ -353,32 +341,22 @@ class WLM_Blocks_Integration implements IntegrationInterface {
                 continue;
             }
             
-            // Check product attribute conditions
-            $should_show_method = true;
+            // Check cart-level attribute conditions
             if (!empty($method_config['attribute_conditions'])) {
-                error_log('[WLM Blocks] Checking attribute conditions for method: ' . $method_id);
-                error_log('[WLM Blocks] Conditions: ' . print_r($method_config['attribute_conditions'], true));
+                error_log('[WLM Blocks] Checking cart-level attribute conditions for method: ' . $method_id);
                 
-                // Check each product in cart
+                // Build package from cart
+                $package = array('contents' => array());
                 if (WC()->cart) {
                     foreach (WC()->cart->get_cart() as $cart_item) {
-                        $product = $cart_item['data'];
-                        if (!$product) continue;
-                        
-                        // Check if product meets conditions
-                        if (!$calculator->check_product_conditions($product, $method_config)) {
-                            error_log('[WLM Blocks] Product ' . $product->get_name() . ' does not meet conditions - hiding method ' . $method_id);
-                            $should_show_method = false;
-                            break; // Stop checking, method is hidden
-                        }
+                        $package['contents'][] = $cart_item;
                     }
                 }
-            }
-            
-            // Skip this method if conditions not met
-            if (!$should_show_method) {
-                error_log('[WLM Blocks] Skipping method ' . $method_id . ' due to unmet conditions');
-                continue;
+                
+                if (!$calculator->check_cart_conditions($package, $method_config)) {
+                    error_log('[WLM Blocks] Cart does not meet conditions - skipping method ' . $method_id);
+                    continue;
+                }
             }
             
             // Calculate delivery window for normal method

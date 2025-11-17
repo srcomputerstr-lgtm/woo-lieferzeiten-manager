@@ -176,7 +176,7 @@
             formData.wlm_surcharges = [];
             $('.wlm-surcharge-item').each(function() {
                 var surcharge = {};
-                $(this).find('[name^="wlm_surcharges"]').each(function() {
+                $(this).find('[name^="wlm_surcharges"]').not('[name*="attribute_conditions"]').each(function() {
                     var name = $(this).attr('name');
                     var match = name.match(/wlm_surcharges\[\d+\]\[(.+)\]/);
                     if (match) {
@@ -188,6 +188,29 @@
                         }
                     }
                 });
+                
+                // Collect attribute_conditions separately
+                surcharge['attribute_conditions'] = [];
+                $(this).find('.wlm-condition-item').each(function() {
+                    var condition = {};
+                    $(this).find('[name*="attribute_conditions"]').each(function() {
+                        var name = $(this).attr('name');
+                        // Extract field name from: wlm_surcharges[X][attribute_conditions][Y][FIELD]
+                        var match = name.match(/attribute_conditions\]\[\d+\]\[([^\]]+)\]/);
+                        if (match) {
+                            var field = match[1];
+                            if ($(this).is('select[multiple]')) {
+                                condition[field] = $(this).val() || [];
+                            } else {
+                                condition[field] = $(this).val();
+                            }
+                        }
+                    });
+                    if (Object.keys(condition).length > 0) {
+                        surcharge['attribute_conditions'].push(condition);
+                    }
+                });
+                
                 if (Object.keys(surcharge).length > 0) {
                     formData.wlm_surcharges.push(surcharge);
                 }
