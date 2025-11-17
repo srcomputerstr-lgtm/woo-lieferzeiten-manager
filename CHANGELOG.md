@@ -2,6 +2,16 @@
 
 All notable changes to WooCommerce Lieferzeiten Manager will be documented in this file.
 
+## [1.14.5] - 2025-11-17
+
+### Fixed
+- **CRITICAL: Syntax Error in class-wlm-shipping-methods.php**
+  - Parse error in Zeile 177: Single quotes in eval() String nicht escaped
+  - Verursachte kompletten Plugin-Crash
+  - Geändert: `'YES'` → `"YES"` in eval() String
+
+---
+
 ## [1.14.4] - 2025-11-17
 
 ### Fixed

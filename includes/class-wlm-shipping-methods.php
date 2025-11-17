@@ -174,7 +174,7 @@ class WLM_Shipping_Methods {
                     return;
                 }
                 
-                error_log("WLM: Method config found. Enabled: " . ($method_config["enabled"] ? 'YES' : 'NO'));
+                error_log("WLM: Method config found. Enabled: " . ($method_config["enabled"] ? "YES" : "NO"));
                 
                 if (empty($method_config["enabled"])) {
                     error_log("WLM: Method disabled: " . $this->wlm_method_id);
