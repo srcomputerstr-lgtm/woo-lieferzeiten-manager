@@ -396,12 +396,17 @@ class WLM_Frontend {
         
         wp_send_json_success(array(
             'delivery_window' => $window['window_formatted'] ?? '',
+            'earliest_date' => $window['earliest_date'] ?? '',
+            'latest_date' => $window['latest_date'] ?? '',
             'express_available' => $express_available,
             'express_window' => $express_window['window_formatted'] ?? '',
+            'express_earliest_date' => $express_window['earliest_date'] ?? '',
+            'express_latest_date' => $express_window['latest_date'] ?? '',
             'express_cost' => $express_cost,
             'express_cost_formatted' => wc_price($express_cost),
             'is_express_selected' => $is_express_selected,
-            'method_id' => $method_id
+            'method_id' => $method_id,
+            'method_name' => $method_config['name'] ?? ''
         ));
     }
     

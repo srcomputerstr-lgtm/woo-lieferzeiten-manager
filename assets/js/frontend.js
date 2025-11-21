@@ -551,32 +551,17 @@
                         
                         (window.wlm_params?.debug) && console.log('[WLM Checkout] Received delivery info:', data);
                         
-                        // Extract dates from delivery_window if available
-                        var earliestDate = '';
-                        var latestDate = '';
+                        // Use data directly from response
+                        var earliestDate = data.earliest_date || '';
+                        var latestDate = data.latest_date || '';
                         var deliveryWindow = data.delivery_window || '';
-                        var methodName = '';
+                        var methodName = data.method_name || '';
                         
-                        // Try to extract method name from the response
-                        // The method name might be in the shipping method label
-                        var $methodLabel = $selectedMethod.closest('li').find('label');
-                        if ($methodLabel.length) {
-                            methodName = $methodLabel.text().trim();
-                            // Remove price from method name
-                            methodName = methodName.replace(/\s*[€$].*$/, '').trim();
-                        }
-                        
-                        // Parse delivery window to extract dates
-                        // Format: "20.11.2025 - 22.11.2025" or similar
-                        if (deliveryWindow) {
-                            var dateMatch = deliveryWindow.match(/(\d{2}\.\d{2}\.\d{4})\s*-\s*(\d{2}\.\d{2}\.\d{4})/);
-                            if (dateMatch) {
-                                // Convert DD.MM.YYYY to YYYY-MM-DD
-                                var earliestParts = dateMatch[1].split('.');
-                                var latestParts = dateMatch[2].split('.');
-                                earliestDate = earliestParts[2] + '-' + earliestParts[1] + '-' + earliestParts[0];
-                                latestDate = latestParts[2] + '-' + latestParts[1] + '-' + latestParts[0];
-                            }
+                        // If express is selected, use express dates
+                        if (data.is_express_selected && data.express_earliest_date) {
+                            earliestDate = data.express_earliest_date;
+                            latestDate = data.express_latest_date;
+                            deliveryWindow = data.express_window;
                         }
                         
                         // Update hidden fields
@@ -589,7 +574,8 @@
                             earliest: earliestDate,
                             latest: latestDate,
                             window: deliveryWindow,
-                            method: methodName
+                            method: methodName,
+                            express: data.is_express_selected
                         });
                     } else {
                         (window.wlm_params?.debug) && console.log('[WLM Checkout] No delivery info received');
