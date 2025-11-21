@@ -303,6 +303,9 @@
         onCartUpdate: function() {
             // Move delivery time from label to below
             this.moveDeliveryTimeFromLabel();
+            
+            // Update hidden checkout fields with delivery timeframe
+            this.updateCheckoutDeliveryFields();
         },
 
         /**
@@ -506,6 +509,96 @@
                 
                 (window.wlm_params?.debug) && console.log('[WLM] moveDeliveryInfoToDescriptionDiv() finished');
             }, 100);
+        },
+        
+        /**
+         * Update hidden checkout fields with delivery timeframe data
+         */
+        updateCheckoutDeliveryFields: function() {
+            // Only on checkout page
+            if (!$('body').hasClass('woocommerce-checkout')) {
+                return;
+            }
+            
+            // Get selected shipping method
+            var $selectedMethod = $('input[name^="shipping_method"]:checked');
+            if (!$selectedMethod.length) {
+                return;
+            }
+            
+            var methodId = $selectedMethod.val();
+            
+            // Only for WLM methods
+            if (!methodId || methodId.indexOf('wlm_method_') !== 0) {
+                (window.wlm_params?.debug) && console.log('[WLM Checkout] Not a WLM method:', methodId);
+                return;
+            }
+            
+            (window.wlm_params?.debug) && console.log('[WLM Checkout] Getting delivery info for method:', methodId);
+            
+            // Get delivery info via AJAX
+            $.ajax({
+                url: wlm_params.ajax_url,
+                type: 'POST',
+                data: {
+                    action: 'wlm_get_shipping_delivery_info',
+                    method_id: methodId,
+                    nonce: wlm_params.nonce
+                },
+                success: function(response) {
+                    if (response.success && response.data) {
+                        var data = response.data;
+                        
+                        (window.wlm_params?.debug) && console.log('[WLM Checkout] Received delivery info:', data);
+                        
+                        // Extract dates from delivery_window if available
+                        var earliestDate = '';
+                        var latestDate = '';
+                        var deliveryWindow = data.delivery_window || '';
+                        var methodName = '';
+                        
+                        // Try to extract method name from the response
+                        // The method name might be in the shipping method label
+                        var $methodLabel = $selectedMethod.closest('li').find('label');
+                        if ($methodLabel.length) {
+                            methodName = $methodLabel.text().trim();
+                            // Remove price from method name
+                            methodName = methodName.replace(/\s*[€$].*$/, '').trim();
+                        }
+                        
+                        // Parse delivery window to extract dates
+                        // Format: "20.11.2025 - 22.11.2025" or similar
+                        if (deliveryWindow) {
+                            var dateMatch = deliveryWindow.match(/(\d{2}\.\d{2}\.\d{4})\s*-\s*(\d{2}\.\d{2}\.\d{4})/);
+                            if (dateMatch) {
+                                // Convert DD.MM.YYYY to YYYY-MM-DD
+                                var earliestParts = dateMatch[1].split('.');
+                                var latestParts = dateMatch[2].split('.');
+                                earliestDate = earliestParts[2] + '-' + earliestParts[1] + '-' + earliestParts[0];
+                                latestDate = latestParts[2] + '-' + latestParts[1] + '-' + latestParts[0];
+                            }
+                        }
+                        
+                        // Update hidden fields
+                        $('#wlm_earliest_delivery').val(earliestDate);
+                        $('#wlm_latest_delivery').val(latestDate);
+                        $('#wlm_delivery_window').val(deliveryWindow);
+                        $('#wlm_shipping_method_name').val(methodName);
+                        
+                        (window.wlm_params?.debug) && console.log('[WLM Checkout] Updated hidden fields:', {
+                            earliest: earliestDate,
+                            latest: latestDate,
+                            window: deliveryWindow,
+                            method: methodName
+                        });
+                    } else {
+                        (window.wlm_params?.debug) && console.log('[WLM Checkout] No delivery info received');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    (window.wlm_params?.debug) && console.error('[WLM Checkout] AJAX error:', error);
+                }
+            });
         }
     };
 

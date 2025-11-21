@@ -26,6 +26,11 @@ class WLM_Frontend {
 
         // Checkout
         add_action('woocommerce_review_order_before_shipping', array($this, 'display_checkout_delivery_window'));
+        
+        // Custom checkout fields for order meta
+        add_action('woocommerce_after_checkout_billing_form', array($this, 'add_delivery_timeframe_hidden_fields'));
+        add_filter('woocommerce_checkout_fields', array($this, 'register_delivery_timeframe_fields'));
+        add_action('woocommerce_checkout_update_order_meta', array($this, 'save_delivery_timeframe_fields'));
 
         // AJAX handlers
         add_action('wp_ajax_wlm_calc_product_window', array($this, 'ajax_calculate_product_window'));
@@ -398,5 +403,86 @@ class WLM_Frontend {
             'is_express_selected' => $is_express_selected,
             'method_id' => $method_id
         ));
+    }
+    
+    /**
+     * Register delivery timeframe fields for checkout
+     *
+     * @param array $fields Checkout fields.
+     * @return array
+     */
+    public function register_delivery_timeframe_fields($fields) {
+        $fields['order']['wlm_earliest_delivery'] = array(
+            'type' => 'text',
+            'label' => __('Earliest Delivery', 'woo-lieferzeiten-manager'),
+            'required' => false,
+            'class' => array('form-row-hidden'),
+            'clear' => true
+        );
+        
+        $fields['order']['wlm_latest_delivery'] = array(
+            'type' => 'text',
+            'label' => __('Latest Delivery', 'woo-lieferzeiten-manager'),
+            'required' => false,
+            'class' => array('form-row-hidden'),
+            'clear' => true
+        );
+        
+        $fields['order']['wlm_delivery_window'] = array(
+            'type' => 'text',
+            'label' => __('Delivery Window', 'woo-lieferzeiten-manager'),
+            'required' => false,
+            'class' => array('form-row-hidden'),
+            'clear' => true
+        );
+        
+        $fields['order']['wlm_shipping_method_name'] = array(
+            'type' => 'text',
+            'label' => __('Shipping Method Name', 'woo-lieferzeiten-manager'),
+            'required' => false,
+            'class' => array('form-row-hidden'),
+            'clear' => true
+        );
+        
+        return $fields;
+    }
+    
+    /**
+     * Add hidden fields for delivery timeframe
+     */
+    public function add_delivery_timeframe_hidden_fields() {
+        ?>
+        <div class="wlm-delivery-timeframe-fields" style="display: none;">
+            <input type="hidden" name="wlm_earliest_delivery" id="wlm_earliest_delivery" value="" />
+            <input type="hidden" name="wlm_latest_delivery" id="wlm_latest_delivery" value="" />
+            <input type="hidden" name="wlm_delivery_window" id="wlm_delivery_window" value="" />
+            <input type="hidden" name="wlm_shipping_method_name" id="wlm_shipping_method_name" value="" />
+        </div>
+        <?php
+    }
+    
+    /**
+     * Save delivery timeframe fields to order meta
+     *
+     * @param int $order_id Order ID.
+     */
+    public function save_delivery_timeframe_fields($order_id) {
+        if (!empty($_POST['wlm_earliest_delivery'])) {
+            update_post_meta($order_id, '_wlm_earliest_delivery', sanitize_text_field($_POST['wlm_earliest_delivery']));
+        }
+        
+        if (!empty($_POST['wlm_latest_delivery'])) {
+            update_post_meta($order_id, '_wlm_latest_delivery', sanitize_text_field($_POST['wlm_latest_delivery']));
+        }
+        
+        if (!empty($_POST['wlm_delivery_window'])) {
+            update_post_meta($order_id, '_wlm_delivery_window', sanitize_text_field($_POST['wlm_delivery_window']));
+        }
+        
+        if (!empty($_POST['wlm_shipping_method_name'])) {
+            update_post_meta($order_id, '_wlm_shipping_method_name', sanitize_text_field($_POST['wlm_shipping_method_name']));
+        }
+        
+        WLM_Core::log('Saved delivery timeframe for order ' . $order_id . ': ' . $_POST['wlm_earliest_delivery'] . ' - ' . $_POST['wlm_latest_delivery']);
     }
 }
