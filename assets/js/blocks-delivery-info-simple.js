@@ -392,6 +392,28 @@
             window: deliveryWindow,
             method: methodName
         });
+        
+        // Save to session via AJAX
+        if (earliestDate && latestDate && window.wlm_params) {
+            jQuery.ajax({
+                url: window.wlm_params.ajax_url,
+                type: 'POST',
+                data: {
+                    action: 'wlm_save_delivery_to_session',
+                    nonce: window.wlm_params.nonce,
+                    earliest: earliestDate,
+                    latest: latestDate,
+                    window: deliveryWindow,
+                    method_name: methodName
+                },
+                success: function(response) {
+                    (window.wlm_params?.debug) && console.log('[WLM Checkout Fields] Saved to session:', response);
+                },
+                error: function(xhr, status, error) {
+                    (window.wlm_params?.debug) && console.error('[WLM Checkout Fields] Failed to save to session:', error);
+                }
+            });
+        }
     }
     
     /**

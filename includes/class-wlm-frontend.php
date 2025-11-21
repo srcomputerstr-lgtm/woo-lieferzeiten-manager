@@ -40,6 +40,11 @@ class WLM_Frontend {
         add_action('wp_ajax_nopriv_wlm_calc_product_window', array($this, 'ajax_calculate_product_window'));
         add_action('wp_ajax_wlm_get_shipping_delivery_info', array($this, 'ajax_get_shipping_delivery_info'));
         add_action('wp_ajax_nopriv_wlm_get_shipping_delivery_info', array($this, 'ajax_get_shipping_delivery_info'));
+        add_action('wp_ajax_wlm_save_delivery_to_session', array($this, 'ajax_save_delivery_to_session'));
+        add_action('wp_ajax_nopriv_wlm_save_delivery_to_session', array($this, 'ajax_save_delivery_to_session'));
+        
+        // Thank-You page
+        add_action('woocommerce_thankyou', array($this, 'display_and_save_delivery_timeframe_on_thankyou'), 10, 1);
 
         // Blocks integration
         // Register Store API extension early (before blocks are loaded)
@@ -693,5 +698,92 @@ class WLM_Frontend {
         $order->save();
         
         WLM_Core::log('Saved delivery timeframe for order (blocks) ' . $order_id . ': ' . $earliest_date . ' - ' . $latest_date);
+    }
+    
+    /**
+     * AJAX handler to save delivery timeframe to session
+     */
+    public function ajax_save_delivery_to_session() {
+        check_ajax_referer('wlm-frontend-nonce', 'nonce');
+        
+        $earliest = sanitize_text_field($_POST['earliest'] ?? '');
+        $latest = sanitize_text_field($_POST['latest'] ?? '');
+        $window = sanitize_text_field($_POST['window'] ?? '');
+        $method_name = sanitize_text_field($_POST['method_name'] ?? '');
+        
+        if (empty($earliest) || empty($latest)) {
+            wp_send_json_error('Missing required fields');
+            return;
+        }
+        
+        // Save to WooCommerce session
+        if (WC()->session) {
+            WC()->session->set('wlm_delivery_timeframe', array(
+                'earliest' => $earliest,
+                'latest' => $latest,
+                'window' => $window,
+                'method_name' => $method_name
+            ));
+            
+            WLM_Core::log('Saved delivery timeframe to session: ' . $earliest . ' - ' . $latest);
+            wp_send_json_success('Saved to session');
+        } else {
+            WLM_Core::log('WC Session not available');
+            wp_send_json_error('Session not available');
+        }
+    }
+    
+    /**
+     * Display and save delivery timeframe on thank-you page
+     *
+     * @param int $order_id Order ID.
+     */
+    public function display_and_save_delivery_timeframe_on_thankyou($order_id) {
+        if (!$order_id) {
+            return;
+        }
+        
+        $order = wc_get_order($order_id);
+        if (!$order) {
+            return;
+        }
+        
+        // Get from session
+        $delivery_data = WC()->session ? WC()->session->get('wlm_delivery_timeframe') : null;
+        
+        if (!$delivery_data || empty($delivery_data['earliest']) || empty($delivery_data['latest'])) {
+            WLM_Core::log('No delivery timeframe in session for order ' . $order_id);
+            return;
+        }
+        
+        WLM_Core::log('Retrieved delivery timeframe from session for order ' . $order_id . ': ' . $delivery_data['earliest'] . ' - ' . $delivery_data['latest']);
+        
+        // Save to order meta
+        $order->update_meta_data('_wlm_earliest_delivery', $delivery_data['earliest']);
+        $order->update_meta_data('_wlm_latest_delivery', $delivery_data['latest']);
+        $order->update_meta_data('_wlm_delivery_window', $delivery_data['window']);
+        $order->update_meta_data('_wlm_shipping_method_name', $delivery_data['method_name']);
+        $order->save();
+        
+        WLM_Core::log('Saved delivery timeframe to order meta: ' . $order_id);
+        
+        // Display on thank-you page
+        echo '<section class="wlm-thankyou-delivery-info">';
+        echo '<h2>' . esc_html__('Voraussichtliche Lieferung', 'woo-lieferzeiten-manager') . '</h2>';
+        echo '<div class="wlm-delivery-details">';
+        echo '<p><strong>' . esc_html__('Versandart:', 'woo-lieferzeiten-manager') . '</strong> ' . esc_html($delivery_data['method_name']) . '</p>';
+        echo '<p><strong>' . esc_html__('Lieferzeitraum:', 'woo-lieferzeiten-manager') . '</strong> ' . esc_html($delivery_data['window']) . '</p>';
+        echo '<p class="wlm-delivery-dates">';
+        echo '<span>' . esc_html__('Früheste Zustellung:', 'woo-lieferzeiten-manager') . ' <code>' . esc_html($delivery_data['earliest']) . '</code></span><br>';
+        echo '<span>' . esc_html__('Späteste Zustellung:', 'woo-lieferzeiten-manager') . ' <code>' . esc_html($delivery_data['latest']) . '</code></span>';
+        echo '</p>';
+        echo '</div>';
+        echo '</section>';
+        
+        // Cleanup session
+        if (WC()->session) {
+            WC()->session->__unset('wlm_delivery_timeframe');
+            WLM_Core::log('Cleaned up delivery timeframe from session');
+        }
     }
 }
