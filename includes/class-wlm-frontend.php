@@ -29,8 +29,11 @@ class WLM_Frontend {
         
         // Custom checkout fields for order meta
         add_action('woocommerce_after_checkout_billing_form', array($this, 'add_delivery_timeframe_hidden_fields'));
+        add_action('woocommerce_blocks_checkout_block_registration', array($this, 'add_delivery_timeframe_hidden_fields_blocks'));
+        add_action('wp_footer', array($this, 'add_delivery_timeframe_hidden_fields_footer'));
         add_filter('woocommerce_checkout_fields', array($this, 'register_delivery_timeframe_fields'));
         add_action('woocommerce_checkout_update_order_meta', array($this, 'save_delivery_timeframe_fields'));
+        add_action('woocommerce_store_api_checkout_update_order_meta', array($this, 'save_delivery_timeframe_fields_blocks'));
 
         // AJAX handlers
         add_action('wp_ajax_wlm_calc_product_window', array($this, 'ajax_calculate_product_window'));
@@ -489,5 +492,108 @@ class WLM_Frontend {
         }
         
         WLM_Core::log('Saved delivery timeframe for order ' . $order_id . ': ' . $_POST['wlm_earliest_delivery'] . ' - ' . $_POST['wlm_latest_delivery']);
+    }
+    
+    /**
+     * Add hidden fields for delivery timeframe in footer (for Block-Checkout)
+     */
+    public function add_delivery_timeframe_hidden_fields_footer() {
+        if (!is_checkout()) {
+            return;
+        }
+        ?>
+        <script>
+        (function() {
+            // Wait for DOM to be ready
+            function addHiddenFields() {
+                // Check if we're on block checkout
+                const blockForm = document.querySelector('form.wc-block-checkout__form');
+                if (!blockForm) {
+                    return;
+                }
+                
+                // Check if fields already exist
+                if (document.getElementById('wlm_earliest_delivery')) {
+                    return;
+                }
+                
+                // Create hidden fields
+                const fields = [
+                    {name: 'wlm_earliest_delivery', id: 'wlm_earliest_delivery'},
+                    {name: 'wlm_latest_delivery', id: 'wlm_latest_delivery'},
+                    {name: 'wlm_delivery_window', id: 'wlm_delivery_window'},
+                    {name: 'wlm_shipping_method_name', id: 'wlm_shipping_method_name'}
+                ];
+                
+                fields.forEach(function(fieldConfig) {
+                    const field = document.createElement('input');
+                    field.type = 'hidden';
+                    field.name = fieldConfig.name;
+                    field.id = fieldConfig.id;
+                    field.value = '';
+                    blockForm.appendChild(field);
+                });
+                
+                (window.wlm_params?.debug) && console.log('[WLM] Hidden fields added to block checkout form');
+            }
+            
+            // Try immediately
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', function() {
+                    setTimeout(addHiddenFields, 500);
+                });
+            } else {
+                setTimeout(addHiddenFields, 500);
+            }
+            
+            // Also try when cart updates
+            if (window.wp && window.wp.data) {
+                window.wp.data.subscribe(function() {
+                    addHiddenFields();
+                });
+            }
+        })();
+        </script>
+        <?php
+    }
+    
+    /**
+     * Add hidden fields for Block-Checkout registration
+     */
+    public function add_delivery_timeframe_hidden_fields_blocks() {
+        // This hook is for block registration, not for adding fields
+        // Fields are added via wp_footer instead
+    }
+    
+    /**
+     * Save delivery timeframe fields for Block-Checkout
+     *
+     * @param \WC_Order $order Order object.
+     */
+    public function save_delivery_timeframe_fields_blocks($order) {
+        $order_id = $order->get_id();
+        
+        // Get data from request
+        $request_data = $_POST;
+        
+        if (!empty($request_data['wlm_earliest_delivery'])) {
+            $order->update_meta_data('_wlm_earliest_delivery', sanitize_text_field($request_data['wlm_earliest_delivery']));
+        }
+        
+        if (!empty($request_data['wlm_latest_delivery'])) {
+            $order->update_meta_data('_wlm_latest_delivery', sanitize_text_field($request_data['wlm_latest_delivery']));
+        }
+        
+        if (!empty($request_data['wlm_delivery_window'])) {
+            $order->update_meta_data('_wlm_delivery_window', sanitize_text_field($request_data['wlm_delivery_window']));
+        }
+        
+        if (!empty($request_data['wlm_shipping_method_name'])) {
+            $order->update_meta_data('_wlm_shipping_method_name', sanitize_text_field($request_data['wlm_shipping_method_name']));
+        }
+        
+        $order->save();
+        
+        WLM_Core::log('Saved delivery timeframe for order (blocks) ' . $order_id . ': ' . ($request_data['wlm_earliest_delivery'] ?? '') . ' - ' . ($request_data['wlm_latest_delivery'] ?? ''));
     }
 }

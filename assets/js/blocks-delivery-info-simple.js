@@ -45,6 +45,9 @@
         (window.wlm_params?.debug) && console.log('[WLM CSS] Delivery info:', deliveryInfo);
         (window.wlm_params?.debug) && console.log('[WLM CSS] Cart items stock:', cartItemsStock);
         
+        // Update hidden checkout fields with delivery timeframe
+        updateCheckoutDeliveryFields(cartData, deliveryInfo);
+        
         // DEBUG: Show all methods with their data
         (window.wlm_params?.debug) && console.log('[WLM DEBUG] === ALLE VERSANDMETHODEN IN DATEN ===');
         Object.keys(deliveryInfo).forEach(function(methodId) {
@@ -292,6 +295,103 @@
         // Apply CSS rules
         styleElement.textContent = cssRules;
         (window.wlm_params?.debug) && console.log('[WLM CSS] CSS rules applied (' + matchedCount + ' matches + ' + cartItemKeys.length + ' stock statuses):', cssRules);
+    }
+    
+    /**
+     * Update hidden checkout fields with delivery timeframe
+     */
+    function updateCheckoutDeliveryFields(cartData, deliveryInfo) {
+        // Only on checkout page
+        if (!document.body.classList.contains('woocommerce-checkout')) {
+            return;
+        }
+        
+        // Get selected shipping method from cart data
+        const shippingRates = cartData.shippingRates?.[0]?.shipping_rates || [];
+        const selectedMethod = shippingRates.find(rate => rate.selected);
+        
+        if (!selectedMethod) {
+            (window.wlm_params?.debug) && console.log('[WLM Checkout Fields] No shipping method selected');
+            return;
+        }
+        
+        // Extract method ID from rate ID (format: "wlm_method_123:1")
+        const methodId = selectedMethod.rate_id.split(':')[0];
+        
+        (window.wlm_params?.debug) && console.log('[WLM Checkout Fields] Selected method ID:', methodId);
+        
+        // Check if this is a WLM method
+        if (!methodId.startsWith('wlm_method_')) {
+            (window.wlm_params?.debug) && console.log('[WLM Checkout Fields] Not a WLM method, skipping');
+            return;
+        }
+        
+        // Get delivery info for this method
+        const info = deliveryInfo[methodId];
+        if (!info) {
+            (window.wlm_params?.debug) && console.log('[WLM Checkout Fields] No delivery info for method:', methodId);
+            return;
+        }
+        
+        (window.wlm_params?.debug) && console.log('[WLM Checkout Fields] Delivery info for selected method:', info);
+        
+        // Extract data
+        const earliestDate = info.earliest_date || '';
+        const latestDate = info.latest_date || '';
+        const deliveryWindow = info.delivery_window || '';
+        const methodName = info.method_name || '';
+        
+        // Find or create hidden fields
+        let earliestField = document.getElementById('wlm_earliest_delivery');
+        let latestField = document.getElementById('wlm_latest_delivery');
+        let windowField = document.getElementById('wlm_delivery_window');
+        let methodField = document.getElementById('wlm_shipping_method_name');
+        
+        // Create fields if they don't exist
+        if (!earliestField) {
+            earliestField = document.createElement('input');
+            earliestField.type = 'hidden';
+            earliestField.name = 'wlm_earliest_delivery';
+            earliestField.id = 'wlm_earliest_delivery';
+            document.querySelector('form.wc-block-checkout__form')?.appendChild(earliestField);
+        }
+        
+        if (!latestField) {
+            latestField = document.createElement('input');
+            latestField.type = 'hidden';
+            latestField.name = 'wlm_latest_delivery';
+            latestField.id = 'wlm_latest_delivery';
+            document.querySelector('form.wc-block-checkout__form')?.appendChild(latestField);
+        }
+        
+        if (!windowField) {
+            windowField = document.createElement('input');
+            windowField.type = 'hidden';
+            windowField.name = 'wlm_delivery_window';
+            windowField.id = 'wlm_delivery_window';
+            document.querySelector('form.wc-block-checkout__form')?.appendChild(windowField);
+        }
+        
+        if (!methodField) {
+            methodField = document.createElement('input');
+            methodField.type = 'hidden';
+            methodField.name = 'wlm_shipping_method_name';
+            methodField.id = 'wlm_shipping_method_name';
+            document.querySelector('form.wc-block-checkout__form')?.appendChild(methodField);
+        }
+        
+        // Update values
+        if (earliestField) earliestField.value = earliestDate;
+        if (latestField) latestField.value = latestDate;
+        if (windowField) windowField.value = deliveryWindow;
+        if (methodField) methodField.value = methodName;
+        
+        (window.wlm_params?.debug) && console.log('[WLM Checkout Fields] Updated hidden fields:', {
+            earliest: earliestDate,
+            latest: latestDate,
+            window: deliveryWindow,
+            method: methodName
+        });
     }
     
     /**
