@@ -407,9 +407,9 @@ class WLM_Core {
         $instance = self::instance();
         if ($instance && $instance->is_debug_mode()) {
             if (!empty($context)) {
-                WLM_Core::log('[WLM] ' . $message . ' | Context: ' . print_r($context, true));
+                error_log('[WLM] ' . $message . ' | Context: ' . print_r($context, true));
             } else {
-                WLM_Core::log('[WLM] ' . $message);
+                error_log('[WLM] ' . $message);
             }
         }
     }
