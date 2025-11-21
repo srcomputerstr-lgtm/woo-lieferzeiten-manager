@@ -121,8 +121,8 @@ class WLM_Core {
         add_action('woocommerce_shipping_init', array($this, 'ensure_methods_in_zones'));
         add_action('woocommerce_init', array($this, 'ensure_methods_in_zones'));
         
-        // Save delivery timeframe to order meta (after order is created)
-        add_action('woocommerce_checkout_order_created', array($this, 'save_delivery_timeframe_to_order'), 10, 2);
+        // Save delivery timeframe to order meta (after order is processed)
+        add_action('woocommerce_checkout_order_processed', array($this, 'save_delivery_timeframe_to_order'), 10, 3);
         
         // Display delivery timeframe in order details (admin)
         add_action('woocommerce_admin_order_data_after_shipping_address', array($this, 'display_order_delivery_timeframe'));
@@ -471,10 +471,20 @@ class WLM_Core {
     /**
      * Save delivery timeframe to order meta
      *
+     * @param int $order_id Order ID.
+     * @param array $posted_data Posted data.
      * @param WC_Order $order Order object.
-     * @param array $data Posted data (optional, not used).
      */
-    public function save_delivery_timeframe_to_order($order, $data = array()) {
+    public function save_delivery_timeframe_to_order($order_id, $posted_data = array(), $order = null) {
+        // Get order object if not provided
+        if (!$order) {
+            $order = wc_get_order($order_id);
+        }
+        
+        if (!$order) {
+            WLM_Core::log('Could not get order object for ID: ' . $order_id);
+            return;
+        }
         // Get chosen shipping method
         $shipping_methods = $order->get_shipping_methods();
         
