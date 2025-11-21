@@ -608,8 +608,10 @@ class WLM_Frontend {
         }
         
         // Get method configuration
-        $shipping_methods_config = WLM_Core::instance()->shipping_methods;
+        $shipping_methods_config = WLM_Core::instance()->get_shipping_methods();
         $method_config = null;
+        
+        WLM_Core::log('Looking for method config: ' . $base_method_id . ' in ' . count($shipping_methods_config) . ' methods');
         
         foreach ($shipping_methods_config as $config) {
             if (isset($config['id']) && $config['id'] == $base_method_id) {
