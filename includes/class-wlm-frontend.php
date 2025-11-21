@@ -573,27 +573,102 @@ class WLM_Frontend {
     public function save_delivery_timeframe_fields_blocks($order) {
         $order_id = $order->get_id();
         
-        // Get data from request
-        $request_data = $_POST;
+        WLM_Core::log('save_delivery_timeframe_fields_blocks called for order ' . $order_id);
         
-        if (!empty($request_data['wlm_earliest_delivery'])) {
-            $order->update_meta_data('_wlm_earliest_delivery', sanitize_text_field($request_data['wlm_earliest_delivery']));
+        // Get shipping methods from order
+        $shipping_methods = $order->get_shipping_methods();
+        
+        if (empty($shipping_methods)) {
+            WLM_Core::log('No shipping methods found for order ' . $order_id);
+            return;
         }
         
-        if (!empty($request_data['wlm_latest_delivery'])) {
-            $order->update_meta_data('_wlm_latest_delivery', sanitize_text_field($request_data['wlm_latest_delivery']));
+        // Get first shipping method
+        $shipping_method = reset($shipping_methods);
+        $method_id = $shipping_method->get_method_id();
+        $instance_id = $shipping_method->get_instance_id();
+        $full_method_id = $method_id . ':' . $instance_id;
+        
+        WLM_Core::log('Shipping method for order ' . $order_id . ': ' . $full_method_id);
+        
+        // Check if this is a WLM method
+        if (strpos($method_id, 'wlm_method_') !== 0) {
+            WLM_Core::log('Not a WLM method, skipping: ' . $method_id);
+            return;
         }
         
-        if (!empty($request_data['wlm_delivery_window'])) {
-            $order->update_meta_data('_wlm_delivery_window', sanitize_text_field($request_data['wlm_delivery_window']));
+        // Get method configuration
+        $shipping_methods_config = WLM_Core::instance()->shipping_methods;
+        $method_config = null;
+        
+        foreach ($shipping_methods_config as $config) {
+            if (isset($config['id']) && $config['id'] == $method_id) {
+                $method_config = $config;
+                break;
+            }
         }
         
-        if (!empty($request_data['wlm_shipping_method_name'])) {
-            $order->update_meta_data('_wlm_shipping_method_name', sanitize_text_field($request_data['wlm_shipping_method_name']));
+        if (!$method_config) {
+            WLM_Core::log('Method config not found for: ' . $method_id);
+            return;
         }
+        
+        // Calculate delivery window based on order items
+        $calculator = new WLM_Calculator();
+        
+        // Get all order items and calculate window
+        $items = $order->get_items();
+        $earliest = null;
+        $latest = null;
+        
+        foreach ($items as $item) {
+            $product = $item->get_product();
+            if (!$product) continue;
+            
+            $quantity = $item->get_quantity();
+            $item_window = $calculator->calculate_product_window($product, $quantity, $method_config);
+            
+            if (!$item_window) continue;
+            
+            if ($earliest === null || $item_window['earliest'] < $earliest) {
+                $earliest = $item_window['earliest'];
+            }
+            
+            if ($latest === null || $item_window['latest'] > $latest) {
+                $latest = $item_window['latest'];
+            }
+        }
+        
+        if ($earliest === null || $latest === null) {
+            WLM_Core::log('Could not calculate window for order ' . $order_id);
+            return;
+        }
+        
+        // Format date range manually (format_date_range is private)
+        $window = array(
+            'earliest' => $earliest,
+            'latest' => $latest,
+            'window_formatted' => date('D, d.m.', $earliest) . ' - ' . date('D, d.m.', $latest)
+        );
+        
+        if (!$window) {
+            WLM_Core::log('Could not calculate window for order ' . $order_id);
+            return;
+        }
+        
+        // Save to order meta
+        $earliest_date = date('Y-m-d', $window['earliest']);
+        $latest_date = date('Y-m-d', $window['latest']);
+        $delivery_window = $window['window_formatted'];
+        $method_name = $method_config['name'] ?? '';
+        
+        $order->update_meta_data('_wlm_earliest_delivery', $earliest_date);
+        $order->update_meta_data('_wlm_latest_delivery', $latest_date);
+        $order->update_meta_data('_wlm_delivery_window', $delivery_window);
+        $order->update_meta_data('_wlm_shipping_method_name', $method_name);
         
         $order->save();
         
-        WLM_Core::log('Saved delivery timeframe for order (blocks) ' . $order_id . ': ' . ($request_data['wlm_earliest_delivery'] ?? '') . ' - ' . ($request_data['wlm_latest_delivery'] ?? ''));
+        WLM_Core::log('Saved delivery timeframe for order (blocks) ' . $order_id . ': ' . $earliest_date . ' - ' . $latest_date);
     }
 }
