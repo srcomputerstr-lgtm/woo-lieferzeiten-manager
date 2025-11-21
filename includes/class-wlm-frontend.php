@@ -597,20 +597,37 @@ class WLM_Frontend {
             return;
         }
         
+        // Check if this is an express method
+        $is_express = false;
+        $base_method_id = $method_id;
+        
+        if (strpos($method_id, '_express') !== false) {
+            $is_express = true;
+            $base_method_id = str_replace('_express', '', $method_id);
+            WLM_Core::log('Express method detected, base method: ' . $base_method_id);
+        }
+        
         // Get method configuration
         $shipping_methods_config = WLM_Core::instance()->shipping_methods;
         $method_config = null;
         
         foreach ($shipping_methods_config as $config) {
-            if (isset($config['id']) && $config['id'] == $method_id) {
+            if (isset($config['id']) && $config['id'] == $base_method_id) {
                 $method_config = $config;
                 break;
             }
         }
         
         if (!$method_config) {
-            WLM_Core::log('Method config not found for: ' . $method_id);
+            WLM_Core::log('Method config not found for: ' . $base_method_id);
             return;
+        }
+        
+        // If express, adjust config
+        if ($is_express) {
+            $method_config['transit_min'] = intval($method_config['express_transit_min'] ?? 0);
+            $method_config['transit_max'] = intval($method_config['express_transit_max'] ?? 1);
+            WLM_Core::log('Using express transit times: ' . $method_config['transit_min'] . '-' . $method_config['transit_max']);
         }
         
         // Calculate delivery window based on order items
@@ -661,6 +678,10 @@ class WLM_Frontend {
         $latest_date = date('Y-m-d', $window['latest']);
         $delivery_window = $window['window_formatted'];
         $method_name = $method_config['name'] ?? '';
+        
+        if ($is_express) {
+            $method_name .= ' - Express';
+        }
         
         $order->update_meta_data('_wlm_earliest_delivery', $earliest_date);
         $order->update_meta_data('_wlm_latest_delivery', $latest_date);
