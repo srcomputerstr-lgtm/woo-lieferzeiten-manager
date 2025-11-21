@@ -380,6 +380,8 @@ class WLM_Blocks_Integration implements IntegrationInterface {
                 'method_id' => $method_id,
                 'method_name' => $method_config['name'] ?? '',
                 'delivery_window' => $window ? $window['window_formatted'] : null,
+                'earliest_date' => $window ? $window['earliest_date'] : null,
+                'latest_date' => $window ? $window['latest_date'] : null,
                 'is_express_rate' => false
             );
             
@@ -435,6 +437,8 @@ class WLM_Blocks_Integration implements IntegrationInterface {
                     'method_id' => $express_method_id,
                     'method_name' => ($method_config['name'] ?? '') . ' - Express',
                     'delivery_window' => $express_window ? $express_window['window_formatted'] : null,
+                    'earliest_date' => $express_window ? $express_window['earliest_date'] : null,
+                    'latest_date' => $express_window ? $express_window['latest_date'] : null,
                     'is_express_rate' => true
                 );
                 
