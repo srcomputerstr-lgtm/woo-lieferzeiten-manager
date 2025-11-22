@@ -102,6 +102,10 @@
         $(document).on('click', '.wlm-remove-value-tag', this.removeValueTag.bind(this));
         $(document).on('keypress', '.wlm-value-input', this.handleValueInputKeypress.bind(this));
         
+        // Holidays
+        $(document).on('click', '#wlm-add-holiday', this.addHoliday.bind(this));
+        $(document).on('click', '.wlm-remove-holiday', this.removeHoliday.bind(this));
+        
         // Cronjob
         $(document).on('click', '#wlm-run-cronjob-now', this.runCronjob.bind(this));
         },
@@ -1099,6 +1103,29 @@
                 "'": '&#039;'
             };
             return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+        },
+        
+        /**
+         * Add holiday
+         */
+        addHoliday: function(e) {
+            e.preventDefault();
+            
+            var $list = $('#wlm-holidays-list');
+            var html = '<div class="wlm-holiday-item">' +
+                '<input type="date" name="wlm_settings[holidays][]" value="" class="regular-text">' +
+                '<button type="button" class="button wlm-remove-holiday">Entfernen</button>' +
+                '</div>';
+            
+            $list.append(html);
+        },
+        
+        /**
+         * Remove holiday
+         */
+        removeHoliday: function(e) {
+            e.preventDefault();
+            $(e.currentTarget).closest('.wlm-holiday-item').remove();
         }
     };
 
