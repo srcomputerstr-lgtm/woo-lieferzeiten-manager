@@ -177,15 +177,25 @@ class WLM_Calculator {
         $cutoff_minute = (int) ($cutoff_parts[1] ?? 0);
 
         $today_cutoff = strtotime(date('Y-m-d', $current_time) . ' ' . $cutoff_time);
+        
+        $current_time_formatted = date('Y-m-d H:i:s', $current_time);
+        $cutoff_formatted = date('Y-m-d H:i:s', $today_cutoff);
+        $is_after_cutoff = $current_time > $today_cutoff;
+        
+        WLM_Core::log('[WLM DEBUG] get_start_date: current_time=' . $current_time_formatted . ', cutoff=' . $cutoff_formatted . ', after_cutoff=' . ($is_after_cutoff ? 'YES' : 'NO'));
 
         if ($current_time > $today_cutoff) {
             // After cutoff, start next business day
             $start_date = strtotime('+1 day', $current_time);
+            WLM_Core::log('[WLM DEBUG] After cutoff - moving to next day: ' . date('Y-m-d', $start_date));
             $start_date = $this->get_next_business_day($start_date);
         } else {
             // Before cutoff, start today if business day
+            WLM_Core::log('[WLM DEBUG] Before cutoff - checking if today is business day');
             $start_date = $this->get_next_business_day($current_time);
         }
+        
+        WLM_Core::log('[WLM DEBUG] Final start_date: ' . date('Y-m-d (l)', $start_date));
 
         return $start_date;
     }
@@ -271,6 +281,8 @@ class WLM_Calculator {
         $settings = WLM_Core::instance()->get_settings();
         $business_days = $settings['business_days'] ?? array(1, 2, 3, 4, 5);
         $holidays = $settings['holidays'] ?? array();
+        
+        WLM_Core::log('[WLM DEBUG] add_business_days: start=' . date('Y-m-d (l)', $start_timestamp) . ', days_to_add=' . $days);
 
         $current = $start_timestamp;
         $added = 0;
@@ -280,19 +292,27 @@ class WLM_Calculator {
             
             // Check if it's a business day
             $day_of_week = (int) date('N', $current); // 1 (Monday) to 7 (Sunday)
+            $date_str = date('Y-m-d', $current);
+            $day_name = date('l', $current);
             
-            if (!in_array($day_of_week, $business_days)) {
+            $is_business_day = in_array($day_of_week, $business_days);
+            $is_holiday = in_array($date_str, $holidays);
+            
+            if (!$is_business_day) {
+                WLM_Core::log('[WLM DEBUG]   - Skip ' . $date_str . ' (' . $day_name . '): not a business day');
                 continue;
             }
 
-            // Check if it's a holiday
-            $date_str = date('Y-m-d', $current);
-            if (in_array($date_str, $holidays)) {
+            if ($is_holiday) {
+                WLM_Core::log('[WLM DEBUG]   - Skip ' . $date_str . ' (' . $day_name . '): holiday');
                 continue;
             }
 
             $added++;
+            WLM_Core::log('[WLM DEBUG]   + Count ' . $date_str . ' (' . $day_name . '): added=' . $added . '/' . $days);
         }
+        
+        WLM_Core::log('[WLM DEBUG] add_business_days result: ' . date('Y-m-d (l)', $current));
 
         return $current;
     }
@@ -307,6 +327,14 @@ class WLM_Calculator {
         $settings = WLM_Core::instance()->get_settings();
         $business_days = $settings['business_days'] ?? array(1, 2, 3, 4, 5);
         $holidays = $settings['holidays'] ?? array();
+        
+        // Map day numbers to names
+        $day_names = array(1 => 'Monday', 2 => 'Tuesday', 3 => 'Wednesday', 4 => 'Thursday', 5 => 'Friday', 6 => 'Saturday', 7 => 'Sunday');
+        $business_day_names = array_map(function($d) use ($day_names) { return $day_names[$d] ?? $d; }, $business_days);
+        
+        WLM_Core::log('[WLM DEBUG] get_next_business_day: business_days=' . implode(', ', $business_day_names) . ' (raw: ' . implode(',', $business_days) . ')');
+        WLM_Core::log('[WLM DEBUG] get_next_business_day: holidays=' . (empty($holidays) ? 'none' : implode(', ', $holidays)));
+        WLM_Core::log('[WLM DEBUG] get_next_business_day: checking from ' . date('Y-m-d (l)', $timestamp));
 
         $current = $timestamp;
         $max_iterations = 30; // Prevent infinite loop
@@ -315,15 +343,23 @@ class WLM_Calculator {
         while ($iterations < $max_iterations) {
             $day_of_week = (int) date('N', $current);
             $date_str = date('Y-m-d', $current);
+            $day_name = date('l', $current);
+            
+            $is_business_day = in_array($day_of_week, $business_days);
+            $is_holiday = in_array($date_str, $holidays);
+            
+            WLM_Core::log('[WLM DEBUG]   - Checking ' . $date_str . ' (' . $day_name . ', N=' . $day_of_week . '): is_business_day=' . ($is_business_day ? 'YES' : 'NO') . ', is_holiday=' . ($is_holiday ? 'YES' : 'NO'));
 
-            if (in_array($day_of_week, $business_days) && !in_array($date_str, $holidays)) {
+            if ($is_business_day && !$is_holiday) {
+                WLM_Core::log('[WLM DEBUG]   ✓ Found next business day: ' . $date_str . ' (' . $day_name . ')');
                 return $current;
             }
 
             $current = strtotime('+1 day', $current);
             $iterations++;
         }
-
+        
+        WLM_Core::log('[WLM DEBUG] WARNING: Max iterations reached, returning original timestamp');
         return $timestamp;
     }
 
