@@ -104,6 +104,9 @@ class WLM_Core {
      * Initialize hooks
      */
     private function init_hooks() {
+        // Run migration on admin init
+        add_action('admin_init', array($this, 'maybe_migrate_settings'));
+        
         // Add cron job action
         add_action('wlm_daily_availability_update', array($this, 'update_product_availability'));
         
@@ -613,5 +616,45 @@ class WLM_Core {
             </p>
         </div>
         <?php
+    }
+    
+    /**
+     * Migrate old settings to new format
+     * Converts processing_min/max to processing_days
+     */
+    public function maybe_migrate_settings() {
+        // Check if migration is needed
+        $migrated = get_option('wlm_settings_migrated_v128', false);
+        
+        if ($migrated) {
+            return;
+        }
+        
+        $settings = $this->get_settings();
+        
+        // Check if old settings exist
+        if (isset($settings['processing_min']) || isset($settings['processing_max'])) {
+            // Use processing_min as the new processing_days value
+            // (or average of min/max if both exist)
+            if (isset($settings['processing_min']) && isset($settings['processing_max'])) {
+                $processing_days = ($settings['processing_min'] + $settings['processing_max']) / 2;
+            } elseif (isset($settings['processing_min'])) {
+                $processing_days = $settings['processing_min'];
+            } else {
+                $processing_days = $settings['processing_max'];
+            }
+            
+            // Update settings
+            $settings['processing_days'] = $processing_days;
+            unset($settings['processing_min']);
+            unset($settings['processing_max']);
+            
+            update_option('wlm_settings', $settings);
+            
+            WLM_Core::log('[WLM Migration] Migrated processing_min/max to processing_days: ' . $processing_days);
+        }
+        
+        // Mark as migrated
+        update_option('wlm_settings_migrated_v128', true);
     }
 }

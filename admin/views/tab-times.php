@@ -12,8 +12,7 @@ if (!defined('ABSPATH')) {
 $cutoff_time = isset($settings['cutoff_time']) ? $settings['cutoff_time'] : '14:00';
 $business_days = isset($settings['business_days']) ? $settings['business_days'] : array(1, 2, 3, 4, 5);
 $holidays = isset($settings['holidays']) ? $settings['holidays'] : array();
-$processing_min = isset($settings['processing_min']) ? $settings['processing_min'] : 1;
-$processing_max = isset($settings['processing_max']) ? $settings['processing_max'] : 2;
+$processing_days = isset($settings['processing_days']) ? $settings['processing_days'] : 1;
 $default_lead_time = isset($settings['default_lead_time']) ? $settings['default_lead_time'] : 3;
 $max_visible_stock = isset($settings['max_visible_stock']) ? $settings['max_visible_stock'] : 100;
 $debug_mode = isset($settings['debug_mode']) ? $settings['debug_mode'] : false;
@@ -115,36 +114,19 @@ $debug_mode = isset($settings['debug_mode']) ? $settings['debug_mode'] : false;
 
             <tr>
                 <th scope="row">
-                    <label for="wlm_processing_min"><?php esc_html_e('Bearbeitungszeit Min (Werktage)', 'woo-lieferzeiten-manager'); ?></label>
+                    <label for="wlm_processing_days"><?php esc_html_e('Bearbeitungszeit (Werktage)', 'woo-lieferzeiten-manager'); ?></label>
                 </th>
                 <td>
                     <input type="number" 
-                           id="wlm_processing_min" 
-                           name="wlm_settings[processing_min]" 
-                           value="<?php echo esc_attr($processing_min); ?>" 
-                           min="0" 
-                           step="1" 
+                           id="wlm_processing_days" 
+                           name="wlm_settings[processing_days]" 
+                           value="<?php echo esc_attr($processing_days); ?>" 
+                           min="0.1" 
+                           max="10" 
+                           step="0.1" 
                            class="small-text">
                     <p class="description">
-                        <?php esc_html_e('Minimale Bearbeitungszeit in Werktagen.', 'woo-lieferzeiten-manager'); ?>
-                    </p>
-                </td>
-            </tr>
-
-            <tr>
-                <th scope="row">
-                    <label for="wlm_processing_max"><?php esc_html_e('Bearbeitungszeit Max (Werktage)', 'woo-lieferzeiten-manager'); ?></label>
-                </th>
-                <td>
-                    <input type="number" 
-                           id="wlm_processing_max" 
-                           name="wlm_settings[processing_max]" 
-                           value="<?php echo esc_attr($processing_max); ?>" 
-                           min="0" 
-                           step="1" 
-                           class="small-text">
-                    <p class="description">
-                        <?php esc_html_e('Maximale Bearbeitungszeit in Werktagen.', 'woo-lieferzeiten-manager'); ?>
+                        <?php esc_html_e('Feste Bearbeitungszeit in Werktagen (z.B. 1 oder 1.5). Dezimalwerte werden aufgerundet.', 'woo-lieferzeiten-manager'); ?>
                     </p>
                 </td>
             </tr>
