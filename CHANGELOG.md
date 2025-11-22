@@ -2,6 +2,30 @@
 
 All notable changes to WooCommerce Lieferzeiten Manager will be documented in this file.
 
+## [1.29.0] - 2025-11-22
+
+### Fixed
+- **CRITICAL: Express delivery calculation was incorrect**
+  - Express ignored processing time completely, showing dates 1 day too early
+  - Fixed by ensuring processing time is always included in calculation
+  - Example: Order on Saturday → Processing starts Monday → Express delivery Tuesday/Wednesday (not Monday/Tuesday)
+
+### Changed
+- **Simplified processing time to single value**
+  - Changed from `processing_min/max` (2 values) to `processing_days` (1 value)
+  - Supports decimal values (e.g., 1.5 days) for API integration
+  - Decimal values are rounded up to next full business day
+  - Admin UI now shows single field instead of min/max
+  - Automatic migration converts old settings (uses average of min/max)
+
+### Added
+- **Enhanced debug logging**
+  - Calculator now logs start date, after_processing date, and transit times
+  - Separate logs for standard vs express mode
+  - Helps troubleshoot delivery time calculation issues
+
+---
+
 ## [1.16.3] - 2025-11-17
 
 ### Fixed

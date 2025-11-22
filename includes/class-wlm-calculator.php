@@ -57,12 +57,12 @@ class WLM_Calculator {
             $start_date = $available_from;
         }
 
-        // Add processing time
-        $processing_min = (int) ($settings['processing_min'] ?? 1);
-        $processing_max = (int) ($settings['processing_max'] ?? 2);
+        // Add processing time (single fixed value)
+        $processing_days = floatval($settings['processing_days'] ?? 1);
+        // Round up to next full business day
+        $processing_days_rounded = (int) ceil($processing_days);
         
-        $earliest_date = $this->add_business_days($start_date, $processing_min);
-        $latest_date = $this->add_business_days($start_date, $processing_max);
+        $after_processing = $this->add_business_days($start_date, $processing_days_rounded);
 
         // Get shipping method and add transit time
         // If shipping_zone is an array, it's a method config
@@ -76,24 +76,26 @@ class WLM_Calculator {
         if ($shipping_method) {
             // Use express transit times if express mode
             if ($is_express && !empty($shipping_method['express_enabled'])) {
-                // Use express cutoff time
-                $express_cutoff = $shipping_method['express_cutoff'] ?? '14:00';
+                // Use express cutoff time if set, otherwise use standard cutoff
+                $express_cutoff = $shipping_method['express_cutoff'] ?? $cutoff_time;
                 $start_date = $this->get_start_date($current_time, $express_cutoff);
                 
-                // Recalculate with express processing (usually 0)
-                $earliest_date = $start_date;
-                $latest_date = $start_date;
+                // Recalculate processing time from new start date
+                $after_processing = $this->add_business_days($start_date, $processing_days_rounded);
                 
                 $transit_min = (int) ($shipping_method['express_transit_min'] ?? 0);
                 $transit_max = (int) ($shipping_method['express_transit_max'] ?? 1);
+                
+                WLM_Core::log('[WLM DEBUG Calculator] Express mode: start=' . date('Y-m-d', $start_date) . ', after_processing=' . date('Y-m-d', $after_processing) . ', transit=' . $transit_min . '-' . $transit_max);
             } else {
                 $transit_min = (int) ($shipping_method['transit_min'] ?? 1);
                 $transit_max = (int) ($shipping_method['transit_max'] ?? 3);
-                WLM_Core::log('[WLM DEBUG Calculator] Method: ' . ($shipping_method['name'] ?? 'unknown') . ', transit_min=' . $transit_min . ', transit_max=' . $transit_max);
+                WLM_Core::log('[WLM DEBUG Calculator] Standard mode: after_processing=' . date('Y-m-d', $after_processing) . ', transit=' . $transit_min . '-' . $transit_max);
             }
             
-            $earliest_date = $this->add_business_days($earliest_date, $transit_min);
-            $latest_date = $this->add_business_days($latest_date, $transit_max);
+            // Add transit time to the date after processing
+            $earliest_date = $this->add_business_days($after_processing, $transit_min);
+            $latest_date = $this->add_business_days($after_processing, $transit_max);
         }
 
         $result = array(
