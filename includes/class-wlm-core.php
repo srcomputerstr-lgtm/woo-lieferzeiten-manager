@@ -624,16 +624,14 @@ class WLM_Core {
      */
     public function maybe_migrate_settings() {
         // Check if migration is needed
-        $migrated = get_option('wlm_settings_migrated_v128', false);
-        
-        if ($migrated) {
-            return;
-        }
+        $migrated_v128 = get_option('wlm_settings_migrated_v128', false);
+        $migrated_v129 = get_option('wlm_settings_migrated_v129', false);
         
         $settings = $this->get_settings();
+        $needs_save = false;
         
-        // Check if old settings exist
-        if (isset($settings['processing_min']) || isset($settings['processing_max'])) {
+        // Migration v1.28: processing_min/max to processing_days
+        if (!$migrated_v128 && (isset($settings['processing_min']) || isset($settings['processing_max']))) {
             // Use processing_min as the new processing_days value
             // (or average of min/max if both exist)
             if (isset($settings['processing_min']) && isset($settings['processing_max'])) {
@@ -649,12 +647,48 @@ class WLM_Core {
             unset($settings['processing_min']);
             unset($settings['processing_max']);
             
-            update_option('wlm_settings', $settings);
+            $needs_save = true;
             
-            WLM_Core::log('[WLM Migration] Migrated processing_min/max to processing_days: ' . $processing_days);
+            WLM_Core::log('[WLM Migration v1.28] Migrated processing_min/max to processing_days: ' . $processing_days);
         }
         
-        // Mark as migrated
-        update_option('wlm_settings_migrated_v128', true);
+        // Migration v1.29: Fix malformed array keys (business_days][], holidays][], etc.)
+        if (!$migrated_v129) {
+            $malformed_keys = array();
+            
+            foreach ($settings as $key => $value) {
+                // Check if key ends with ][] (malformed)
+                if (substr($key, -3) === '][]') {
+                    $correct_key = substr($key, 0, -3); // Remove ][]
+                    $malformed_keys[$key] = $correct_key;
+                }
+            }
+            
+            if (!empty($malformed_keys)) {
+                foreach ($malformed_keys as $old_key => $new_key) {
+                    // Copy value to correct key
+                    $settings[$new_key] = $settings[$old_key];
+                    // Remove malformed key
+                    unset($settings[$old_key]);
+                    
+                    WLM_Core::log('[WLM Migration v1.29] Fixed malformed key: ' . $old_key . ' -> ' . $new_key);
+                }
+                
+                $needs_save = true;
+            }
+        }
+        
+        // Save if needed
+        if ($needs_save) {
+            update_option('wlm_settings', $settings);
+        }
+        
+        // Mark migrations as complete
+        if (!$migrated_v128) {
+            update_option('wlm_settings_migrated_v128', true);
+        }
+        if (!$migrated_v129) {
+            update_option('wlm_settings_migrated_v129', true);
+        }
     }
 }

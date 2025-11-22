@@ -125,7 +125,9 @@
             // Collect wlm_settings
             $('[name^="wlm_settings"]').each(function() {
                 var name = $(this).attr('name');
-                var match = name.match(/wlm_settings\[(.+)\](?:\[\])?/);
+                // Match wlm_settings[key] or wlm_settings[key][]
+                // Use [^\]]+ to match everything except ] to avoid capturing the trailing ][]
+                var match = name.match(/wlm_settings\[([^\]]+)\](?:\[\])?/);
                 if (match) {
                     var key = match[1];
                     if ($(this).is(':checkbox')) {
