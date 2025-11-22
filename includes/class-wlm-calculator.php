@@ -282,6 +282,11 @@ class WLM_Calculator {
         $business_days = $settings['business_days'] ?? array(1, 2, 3, 4, 5);
         $holidays = $settings['holidays'] ?? array();
         
+        // Ensure holidays is always an array (fix for malformed data)
+        if (!is_array($holidays)) {
+            $holidays = empty($holidays) ? array() : array($holidays);
+        }
+        
         WLM_Core::log('[WLM DEBUG] add_business_days: start=' . date('Y-m-d (l)', $start_timestamp) . ', days_to_add=' . $days);
 
         $current = $start_timestamp;
@@ -327,6 +332,11 @@ class WLM_Calculator {
         $settings = WLM_Core::instance()->get_settings();
         $business_days = $settings['business_days'] ?? array(1, 2, 3, 4, 5);
         $holidays = $settings['holidays'] ?? array();
+        
+        // Ensure holidays is always an array (fix for malformed data)
+        if (!is_array($holidays)) {
+            $holidays = empty($holidays) ? array() : array($holidays);
+        }
         
         // Map day numbers to names
         $day_names = array(1 => 'Monday', 2 => 'Tuesday', 3 => 'Wednesday', 4 => 'Thursday', 5 => 'Friday', 6 => 'Saturday', 7 => 'Sunday');

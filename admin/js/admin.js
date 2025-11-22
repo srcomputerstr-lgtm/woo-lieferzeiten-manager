@@ -130,14 +130,25 @@
                 var match = name.match(/wlm_settings\[([^\]]+)\](?:\[\])?/);
                 if (match) {
                     var key = match[1];
+                    var isArray = name.endsWith('[]'); // Check if field name ends with []
+                    
+                    if (!formData.wlm_settings) formData.wlm_settings = {};
+                    
                     if ($(this).is(':checkbox')) {
-                        if (!formData.wlm_settings) formData.wlm_settings = {};
+                        // Checkboxes: collect checked values into array
                         if (!formData.wlm_settings[key]) formData.wlm_settings[key] = [];
                         if ($(this).is(':checked')) {
                             formData.wlm_settings[key].push($(this).val());
                         }
+                    } else if (isArray) {
+                        // Array notation (e.g., holidays[]): collect all values into array
+                        if (!formData.wlm_settings[key]) formData.wlm_settings[key] = [];
+                        var value = $(this).val();
+                        if (value) { // Only add non-empty values
+                            formData.wlm_settings[key].push(value);
+                        }
                     } else {
-                        if (!formData.wlm_settings) formData.wlm_settings = {};
+                        // Single value
                         formData.wlm_settings[key] = $(this).val();
                     }
                 }
