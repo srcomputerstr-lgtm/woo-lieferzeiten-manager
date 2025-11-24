@@ -779,17 +779,57 @@ class WLM_Frontend {
         
         WLM_Core::log('Saved delivery timeframe to order meta: ' . $order_id);
         
-        // Display on thank-you page
-        echo '<section class="wlm-thankyou-delivery-info">';
-        echo '<h2>' . esc_html__('Voraussichtliche Lieferung', 'woo-lieferzeiten-manager') . '</h2>';
-        echo '<div class="wlm-delivery-details">';
-        echo '<p><strong>' . esc_html__('Versandart:', 'woo-lieferzeiten-manager') . '</strong> ' . esc_html($delivery_data['method_name']) . '</p>';
-        echo '<p><strong>' . esc_html__('Lieferzeitraum:', 'woo-lieferzeiten-manager') . '</strong> ' . esc_html($delivery_data['window']) . '</p>';
-        echo '<p class="wlm-delivery-dates">';
-        echo '<span>' . esc_html__('Früheste Zustellung:', 'woo-lieferzeiten-manager') . ' <code>' . esc_html($delivery_data['earliest']) . '</code></span><br>';
-        echo '<span>' . esc_html__('Späteste Zustellung:', 'woo-lieferzeiten-manager') . ' <code>' . esc_html($delivery_data['latest']) . '</code></span>';
-        echo '</p>';
+        // Display on thank-you page with tracking timeline style
+        $order_date = date_i18n('d.m.Y', strtotime($delivery_data['earliest']) - (7 * 24 * 60 * 60)); // Estimate order date
+        
+        echo '<section class="wlm-thankyou-delivery-timeline" style="margin: 30px 0; padding: 30px; background: #f8f9fa; border-radius: 8px; text-align: center;">';
+        
+        // Package icon and title
+        echo '<div style="margin-bottom: 20px;">';
+        echo '<div style="font-size: 48px; margin-bottom: 10px;">📦</div>';
+        echo '<p style="margin: 0; color: #666; font-size: 14px;">' . esc_html__('Versandart:', 'woo-lieferzeiten-manager') . ' ' . esc_html($delivery_data['method_name']) . '</p>';
         echo '</div>';
+        
+        // Timeline
+        echo '<div class="wlm-timeline" style="display: flex; justify-content: space-between; align-items: flex-start; max-width: 900px; margin: 0 auto; position: relative;">';
+        
+        // Progress line
+        echo '<div style="position: absolute; top: 20px; left: 10%; right: 10%; height: 2px; background: #ddd; z-index: 0;"></div>';
+        echo '<div style="position: absolute; top: 20px; left: 10%; width: 20%; height: 2px; background: #ffa500; z-index: 1;"></div>';
+        
+        // Step 1: Bestellung erhalten (active)
+        echo '<div style="flex: 1; position: relative; z-index: 2;">';
+        echo '<div style="width: 40px; height: 40px; border-radius: 50%; background: #ffa500; color: white; display: flex; align-items: center; justify-content: center; margin: 0 auto 10px; font-weight: bold; box-shadow: 0 2px 8px rgba(255,165,0,0.3);">1</div>';
+        echo '<div style="font-weight: 600; margin-bottom: 5px;">' . esc_html__('Bestellung erhalten', 'woo-lieferzeiten-manager') . '</div>';
+        echo '<div style="font-size: 12px; color: #666;">' . esc_html($order_date) . '</div>';
+        echo '</div>';
+        
+        // Step 2: In Bearbeitung
+        echo '<div style="flex: 1; position: relative; z-index: 2;">';
+        echo '<div style="width: 40px; height: 40px; border-radius: 50%; background: #ddd; color: #666; display: flex; align-items: center; justify-content: center; margin: 0 auto 10px; font-weight: bold;">2</div>';
+        echo '<div style="font-weight: 600; color: #666;">' . esc_html__('In Bearbeitung', 'woo-lieferzeiten-manager') . '</div>';
+        echo '</div>';
+        
+        // Step 3: Verpackt
+        echo '<div style="flex: 1; position: relative; z-index: 2;">';
+        echo '<div style="width: 40px; height: 40px; border-radius: 50%; background: #ddd; color: #666; display: flex; align-items: center; justify-content: center; margin: 0 auto 10px; font-weight: bold;">3</div>';
+        echo '<div style="font-weight: 600; color: #666;">' . esc_html__('Verpackt', 'woo-lieferzeiten-manager') . '</div>';
+        echo '</div>';
+        
+        // Step 4: Abgeholt
+        echo '<div style="flex: 1; position: relative; z-index: 2;">';
+        echo '<div style="width: 40px; height: 40px; border-radius: 50%; background: #ddd; color: #666; display: flex; align-items: center; justify-content: center; margin: 0 auto 10px; font-weight: bold;">4</div>';
+        echo '<div style="font-weight: 600; color: #666;">' . esc_html__('Abgeholt', 'woo-lieferzeiten-manager') . '</div>';
+        echo '</div>';
+        
+        // Step 5: Voraussichtliche Zustellung (highlighted)
+        echo '<div style="flex: 1; position: relative; z-index: 2;">';
+        echo '<div style="width: 40px; height: 40px; border-radius: 50%; background: #28a745; color: white; display: flex; align-items: center; justify-content: center; margin: 0 auto 10px; font-weight: bold; box-shadow: 0 2px 8px rgba(40,167,69,0.3);">5</div>';
+        echo '<div style="font-weight: 600; color: #28a745;">' . esc_html__('Voraussichtliche Zustellung', 'woo-lieferzeiten-manager') . '</div>';
+        echo '<div style="font-size: 14px; color: #28a745; font-weight: 600; margin-top: 5px;">' . esc_html($delivery_data['window']) . '</div>';
+        echo '</div>';
+        
+        echo '</div>'; // end timeline
         echo '</section>';
         
         // Cleanup session
