@@ -96,13 +96,19 @@ class WLM_Calculator {
             // Add transit time to the date after processing
             $earliest_date = $this->add_business_days($after_processing, $transit_min);
             $latest_date = $this->add_business_days($after_processing, $transit_max);
+            
+            // Calculate ship-by date (when order must be shipped to meet earliest delivery)
+            // This is the date after processing is complete, before transit begins
+            $ship_by_date = $after_processing;
         }
 
         $result = array(
             'earliest' => $earliest_date,
             'latest' => $latest_date,
+            'ship_by_date' => $ship_by_date,
             'earliest_formatted' => $this->format_date($earliest_date),
             'latest_formatted' => $this->format_date($latest_date),
+            'ship_by_date_formatted' => $this->format_date($ship_by_date),
             'window_formatted' => $this->format_date_range($earliest_date, $latest_date),
             'stock_status' => $this->get_stock_status($product, $quantity),
             'shipping_method' => $shipping_method,

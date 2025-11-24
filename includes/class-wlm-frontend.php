@@ -644,6 +644,7 @@ class WLM_Frontend {
         $items = $order->get_items();
         $earliest = null;
         $latest = null;
+        $ship_by = null;
         
         foreach ($items as $item) {
             $product = $item->get_product();
@@ -660,6 +661,11 @@ class WLM_Frontend {
             
             if ($latest === null || $item_window['latest'] > $latest) {
                 $latest = $item_window['latest'];
+            }
+            
+            // Track earliest ship-by date (most urgent)
+            if ($ship_by === null || $item_window['ship_by_date'] < $ship_by) {
+                $ship_by = $item_window['ship_by_date'];
             }
         }
         
@@ -690,14 +696,17 @@ class WLM_Frontend {
             $method_name .= ' - Express';
         }
         
+        $ship_by_date = $ship_by ? date('Y-m-d', $ship_by) : '';
+        
         $order->update_meta_data('_wlm_earliest_delivery', $earliest_date);
         $order->update_meta_data('_wlm_latest_delivery', $latest_date);
+        $order->update_meta_data('_wlm_ship_by_date', $ship_by_date);
         $order->update_meta_data('_wlm_delivery_window', $delivery_window);
         $order->update_meta_data('_wlm_shipping_method_name', $method_name);
         
         $order->save();
         
-        WLM_Core::log('Saved delivery timeframe for order (blocks) ' . $order_id . ': ' . $earliest_date . ' - ' . $latest_date);
+        WLM_Core::log('Saved delivery timeframe for order (blocks) ' . $order_id . ': earliest=' . $earliest_date . ', latest=' . $latest_date . ', ship_by=' . $ship_by_date);
     }
     
     /**
@@ -708,6 +717,7 @@ class WLM_Frontend {
         
         $earliest = sanitize_text_field($_POST['earliest'] ?? '');
         $latest = sanitize_text_field($_POST['latest'] ?? '');
+        $ship_by = sanitize_text_field($_POST['ship_by'] ?? '');
         $window = sanitize_text_field($_POST['window'] ?? '');
         $method_name = sanitize_text_field($_POST['method_name'] ?? '');
         
@@ -721,6 +731,7 @@ class WLM_Frontend {
             WC()->session->set('wlm_delivery_timeframe', array(
                 'earliest' => $earliest,
                 'latest' => $latest,
+                'ship_by' => $ship_by,
                 'window' => $window,
                 'method_name' => $method_name
             ));
@@ -761,6 +772,7 @@ class WLM_Frontend {
         // Save to order meta
         $order->update_meta_data('_wlm_earliest_delivery', $delivery_data['earliest']);
         $order->update_meta_data('_wlm_latest_delivery', $delivery_data['latest']);
+        $order->update_meta_data('_wlm_ship_by_date', $delivery_data['ship_by'] ?? '');
         $order->update_meta_data('_wlm_delivery_window', $delivery_data['window']);
         $order->update_meta_data('_wlm_shipping_method_name', $delivery_data['method_name']);
         $order->save();

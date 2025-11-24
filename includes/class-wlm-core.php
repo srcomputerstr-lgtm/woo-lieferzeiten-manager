@@ -570,6 +570,7 @@ class WLM_Core {
     public function display_order_delivery_timeframe($order) {
         $earliest = $order->get_meta('_wlm_earliest_delivery');
         $latest = $order->get_meta('_wlm_latest_delivery');
+        $ship_by = $order->get_meta('_wlm_ship_by_date');
         $window = $order->get_meta('_wlm_delivery_window');
         $method_name = $order->get_meta('_wlm_shipping_method_name');
         
@@ -580,6 +581,7 @@ class WLM_Core {
         // Format dates for display
         $earliest_formatted = date_i18n(get_option('date_format'), strtotime($earliest));
         $latest_formatted = date_i18n(get_option('date_format'), strtotime($latest));
+        $ship_by_formatted = $ship_by ? date_i18n(get_option('date_format'), strtotime($ship_by)) : '';
         
         ?>
         <div class="wlm-order-delivery-timeframe" style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-left: 4px solid #2271b1;">
@@ -596,6 +598,14 @@ class WLM_Core {
             <p style="margin: 5px 0;">
                 <strong><?php esc_html_e('Lieferzeitraum:', 'woo-lieferzeiten-manager'); ?></strong>
                 <?php echo esc_html($window); ?>
+            </p>
+            <?php endif; ?>
+            
+            <?php if ($ship_by): ?>
+            <p style="margin: 5px 0; padding: 8px; background: #fff3cd; border-left: 3px solid #ffc107;">
+                <strong style="color: #856404;">📦 <?php esc_html_e('Versand bis:', 'woo-lieferzeiten-manager'); ?></strong>
+                <?php echo esc_html($ship_by_formatted); ?>
+                <code style="margin-left: 10px; background: #fff; padding: 2px 6px; border-radius: 3px;"><?php echo esc_html($ship_by); ?></code>
             </p>
             <?php endif; ?>
             
