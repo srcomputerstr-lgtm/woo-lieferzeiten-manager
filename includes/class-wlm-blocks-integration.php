@@ -382,6 +382,7 @@ class WLM_Blocks_Integration implements IntegrationInterface {
                 'delivery_window' => $window ? $window['window_formatted'] : null,
                 'earliest_date' => $window ? date('Y-m-d', $window['earliest']) : null,
                 'latest_date' => $window ? date('Y-m-d', $window['latest']) : null,
+                'ship_by_date' => $window && isset($window['ship_by']) ? date('Y-m-d', $window['ship_by']) : null,
                 'is_express_rate' => false
             );
             
@@ -439,6 +440,7 @@ class WLM_Blocks_Integration implements IntegrationInterface {
                     'delivery_window' => $express_window ? $express_window['window_formatted'] : null,
                     'earliest_date' => $express_window ? date('Y-m-d', $express_window['earliest']) : null,
                     'latest_date' => $express_window ? date('Y-m-d', $express_window['latest']) : null,
+                    'ship_by_date' => $express_window && isset($express_window['ship_by']) ? date('Y-m-d', $express_window['ship_by']) : null,
                     'is_express_rate' => true
                 );
                 

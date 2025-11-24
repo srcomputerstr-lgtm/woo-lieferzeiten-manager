@@ -784,11 +784,8 @@ class WLM_Frontend {
         
         echo '<section class="wlm-thankyou-delivery-timeline" style="margin: 30px 0; padding: 30px; background: #f8f9fa; border-radius: 8px; text-align: center;">';
         
-        // Thank you heading
-        echo '<h2 style="font-size: 32px; font-weight: 700; margin: 0 0 10px 0; color: #333;">' . esc_html__('Danke für deine Bestellung!', 'woo-lieferzeiten-manager') . '</h2>';
-        
         // Package icon and shipping method
-        echo '<div style="margin-bottom: 30px;">';
+        echo '<div style="margin-bottom: 20px;">';
         echo '<div style="font-size: 48px; margin-bottom: 10px;">📦</div>';
         echo '<p style="margin: 0; color: #666; font-size: 14px;">' . esc_html__('Versandart:', 'woo-lieferzeiten-manager') . ' ' . esc_html($delivery_data['method_name']) . '</p>';
         echo '</div>';

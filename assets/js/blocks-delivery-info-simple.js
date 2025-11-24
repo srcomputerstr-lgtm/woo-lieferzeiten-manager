@@ -340,6 +340,7 @@
         const latestDate = info.latest_date || '';
         const deliveryWindow = info.delivery_window || '';
         const methodName = info.method_name || '';
+        const shipByDate = info.ship_by_date || '';
         
         // Find or create hidden fields
         let earliestField = document.getElementById('wlm_earliest_delivery');
@@ -390,7 +391,8 @@
             earliest: earliestDate,
             latest: latestDate,
             window: deliveryWindow,
-            method: methodName
+            method: methodName,
+            ship_by: shipByDate
         });
         
         // Save to session via AJAX
@@ -404,7 +406,8 @@
                     earliest: earliestDate,
                     latest: latestDate,
                     window: deliveryWindow,
-                    method_name: methodName
+                    method_name: methodName,
+                    ship_by: shipByDate
                 },
                 success: function(response) {
                     (window.wlm_params?.debug) && console.log('[WLM Checkout Fields] Saved to session:', response);
