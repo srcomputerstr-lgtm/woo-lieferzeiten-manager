@@ -786,7 +786,7 @@ class WLM_Admin {
         
         // Export general settings
         if ($export_settings) {
-            $settings = WLM_Core::get_settings();
+            $settings = get_option('wlm_settings', array());
             $export_data['settings'] = $settings;
         }
         
