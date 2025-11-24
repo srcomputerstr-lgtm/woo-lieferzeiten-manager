@@ -792,20 +792,14 @@ class WLM_Frontend {
         $order_status = $order->get_status();
         $is_pending = ($order_status === 'pending' || $order_status === 'on-hold');
         
-        // Save to order meta
+        // Save to order meta (always save ship_by_date, even for pending orders)
         $order->update_meta_data('_wlm_earliest_delivery', $delivery_data['earliest']);
         $order->update_meta_data('_wlm_latest_delivery', $delivery_data['latest']);
-        
-        // Only save ship_by_date if order is NOT pending (payment received)
-        if (!$is_pending) {
-            $order->update_meta_data('_wlm_ship_by_date', $ship_by_date);
-        } else {
-            // For pending orders, don't save ship_by_date yet
-            $order->update_meta_data('_wlm_ship_by_date', '');
-        }
-        
+        $order->update_meta_data('_wlm_ship_by_date', $ship_by_date);
         $order->update_meta_data('_wlm_delivery_window', $delivery_data['window']);
         $order->update_meta_data('_wlm_shipping_method_name', $delivery_data['method_name']);
+        
+        // Mark if dates are pending (will be recalculated after payment)
         $order->update_meta_data('_wlm_is_pending_payment', $is_pending ? 'yes' : 'no');
         $order->save();
         
