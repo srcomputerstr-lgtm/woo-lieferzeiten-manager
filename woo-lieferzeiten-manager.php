@@ -1,11 +1,11 @@
 <?php
 /**
  * Plugin Name: Woo Lieferzeiten Manager
- * Plugin URI: https://example.com/woo-lieferzeiten-manager
+ * Plugin URI: https://github.com/srcomputerstr-lgtm/woo-lieferzeiten-manager
  * Description: Zentrales Plugin für WooCommerce zur Verwaltung von Lieferzeiten, Versandarten, Express-Optionen und Versandzuschlägen mit Block-Layout-Unterstützung.
  * Version: 1.31.0
- * Author: Ihr Name
- * Author URI: https://example.com
+ * Author: seoparden.de
+ * Author URI: https://seoparden.de
  * Text Domain: woo-lieferzeiten-manager
  * Domain Path: /languages
  * Requires at least: 6.0
