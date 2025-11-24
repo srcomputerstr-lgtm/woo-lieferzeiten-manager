@@ -45,6 +45,9 @@ class WLM_Frontend {
         
         // Thank-You page (priority 5 to display at top)
         add_action('woocommerce_thankyou', array($this, 'display_and_save_delivery_timeframe_on_thankyou'), 5, 1);
+        
+        // Order status change - recalculate ship-by date when payment received
+        add_action('woocommerce_order_status_changed', array($this, 'recalculate_ship_by_on_status_change'), 10, 4);
 
         // Blocks integration
         // Register Store API extension early (before blocks are loaded)
@@ -769,20 +772,41 @@ class WLM_Frontend {
         
         WLM_Core::log('Retrieved delivery timeframe from session for order ' . $order_id . ': ' . $delivery_data['earliest'] . ' - ' . $delivery_data['latest']);
         
-        // Calculate ship_by_date from earliest_date
-        // Ship-by date = earliest delivery date - 1 day (to account for transit)
-        $earliest_timestamp = strtotime($delivery_data['earliest']);
-        $ship_by_timestamp = $earliest_timestamp - (24 * 60 * 60); // Subtract 1 day
-        $ship_by_date = date('Y-m-d', $ship_by_timestamp);
+        // Calculate ship_by_date from order date + processing time
+        // Ship-by date = order date + processing days (internal handling time)
+        // Use ship_by from session if available (calculated correctly in calculator)
+        if (!empty($delivery_data['ship_by'])) {
+            $ship_by_date = $delivery_data['ship_by'];
+        } else {
+            // Fallback: Calculate from order date
+            $order_date = $order->get_date_created()->getTimestamp();
+            // Get processing days from settings (default 15)
+            $processing_days = (float) get_option('wlm_processing_days', 1);
+            $ship_by_timestamp = strtotime('+' . $processing_days . ' days', $order_date);
+            $ship_by_date = date('Y-m-d', $ship_by_timestamp);
+        }
         
         WLM_Core::log('Calculated ship_by_date for order ' . $order_id . ': ' . $ship_by_date . ' (earliest: ' . $delivery_data['earliest'] . ')');
+        
+        // Check order status for pending handling
+        $order_status = $order->get_status();
+        $is_pending = ($order_status === 'pending' || $order_status === 'on-hold');
         
         // Save to order meta
         $order->update_meta_data('_wlm_earliest_delivery', $delivery_data['earliest']);
         $order->update_meta_data('_wlm_latest_delivery', $delivery_data['latest']);
-        $order->update_meta_data('_wlm_ship_by_date', $ship_by_date);
+        
+        // Only save ship_by_date if order is NOT pending (payment received)
+        if (!$is_pending) {
+            $order->update_meta_data('_wlm_ship_by_date', $ship_by_date);
+        } else {
+            // For pending orders, don't save ship_by_date yet
+            $order->update_meta_data('_wlm_ship_by_date', '');
+        }
+        
         $order->update_meta_data('_wlm_delivery_window', $delivery_data['window']);
         $order->update_meta_data('_wlm_shipping_method_name', $delivery_data['method_name']);
+        $order->update_meta_data('_wlm_is_pending_payment', $is_pending ? 'yes' : 'no');
         $order->save();
         
         WLM_Core::log('Saved delivery timeframe to order meta: ' . $order_id);
@@ -844,6 +868,91 @@ class WLM_Frontend {
         if (WC()->session) {
             WC()->session->__unset('wlm_delivery_timeframe');
             WLM_Core::log('Cleaned up delivery timeframe from session');
+        }
+    }
+    
+    /**
+     * Recalculate ship-by date when order status changes to processing
+     * This ensures ship-by date is calculated from payment received date, not order date
+     *
+     * @param int $order_id Order ID
+     * @param string $old_status Old order status
+     * @param string $new_status New order status
+     * @param WC_Order $order Order object
+     */
+    public function recalculate_ship_by_on_status_change($order_id, $old_status, $new_status, $order) {
+        // Only recalculate when order moves to processing (payment received)
+        if ($new_status !== 'processing') {
+            return;
+        }
+        
+        // Skip if ship-by date already exists and is not empty
+        $existing_ship_by = $order->get_meta('_wlm_ship_by_date');
+        if (!empty($existing_ship_by)) {
+            WLM_Core::log('Ship-by date already exists for order ' . $order_id . ', skipping recalculation');
+            return;
+        }
+        
+        // Get earliest and latest delivery dates (should already be saved)
+        $earliest = $order->get_meta('_wlm_earliest_delivery');
+        $latest = $order->get_meta('_wlm_latest_delivery');
+        
+        if (empty($earliest) || empty($latest)) {
+            WLM_Core::log('No delivery dates found for order ' . $order_id . ', skipping ship-by calculation');
+            return;
+        }
+        
+        // Calculate ship-by date from NOW (payment received date) + processing days
+        $payment_received_date = current_time('timestamp');
+        $processing_days = (float) get_option('wlm_processing_days', 1);
+        $ship_by_timestamp = strtotime('+' . $processing_days . ' days', $payment_received_date);
+        $ship_by_date = date('Y-m-d', $ship_by_timestamp);
+        
+        // Also recalculate delivery dates based on new ship-by date
+        $calculator = new WLM_Calculator();
+        
+        // Get shipping method from order
+        $shipping_methods = $order->get_shipping_methods();
+        $shipping_method_id = null;
+        foreach ($shipping_methods as $method) {
+            $shipping_method_id = $method->get_method_id();
+            break;
+        }
+        
+        if ($shipping_method_id) {
+            // Get transit times from shipping method
+            $settings = get_option('wlm_settings', array());
+            $shipping_method = null;
+            
+            foreach ($settings['shipping_methods'] ?? array() as $method) {
+                if ($method['id'] === $shipping_method_id) {
+                    $shipping_method = $method;
+                    break;
+                }
+            }
+            
+            if ($shipping_method) {
+                $transit_min = (int) ($shipping_method['transit_min'] ?? 1);
+                $transit_max = (int) ($shipping_method['transit_max'] ?? 3);
+                
+                // Calculate new delivery dates from ship-by date
+                $earliest_timestamp = $calculator->add_business_days($ship_by_timestamp, $transit_min);
+                $latest_timestamp = $calculator->add_business_days($ship_by_timestamp, $transit_max);
+                
+                $new_earliest = date('Y-m-d', $earliest_timestamp);
+                $new_latest = date('Y-m-d', $latest_timestamp);
+                $new_window = date_i18n(get_option('date_format'), $earliest_timestamp) . ' – ' . date_i18n(get_option('date_format'), $latest_timestamp);
+                
+                // Update order meta with recalculated dates
+                $order->update_meta_data('_wlm_ship_by_date', $ship_by_date);
+                $order->update_meta_data('_wlm_earliest_delivery', $new_earliest);
+                $order->update_meta_data('_wlm_latest_delivery', $new_latest);
+                $order->update_meta_data('_wlm_delivery_window', $new_window);
+                $order->update_meta_data('_wlm_is_pending_payment', 'no');
+                $order->save();
+                
+                WLM_Core::log('Recalculated delivery dates for order ' . $order_id . ' on status change to processing: ship_by=' . $ship_by_date . ', earliest=' . $new_earliest . ', latest=' . $new_latest);
+            }
         }
     }
 }

@@ -4,7 +4,7 @@ Tags: woocommerce, shipping, delivery, lead time, express shipping
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.33.3
+Stable tag: 1.34.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -92,6 +92,13 @@ Ja! Das Plugin ist vollständig kompatibel mit WooCommerce High-Performance Orde
 5. Backend Order-Details mit Lieferzeitraum
 
 == Changelog ==
+
+= 1.34.0 - 2025-11-24 =
+* Fix: Ship-by Date wird jetzt korrekt ab Zahlungseingang berechnet (nicht ab Bestelldatum)
+* Neu: Automatische Neuberechnung bei Status-Wechsel zu "In Bearbeitung"
+* Neu: Pending-Order Handling - Ship-by Date erst nach Zahlungseingang
+* Fix: Lieferzeitraum wird bei Zahlungseingang neu berechnet
+* Verbesserung: Unterstützt Instant Payment (PayPal, Stripe) und manuelle Zahlung
 
 = 1.33.3 - 2025-11-24 =
 * Fix: Germanized API Call entfernt (verursachte Fatal Error)
