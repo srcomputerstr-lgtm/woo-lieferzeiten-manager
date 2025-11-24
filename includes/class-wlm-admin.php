@@ -887,8 +887,6 @@ class WLM_Admin {
             'imported' => $imported
         ));
     }
-}
-
     
     /**
      * AJAX handler to get Germanized/Shiptastic providers
