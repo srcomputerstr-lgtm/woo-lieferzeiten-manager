@@ -899,43 +899,68 @@ class WLM_Admin {
             return;
         }
         
-        global $wpdb;
+        $provider_list = array();
         
-        // Check if Germanized table exists
-        $table_name = $wpdb->prefix . 'woocommerce_gzd_shipping_provider';
-        $table_exists = $wpdb->get_var("SHOW TABLES LIKE '$table_name'") === $table_name;
+        // Method 1: Try Germanized API (Shiptastic)
+        if (function_exists('wc_gzd_get_shipping_provider')) {
+            $providers = WC_GZD_Shipping_Providers::instance()->get_shipping_providers();
+            
+            if (!empty($providers)) {
+                foreach ($providers as $provider) {
+                    $provider_list[] = array(
+                        'slug' => $provider->get_name(),
+                        'title' => $provider->get_title()
+                    );
+                }
+            }
+        }
         
-        if (!$table_exists) {
+        // Method 2: Fallback to database query
+        if (empty($provider_list)) {
+            global $wpdb;
+            
+            // Try different possible table names
+            $possible_tables = array(
+                $wpdb->prefix . 'woocommerce_gzd_shipping_provider',
+                $wpdb->prefix . 'gzd_shipping_provider',
+                $wpdb->prefix . 'wc_gzd_shipping_provider'
+            );
+            
+            foreach ($possible_tables as $table_name) {
+                $table_exists = $wpdb->get_var("SHOW TABLES LIKE '$table_name'") === $table_name;
+                
+                if ($table_exists) {
+                    $providers = $wpdb->get_results("
+                        SELECT * FROM {$table_name}
+                        ORDER BY shipping_provider_title ASC
+                    ");
+                    
+                    if (!empty($providers)) {
+                        foreach ($providers as $p) {
+                            // Try different column name variations
+                            $slug = $p->shipping_provider_name ?? $p->name ?? $p->slug ?? '';
+                            $title = $p->shipping_provider_title ?? $p->title ?? $slug;
+                            
+                            if (!empty($slug)) {
+                                $provider_list[] = array(
+                                    'slug' => $slug,
+                                    'title' => $title
+                                );
+                            }
+                        }
+                        break; // Found providers, stop searching
+                    }
+                }
+            }
+        }
+        
+        // If still empty, return error
+        if (empty($provider_list)) {
             wp_send_json_success(array(
                 'providers' => array(),
                 'message' => 'Germanized/Shiptastic nicht installiert oder keine Provider gefunden'
             ));
             return;
-        }
-        
-        // Get providers from Germanized
-        $providers = $wpdb->get_results("
-            SELECT 
-                shipping_provider_name as slug,
-                shipping_provider_title as title
-            FROM {$table_name}
-            ORDER BY shipping_provider_title ASC
-        ");
-        
-        if (empty($providers)) {
-            wp_send_json_success(array(
-                'providers' => array(),
-                'message' => 'Keine Germanized Provider gefunden'
-            ));
-            return;
-        }
-        
-        $provider_list = array();
-        foreach ($providers as $p) {
-            $provider_list[] = array(
-                'slug' => $p->slug,
-                'title' => $p->title
-            );
         }
         
         wp_send_json_success(array(
