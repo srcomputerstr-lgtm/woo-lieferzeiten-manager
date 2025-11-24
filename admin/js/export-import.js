@@ -4,6 +4,8 @@
 (function($) {
     'use strict';
     
+    $(document).ready(function() {
+    
     // Export settings
     $('#wlm-export-settings').on('click', function() {
         const button = $(this);
@@ -199,5 +201,7 @@
             }
         });
     });
+    
+    }); // document.ready
     
 })(jQuery);

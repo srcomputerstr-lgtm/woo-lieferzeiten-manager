@@ -9,6 +9,11 @@
     (window.wlm_params?.debug) && console.log('[WLM Stock] Script loaded');
 
     function addStockStatusCSS() {
+        // Only run in frontend (not in admin)
+        if (!wp.data || !wp.data.select || !wp.data.select('wc/store/cart')) {
+            return;
+        }
+        
         const cartData = wp.data.select('wc/store/cart').getCartData();
         
         if (!cartData || !cartData.extensions || !cartData.extensions['woo-lieferzeiten-manager']) {
