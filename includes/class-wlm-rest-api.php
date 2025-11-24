@@ -230,6 +230,85 @@ class WLM_REST_API {
                 )
             )
         ));
+        
+        // Get ship-by date only
+        register_rest_route(self::NAMESPACE, '/orders/(?P<id>\d+)/ship-by-date', array(
+            'methods' => 'GET',
+            'callback' => array($this, 'get_ship_by_date'),
+            'permission_callback' => array($this, 'check_permission'),
+            'args' => array(
+                'id' => array(
+                    'required' => true,
+                    'validate_callback' => function($param) {
+                        return is_numeric($param);
+                    }
+                )
+            )
+        ));
+        
+        // Get earliest delivery date only
+        register_rest_route(self::NAMESPACE, '/orders/(?P<id>\d+)/earliest-delivery', array(
+            'methods' => 'GET',
+            'callback' => array($this, 'get_earliest_delivery'),
+            'permission_callback' => array($this, 'check_permission'),
+            'args' => array(
+                'id' => array(
+                    'required' => true,
+                    'validate_callback' => function($param) {
+                        return is_numeric($param);
+                    }
+                )
+            )
+        ));
+        
+        // Get latest delivery date only
+        register_rest_route(self::NAMESPACE, '/orders/(?P<id>\d+)/latest-delivery', array(
+            'methods' => 'GET',
+            'callback' => array($this, 'get_latest_delivery'),
+            'permission_callback' => array($this, 'check_permission'),
+            'args' => array(
+                'id' => array(
+                    'required' => true,
+                    'validate_callback' => function($param) {
+                        return is_numeric($param);
+                    }
+                )
+            )
+        ));
+        
+        // Get delivery window (formatted) only
+        register_rest_route(self::NAMESPACE, '/orders/(?P<id>\d+)/delivery-window', array(
+            'methods' => 'GET',
+            'callback' => array($this, 'get_delivery_window'),
+            'permission_callback' => array($this, 'check_permission'),
+            'args' => array(
+                'id' => array(
+                    'required' => true,
+                    'validate_callback' => function($param) {
+                        return is_numeric($param);
+                    }
+                )
+            )
+        ));
+        
+        // Get orders that need to be shipped by a specific date
+        register_rest_route(self::NAMESPACE, '/orders/ship-by/(?P<date>[0-9-]+)', array(
+            'methods' => 'GET',
+            'callback' => array($this, 'get_orders_by_ship_date'),
+            'permission_callback' => array($this, 'check_permission'),
+            'args' => array(
+                'date' => array(
+                    'required' => true,
+                    'validate_callback' => function($param) {
+                        return preg_match('/^\d{4}-\d{2}-\d{2}$/', $param);
+                    }
+                ),
+                'status' => array(
+                    'required' => false,
+                    'default' => 'processing',
+                )
+            )
+        ));
     }
 
     /**
@@ -807,5 +886,146 @@ class WLM_REST_API {
         );
         
         return rest_ensure_response($response);
+    }
+    
+    /**
+     * Get ship-by date only
+     *
+     * @param WP_REST_Request $request Request object.
+     * @return WP_REST_Response|WP_Error
+     */
+    public function get_ship_by_date($request) {
+        $order_id = $request['id'];
+        $order = wc_get_order($order_id);
+        
+        if (!$order) {
+            return new WP_Error('order_not_found', 'Order not found', array('status' => 404));
+        }
+        
+        $ship_by_date = $order->get_meta('_wlm_ship_by_date');
+        
+        if (!$ship_by_date) {
+            return new WP_Error('no_data', 'No ship-by date found for this order', array('status' => 404));
+        }
+        
+        return rest_ensure_response($ship_by_date);
+    }
+    
+    /**
+     * Get earliest delivery date only
+     *
+     * @param WP_REST_Request $request Request object.
+     * @return WP_REST_Response|WP_Error
+     */
+    public function get_earliest_delivery($request) {
+        $order_id = $request['id'];
+        $order = wc_get_order($order_id);
+        
+        if (!$order) {
+            return new WP_Error('order_not_found', 'Order not found', array('status' => 404));
+        }
+        
+        $earliest = $order->get_meta('_wlm_earliest_delivery');
+        
+        if (!$earliest) {
+            return new WP_Error('no_data', 'No earliest delivery date found for this order', array('status' => 404));
+        }
+        
+        return rest_ensure_response($earliest);
+    }
+    
+    /**
+     * Get latest delivery date only
+     *
+     * @param WP_REST_Request $request Request object.
+     * @return WP_REST_Response|WP_Error
+     */
+    public function get_latest_delivery($request) {
+        $order_id = $request['id'];
+        $order = wc_get_order($order_id);
+        
+        if (!$order) {
+            return new WP_Error('order_not_found', 'Order not found', array('status' => 404));
+        }
+        
+        $latest = $order->get_meta('_wlm_latest_delivery');
+        
+        if (!$latest) {
+            return new WP_Error('no_data', 'No latest delivery date found for this order', array('status' => 404));
+        }
+        
+        return rest_ensure_response($latest);
+    }
+    
+    /**
+     * Get delivery window (formatted) only
+     *
+     * @param WP_REST_Request $request Request object.
+     * @return WP_REST_Response|WP_Error
+     */
+    public function get_delivery_window($request) {
+        $order_id = $request['id'];
+        $order = wc_get_order($order_id);
+        
+        if (!$order) {
+            return new WP_Error('order_not_found', 'Order not found', array('status' => 404));
+        }
+        
+        $window = $order->get_meta('_wlm_delivery_window');
+        
+        if (!$window) {
+            return new WP_Error('no_data', 'No delivery window found for this order', array('status' => 404));
+        }
+        
+        return rest_ensure_response($window);
+    }
+    
+    /**
+     * Get orders that need to be shipped by a specific date
+     *
+     * @param WP_REST_Request $request Request object.
+     * @return WP_REST_Response
+     */
+    public function get_orders_by_ship_date($request) {
+        $date = $request['date'];
+        $status = $request['status'];
+        
+        $args = array(
+            'limit' => -1,
+            'status' => $status,
+            'meta_query' => array(
+                array(
+                    'key' => '_wlm_ship_by_date',
+                    'value' => $date,
+                    'compare' => '<=',
+                    'type' => 'DATE',
+                ),
+            ),
+            'orderby' => 'meta_value',
+            'meta_key' => '_wlm_ship_by_date',
+            'order' => 'ASC',
+        );
+        
+        $orders = wc_get_orders($args);
+        
+        $result = array();
+        foreach ($orders as $order) {
+            $result[] = array(
+                'order_id' => $order->get_id(),
+                'order_number' => $order->get_order_number(),
+                'ship_by_date' => $order->get_meta('_wlm_ship_by_date'),
+                'earliest_delivery' => $order->get_meta('_wlm_earliest_delivery'),
+                'latest_delivery' => $order->get_meta('_wlm_latest_delivery'),
+                'delivery_window' => $order->get_meta('_wlm_delivery_window'),
+                'shipping_method_name' => $order->get_meta('_wlm_shipping_method_name'),
+                'status' => $order->get_status(),
+            );
+        }
+        
+        return rest_ensure_response(array(
+            'date' => $date,
+            'count' => count($result),
+            'orders' => $result,
+        ));
     }
 }
