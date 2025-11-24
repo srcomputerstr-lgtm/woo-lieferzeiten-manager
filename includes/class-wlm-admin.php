@@ -899,56 +899,63 @@ class WLM_Admin {
             return;
         }
         
+        global $wpdb;
         $provider_list = array();
         
-        // Method 1: Try Germanized API (Shiptastic)
-        if (function_exists('wc_gzd_get_shipping_provider')) {
-            $providers = WC_GZD_Shipping_Providers::instance()->get_shipping_providers();
-            
-            if (!empty($providers)) {
-                foreach ($providers as $provider) {
-                    $provider_list[] = array(
-                        'slug' => $provider->get_name(),
-                        'title' => $provider->get_title()
-                    );
-                }
+        // Get all tables in database
+        $all_tables = $wpdb->get_col("SHOW TABLES");
+        
+        // Find Germanized shipping provider table
+        $gzd_table = null;
+        foreach ($all_tables as $table) {
+            if (stripos($table, 'shipping_provider') !== false) {
+                $gzd_table = $table;
+                break;
             }
         }
         
-        // Method 2: Fallback to database query
-        if (empty($provider_list)) {
-            global $wpdb;
+        if ($gzd_table) {
+            // Get all columns from the table
+            $columns = $wpdb->get_results("SHOW COLUMNS FROM {$gzd_table}");
+            $column_names = array();
+            foreach ($columns as $col) {
+                $column_names[] = $col->Field;
+            }
             
-            // Try different possible table names
-            $possible_tables = array(
-                $wpdb->prefix . 'woocommerce_gzd_shipping_provider',
-                $wpdb->prefix . 'gzd_shipping_provider',
-                $wpdb->prefix . 'wc_gzd_shipping_provider'
-            );
+            // Get all providers
+            $providers = $wpdb->get_results("SELECT * FROM {$gzd_table}");
             
-            foreach ($possible_tables as $table_name) {
-                $table_exists = $wpdb->get_var("SHOW TABLES LIKE '$table_name'") === $table_name;
-                
-                if ($table_exists) {
-                    $providers = $wpdb->get_results("
-                        SELECT * FROM {$table_name}
-                        ORDER BY shipping_provider_title ASC
-                    ");
+            if (!empty($providers)) {
+                foreach ($providers as $p) {
+                    $slug = '';
+                    $title = '';
                     
-                    if (!empty($providers)) {
-                        foreach ($providers as $p) {
-                            // Try different column name variations
-                            $slug = $p->shipping_provider_name ?? $p->name ?? $p->slug ?? '';
-                            $title = $p->shipping_provider_title ?? $p->title ?? $slug;
-                            
-                            if (!empty($slug)) {
-                                $provider_list[] = array(
-                                    'slug' => $slug,
-                                    'title' => $title
-                                );
-                            }
+                    // Find slug column (try different names)
+                    foreach (array('shipping_provider_name', 'name', 'slug', 'provider_name') as $field) {
+                        if (isset($p->$field) && !empty($p->$field)) {
+                            $slug = $p->$field;
+                            break;
                         }
-                        break; // Found providers, stop searching
+                    }
+                    
+                    // Find title column (try different names)
+                    foreach (array('shipping_provider_title', 'title', 'label', 'provider_title') as $field) {
+                        if (isset($p->$field) && !empty($p->$field)) {
+                            $title = $p->$field;
+                            break;
+                        }
+                    }
+                    
+                    // Use slug as title if title is empty
+                    if (empty($title) && !empty($slug)) {
+                        $title = ucfirst($slug);
+                    }
+                    
+                    if (!empty($slug)) {
+                        $provider_list[] = array(
+                            'slug' => $slug,
+                            'title' => $title
+                        );
                     }
                 }
             }

@@ -4,7 +4,7 @@ Tags: woocommerce, shipping, delivery, lead time, express shipping
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.33.2
+Stable tag: 1.33.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -92,6 +92,11 @@ Ja! Das Plugin ist vollständig kompatibel mit WooCommerce High-Performance Orde
 5. Backend Order-Details mit Lieferzeitraum
 
 == Changelog ==
+
+= 1.33.3 - 2025-11-24 =
+* Fix: Germanized API Call entfernt (verursachte Fatal Error)
+* Fix: Sichere Datenbank-Abfrage mit automatischer Tabellen-Erkennung
+* Fix: Unterstützt alle möglichen Spalten-Namen dynamisch
 
 = 1.33.2 - 2025-11-24 =
 * Fix: Provider-Dropdown lädt jetzt Provider über Germanized API statt Datenbank
