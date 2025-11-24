@@ -31,6 +31,12 @@ class WLM_Admin {
         
         // AJAX handler for getting shipping classes
         add_action('wp_ajax_wlm_get_shipping_classes', array($this, 'ajax_get_shipping_classes'));
+        
+        // AJAX handler for export
+        add_action('wp_ajax_wlm_export_settings', array($this, 'ajax_export_settings'));
+        
+        // AJAX handler for import
+        add_action('wp_ajax_wlm_import_settings', array($this, 'ajax_import_settings'));
     }
 
     /**
@@ -157,6 +163,15 @@ class WLM_Admin {
             'wlm-admin',
             WLM_PLUGIN_URL . 'admin/js/admin.js',
             array('jquery', 'jquery-ui-datepicker', 'jquery-ui-sortable', 'select2'),
+            WLM_VERSION,
+            true
+        );
+        
+        // Enqueue export/import script
+        wp_enqueue_script(
+            'wlm-export-import',
+            WLM_PLUGIN_URL . 'admin/js/export-import.js',
+            array('jquery', 'wlm-admin'),
             WLM_VERSION,
             true
         );
@@ -305,6 +320,9 @@ class WLM_Admin {
                 <a href="<?php echo $is_wc_settings ? 'admin.php?page=wc-settings&tab=shipping&section=wlm&wlm_tab=surcharges' : '?page=wlm-settings&tab=surcharges'; ?>" class="nav-tab <?php echo $active_tab === 'surcharges' ? 'nav-tab-active' : ''; ?>">
                     <?php esc_html_e('Zuschläge', 'woo-lieferzeiten-manager'); ?>
                 </a>
+                <a href="<?php echo $is_wc_settings ? 'admin.php?page=wc-settings&tab=shipping&section=wlm&wlm_tab=export-import' : '?page=wlm-settings&tab=export-import'; ?>" class="nav-tab <?php echo $active_tab === 'export-import' ? 'nav-tab-active' : ''; ?>">
+                    <?php esc_html_e('Export / Import', 'woo-lieferzeiten-manager'); ?>
+                </a>
             </h2>
 
             <?php if (!$is_wc_settings): ?>
@@ -322,6 +340,9 @@ class WLM_Admin {
                     break;
                 case 'surcharges':
                     $this->render_surcharges_tab();
+                    break;
+                case 'export-import':
+                    $this->render_export_import_tab();
                     break;
             }
             
@@ -365,6 +386,13 @@ class WLM_Admin {
         $surcharge_application_strategy = get_option('wlm_surcharge_application_strategy', 'all_charges');
         $attribute_taxonomies = wc_get_attribute_taxonomies();
         require_once WLM_PLUGIN_DIR . 'admin/views/tab-surcharges.php';
+    }
+
+    /**
+     * Render export/import tab
+     */
+    private function render_export_import_tab() {
+        require_once WLM_PLUGIN_DIR . 'admin/views/tab-export-import.php';
     }
 
     /**
@@ -728,5 +756,132 @@ class WLM_Admin {
         }
         
         wp_send_json_success($result);
+    }
+    
+    /**
+     * AJAX handler for export settings
+     */
+    public function ajax_export_settings() {
+        // Verify nonce
+        if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'wlm-admin-nonce')) {
+            wp_send_json_error('Invalid nonce');
+            return;
+        }
+        
+        // Check permissions
+        if (!current_user_can('manage_woocommerce')) {
+            wp_send_json_error('Insufficient permissions');
+            return;
+        }
+        
+        $export_settings = isset($_POST['export_settings']) && $_POST['export_settings'] === '1';
+        $export_shipping = isset($_POST['export_shipping_methods']) && $_POST['export_shipping_methods'] === '1';
+        $export_surcharges = isset($_POST['export_surcharges']) && $_POST['export_surcharges'] === '1';
+        
+        $export_data = array(
+            'version' => WLM_VERSION,
+            'exported_at' => current_time('mysql'),
+            'site_url' => get_site_url(),
+        );
+        
+        // Export general settings
+        if ($export_settings) {
+            $settings = WLM_Core::get_settings();
+            $export_data['settings'] = $settings;
+        }
+        
+        // Export shipping methods
+        if ($export_shipping) {
+            $shipping_methods = get_option('wlm_shipping_methods', array());
+            $export_data['shipping_methods'] = $shipping_methods;
+        }
+        
+        // Export surcharges
+        if ($export_surcharges) {
+            $surcharges = get_option('wlm_surcharges', array());
+            $surcharge_strategy = get_option('wlm_surcharge_application_strategy', 'all_charges');
+            $export_data['surcharges'] = $surcharges;
+            $export_data['surcharge_application_strategy'] = $surcharge_strategy;
+        }
+        
+        wp_send_json_success(array(
+            'data' => $export_data,
+            'filename' => 'wlm-settings-' . date('Y-m-d-His') . '.json'
+        ));
+    }
+    
+    /**
+     * AJAX handler for import settings
+     */
+    public function ajax_import_settings() {
+        // Verify nonce
+        if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'wlm-admin-nonce')) {
+            wp_send_json_error('Invalid nonce');
+            return;
+        }
+        
+        // Check permissions
+        if (!current_user_can('manage_woocommerce')) {
+            wp_send_json_error('Insufficient permissions');
+            return;
+        }
+        
+        if (!isset($_POST['data'])) {
+            wp_send_json_error('No data provided');
+            return;
+        }
+        
+        $import_data = json_decode(stripslashes($_POST['data']), true);
+        
+        if (!$import_data || !is_array($import_data)) {
+            wp_send_json_error('Invalid JSON data');
+            return;
+        }
+        
+        // Validate version
+        if (!isset($import_data['version'])) {
+            wp_send_json_error('Invalid export file: missing version');
+            return;
+        }
+        
+        $import_settings = isset($_POST['import_settings']) && $_POST['import_settings'] === '1';
+        $import_shipping = isset($_POST['import_shipping_methods']) && $_POST['import_shipping_methods'] === '1';
+        $import_surcharges = isset($_POST['import_surcharges']) && $_POST['import_surcharges'] === '1';
+        
+        $imported = array();
+        
+        // Import general settings
+        if ($import_settings && isset($import_data['settings'])) {
+            update_option('wlm_settings', $import_data['settings']);
+            $imported[] = 'settings';
+        }
+        
+        // Import shipping methods
+        if ($import_shipping && isset($import_data['shipping_methods'])) {
+            update_option('wlm_shipping_methods', $import_data['shipping_methods']);
+            $imported[] = 'shipping_methods';
+        }
+        
+        // Import surcharges
+        if ($import_surcharges && isset($import_data['surcharges'])) {
+            update_option('wlm_surcharges', $import_data['surcharges']);
+            if (isset($import_data['surcharge_application_strategy'])) {
+                update_option('wlm_surcharge_application_strategy', $import_data['surcharge_application_strategy']);
+            }
+            $imported[] = 'surcharges';
+        }
+        
+        if (empty($imported)) {
+            wp_send_json_error('Nothing to import');
+            return;
+        }
+        
+        wp_send_json_success(array(
+            'message' => sprintf(
+                __('Import erfolgreich! Importiert: %s', 'woo-lieferzeiten-manager'),
+                implode(', ', $imported)
+            ),
+            'imported' => $imported
+        ));
     }
 }
