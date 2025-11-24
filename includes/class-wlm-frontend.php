@@ -880,12 +880,8 @@ class WLM_Frontend {
             return;
         }
         
-        // Skip if ship-by date already exists and is not empty
-        $existing_ship_by = $order->get_meta('_wlm_ship_by_date');
-        if (!empty($existing_ship_by)) {
-            WLM_Core::log('Ship-by date already exists for order ' . $order_id . ', skipping recalculation');
-            return;
-        }
+        // Always recalculate when moving to processing (payment received)
+        WLM_Core::log('Order ' . $order_id . ' status changed to processing, recalculating ship-by date from payment date');
         
         // Get earliest and latest delivery dates (should already be saved)
         $earliest = $order->get_meta('_wlm_earliest_delivery');
