@@ -37,6 +37,9 @@ class WLM_Admin {
         
         // AJAX handler for import
         add_action('wp_ajax_wlm_import_settings', array($this, 'ajax_import_settings'));
+        
+        // AJAX handler for getting Germanized providers
+        add_action('wp_ajax_wlm_get_germanized_providers', array($this, 'ajax_get_germanized_providers'));
     }
 
     /**
@@ -882,6 +885,64 @@ class WLM_Admin {
                 implode(', ', $imported)
             ),
             'imported' => $imported
+        ));
+    }
+}
+
+    
+    /**
+     * AJAX handler to get Germanized/Shiptastic providers
+     */
+    public function ajax_get_germanized_providers() {
+        check_ajax_referer('wlm-admin-nonce', 'nonce');
+        
+        if (!current_user_can('manage_woocommerce')) {
+            wp_send_json_error('Insufficient permissions');
+            return;
+        }
+        
+        global $wpdb;
+        
+        // Check if Germanized table exists
+        $table_name = $wpdb->prefix . 'woocommerce_gzd_shipping_provider';
+        $table_exists = $wpdb->get_var("SHOW TABLES LIKE '$table_name'") === $table_name;
+        
+        if (!$table_exists) {
+            wp_send_json_success(array(
+                'providers' => array(),
+                'message' => 'Germanized/Shiptastic nicht installiert oder keine Provider gefunden'
+            ));
+            return;
+        }
+        
+        // Get providers from Germanized
+        $providers = $wpdb->get_results("
+            SELECT 
+                shipping_provider_name as slug,
+                shipping_provider_title as title
+            FROM {$table_name}
+            ORDER BY shipping_provider_title ASC
+        ");
+        
+        if (empty($providers)) {
+            wp_send_json_success(array(
+                'providers' => array(),
+                'message' => 'Keine Germanized Provider gefunden'
+            ));
+            return;
+        }
+        
+        $provider_list = array();
+        foreach ($providers as $p) {
+            $provider_list[] = array(
+                'slug' => $p->slug,
+                'title' => $p->title
+            );
+        }
+        
+        wp_send_json_success(array(
+            'providers' => $provider_list,
+            'message' => sprintf('%d Provider gefunden', count($provider_list))
         ));
     }
 }

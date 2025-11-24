@@ -13,6 +13,7 @@
             this.initSortable();
             this.initSelect2();
             this.initConditionTypes();
+            this.loadGermanizedProviders();
             this.bindEvents();
         },
         
@@ -1139,6 +1140,58 @@
         removeHoliday: function(e) {
             e.preventDefault();
             $(e.currentTarget).closest('.wlm-holiday-item').remove();
+        },
+        
+        /**
+         * Load Germanized/Shiptastic providers for shipping methods
+         */
+        loadGermanizedProviders: function() {
+            var self = this;
+            
+            // Only load on shipping tab
+            if ($('.wlm-shiptastic-provider-select').length === 0) {
+                return;
+            }
+            
+            $.ajax({
+                url: wlmAdmin.ajaxUrl,
+                method: 'POST',
+                data: {
+                    action: 'wlm_get_germanized_providers',
+                    nonce: wlmAdmin.nonce
+                },
+                success: function(response) {
+                    if (response.success && response.data.providers) {
+                        self.populateProviderSelects(response.data.providers);
+                    }
+                },
+                error: function() {
+                    console.log('WLM: Could not load Germanized providers');
+                }
+            });
+        },
+        
+        /**
+         * Populate provider select dropdowns
+         */
+        populateProviderSelects: function(providers) {
+            $('.wlm-shiptastic-provider-select').each(function() {
+                var $select = $(this);
+                var currentValue = $select.find('option:selected').val();
+                
+                // Keep first option ("Kein Provider")
+                $select.find('option:not(:first)').remove();
+                
+                // Add providers
+                providers.forEach(function(provider) {
+                    var selected = (currentValue === provider.slug) ? 'selected' : '';
+                    $select.append(
+                        '<option value="' + provider.slug + '" ' + selected + '>' + 
+                        provider.title + ' (' + provider.slug + ')' +
+                        '</option>'
+                    );
+                });
+            });
         }
     };
 

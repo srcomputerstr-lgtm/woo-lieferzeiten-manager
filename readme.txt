@@ -4,7 +4,7 @@ Tags: woocommerce, shipping, delivery, lead time, express shipping
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.32.2
+Stable tag: 1.33.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -92,6 +92,14 @@ Ja! Das Plugin ist vollständig kompatibel mit WooCommerce High-Performance Orde
 5. Backend Order-Details mit Lieferzeitraum
 
 == Changelog ==
+
+= 1.33.0 - 2025-11-24 =
+* Neu: Tracking-Integration - Shiptastic Provider können Versandarten zugeordnet werden
+* Neu: WLM_Tracking_Helper Klasse für externe Plugin-Integration
+* Neu: AJAX Endpoint für Germanized/Shiptastic Provider
+* Feature: Transit-Zeiten werden automatisch an Tracking-Plugin übermittelt
+* Feature: Ship-by Date Verzögerungserkennung für Tracking
+* Verbesserung: Dynamische Transit-Zeiten statt hardcoded Werte
 
 = 1.32.2 - 2025-11-24 =
 * Fix: Export-Funktion - Statischer Methodenaufruf korrigiert

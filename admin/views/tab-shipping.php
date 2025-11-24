@@ -405,6 +405,29 @@ if (!defined('ABSPATH')) {
                                     </td>
                                 </tr>
 
+                                <!-- Shiptastic Provider (für Tracking Integration) -->
+                                <tr>
+                                    <th scope="row">
+                                        <label><?php esc_html_e('Shiptastic Provider', 'woo-lieferzeiten-manager'); ?></label>
+                                    </th>
+                                    <td>
+                                        <select name="wlm_shipping_methods[<?php echo $index; ?>][shiptastic_provider]" 
+                                                class="regular-text wlm-shiptastic-provider-select"
+                                                data-method-index="<?php echo $index; ?>">
+                                            <option value=""><?php esc_html_e('-- Kein Provider (Standard) --', 'woo-lieferzeiten-manager'); ?></option>
+                                            <?php
+                                            // Provider werden via JavaScript geladen
+                                            if (!empty($method['shiptastic_provider'])) {
+                                                echo '<option value="' . esc_attr($method['shiptastic_provider']) . '" selected>' . esc_html($method['shiptastic_provider']) . '</option>';
+                                            }
+                                            ?>
+                                        </select>
+                                        <p class="description">
+                                            <?php esc_html_e('Verknüpfe diese Versandart mit einem Germanized/Shiptastic Provider für die Tracking-Integration. Die Transit-Zeiten dieser Versandart werden dann im Tracking-Plugin verwendet.', 'woo-lieferzeiten-manager'); ?>
+                                        </p>
+                                    </td>
+                                </tr>
+
                                 <!-- Express-Option -->
                                 <tr>
                                     <th scope="row">
