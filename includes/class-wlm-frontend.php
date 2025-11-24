@@ -769,10 +769,18 @@ class WLM_Frontend {
         
         WLM_Core::log('Retrieved delivery timeframe from session for order ' . $order_id . ': ' . $delivery_data['earliest'] . ' - ' . $delivery_data['latest']);
         
+        // Calculate ship_by_date from earliest_date
+        // Ship-by date = earliest delivery date - 1 day (to account for transit)
+        $earliest_timestamp = strtotime($delivery_data['earliest']);
+        $ship_by_timestamp = $earliest_timestamp - (24 * 60 * 60); // Subtract 1 day
+        $ship_by_date = date('Y-m-d', $ship_by_timestamp);
+        
+        WLM_Core::log('Calculated ship_by_date for order ' . $order_id . ': ' . $ship_by_date . ' (earliest: ' . $delivery_data['earliest'] . ')');
+        
         // Save to order meta
         $order->update_meta_data('_wlm_earliest_delivery', $delivery_data['earliest']);
         $order->update_meta_data('_wlm_latest_delivery', $delivery_data['latest']);
-        $order->update_meta_data('_wlm_ship_by_date', $delivery_data['ship_by'] ?? '');
+        $order->update_meta_data('_wlm_ship_by_date', $ship_by_date);
         $order->update_meta_data('_wlm_delivery_window', $delivery_data['window']);
         $order->update_meta_data('_wlm_shipping_method_name', $delivery_data['method_name']);
         $order->save();
@@ -780,7 +788,7 @@ class WLM_Frontend {
         WLM_Core::log('Saved delivery timeframe to order meta: ' . $order_id);
         
         // Display on thank-you page with tracking timeline style
-        $order_date = date_i18n('d.m.Y', strtotime($delivery_data['earliest']) - (7 * 24 * 60 * 60)); // Estimate order date
+        $order_date = $order->get_date_created() ? $order->get_date_created()->date_i18n('d.m.Y') : date('d.m.Y');
         
         echo '<section class="wlm-thankyou-delivery-timeline" style="margin: 30px 0; padding: 30px; background: #f8f9fa; border-radius: 8px; text-align: center;">';
         
