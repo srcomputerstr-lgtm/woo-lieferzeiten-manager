@@ -882,12 +882,17 @@ class WLM_Frontend {
      * @param WC_Order $order Order object
      */
     public function recalculate_ship_by_on_status_change($order_id, $old_status, $new_status, $order) {
+        // DEBUG: Log every time hook fires
+        error_log("WLM DEBUG: Hook fired! Order #{$order_id}: {$old_status} → {$new_status}");
+        
         // Only recalculate when order moves to processing (payment received)
         if ($new_status !== 'processing') {
+            error_log("WLM DEBUG: Skipping - new status is not 'processing'");
             return;
         }
         
         // Always recalculate when moving to processing (payment received)
+        error_log("WLM DEBUG: Recalculating ship-by date for order #{$order_id}");
         WLM_Core::log('Order ' . $order_id . ' status changed to processing, recalculating ship-by date from payment date');
         
         // Get earliest and latest delivery dates (should already be saved)
@@ -948,8 +953,13 @@ class WLM_Frontend {
                 $order->update_meta_data('_wlm_is_pending_payment', 'no');
                 $order->save();
                 
+                error_log("WLM DEBUG: SUCCESS! Updated order #{$order_id}: ship_by={$ship_by_date}, earliest={$new_earliest}, latest={$new_latest}");
                 WLM_Core::log('Recalculated delivery dates for order ' . $order_id . ' on status change to processing: ship_by=' . $ship_by_date . ', earliest=' . $new_earliest . ', latest=' . $new_latest);
+            } else {
+                error_log("WLM DEBUG: ERROR - No shipping method found for order #{$order_id}");
             }
+        } else {
+            error_log("WLM DEBUG: ERROR - No shipping method ID found for order #{$order_id}");
         }
     }
 }

@@ -3,7 +3,7 @@
  * Plugin Name: Woo Lieferzeiten Manager
  * Plugin URI: https://github.com/srcomputerstr-lgtm/woo-lieferzeiten-manager
  * Description: Zentrales Plugin für WooCommerce zur Verwaltung von Lieferzeiten, Versandarten, Express-Optionen und Versandzuschlägen mit Block-Layout-Unterstützung.
- * Version: 1.35.0
+ * Version: 1.35.1-debug
  * Author: seoparden.de
  * Author URI: https://seoparden.de
  * Text Domain: woo-lieferzeiten-manager
@@ -22,7 +22,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Define plugin constants
-define('WLM_VERSION', '1.35.0');
+define('WLM_VERSION', '1.35.1-debug');
 define('WLM_PLUGIN_FILE', __FILE__);
 define('WLM_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('WLM_PLUGIN_URL', plugin_dir_url(__FILE__));
