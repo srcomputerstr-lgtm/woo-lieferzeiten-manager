@@ -45,13 +45,13 @@ class WLM_Frontend {
         
         // Thank-You page (priority 5 to display at top)
         add_action('woocommerce_thankyou', array($this, 'display_and_save_delivery_timeframe_on_thankyou'), 5, 1);
-        
-        // Order status change - recalculate ship-by date when payment received
-        add_action('woocommerce_order_status_changed', array($this, 'recalculate_ship_by_on_status_change'), 10, 4);
 
         // Blocks integration
         // Register Store API extension early (before blocks are loaded)
         add_action('woocommerce_init', array($this, 'register_blocks_integration'), 5);
+        
+        // Order status change - register after WooCommerce init
+        add_action('woocommerce_init', array($this, 'register_status_change_hook'), 10);
         
         // Block-based checkout: Add delivery info after shipping options
         add_filter('woocommerce_cart_shipping_packages', array($this, 'add_delivery_info_to_shipping_packages'));
@@ -863,6 +863,13 @@ class WLM_Frontend {
             WC()->session->__unset('wlm_delivery_timeframe');
             WLM_Core::log('Cleaned up delivery timeframe from session');
         }
+    }
+    
+    /**
+     * Register status change hook after WooCommerce init
+     */
+    public function register_status_change_hook() {
+        add_action('woocommerce_order_status_changed', array($this, 'recalculate_ship_by_on_status_change'), 10, 4);
     }
     
     /**
