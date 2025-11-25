@@ -115,7 +115,34 @@ class WLM_Admin {
                 update_option('wlm_settings', $_POST['wlm_settings']);
             }
             if (isset($_POST['wlm_shipping_methods'])) {
+                error_log('[WLM Save] ========== SAVING SHIPPING METHODS ==========');
+                error_log('[WLM Save] Total methods in POST: ' . count($_POST['wlm_shipping_methods']));
+                
+                foreach ($_POST['wlm_shipping_methods'] as $index => $method) {
+                    error_log('[WLM Save] Method ' . $index . ': ' . ($method['name'] ?? 'N/A'));
+                    if (isset($method['attribute_conditions'])) {
+                        error_log('[WLM Save]   - Conditions count: ' . count($method['attribute_conditions']));
+                        error_log('[WLM Save]   - Conditions: ' . print_r($method['attribute_conditions'], true));
+                    } else {
+                        error_log('[WLM Save]   - No conditions');
+                    }
+                }
+                
                 update_option('wlm_shipping_methods', $_POST['wlm_shipping_methods']);
+                
+                error_log('[WLM Save] Saved to database');
+                
+                // Verify what was saved
+                $saved_methods = get_option('wlm_shipping_methods');
+                error_log('[WLM Save] Verification - Total methods in DB: ' . count($saved_methods));
+                foreach ($saved_methods as $index => $method) {
+                    error_log('[WLM Save] DB Method ' . $index . ': ' . ($method['name'] ?? 'N/A'));
+                    if (isset($method['attribute_conditions'])) {
+                        error_log('[WLM Save]   - Conditions count: ' . count($method['attribute_conditions']));
+                    } else {
+                        error_log('[WLM Save]   - No conditions');
+                    }
+                }
                 
                 // Update zones after saving shipping methods
                 $this->update_zones_after_save();
