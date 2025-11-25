@@ -821,7 +821,8 @@ class WLM_Calculator {
         if ($cost <= 0) {
             $parts[] = __('Kostenlos', 'woo-lieferzeiten-manager');
         } else {
-            $cost_text = strip_tags(wc_price($cost));
+            $cost_gross = WLM_Core::get_shipping_price_with_tax($cost);
+            $cost_text = strip_tags(wc_price($cost_gross));
             
             switch ($cost_type) {
                 case 'by_weight':

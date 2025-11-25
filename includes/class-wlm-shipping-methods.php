@@ -550,7 +550,7 @@ class WLM_Shipping_Methods {
                     echo '<div class="wlm-express-cta" style="margin-top: 0.5em;">';
                     echo '<button type="button" class="wlm-activate-express" data-method-id="' . esc_attr($base_method_id) . '" style="padding: 0.4em 0.8em; background: #0073aa; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 0.9em;">';
                     echo esc_html__('⚡ Express-Versand', 'woo-lieferzeiten-manager') . ' ';
-                    echo '(+' . wc_price($express_cost) . ') – ';
+                    echo '(+' . wc_price(WLM_Core::get_shipping_price_with_tax($express_cost)) . ') – ';
                     echo esc_html__('Zustellung:', 'woo-lieferzeiten-manager') . ' ';
                     echo '<strong>' . esc_html($express_window['window_formatted']) . '</strong>';
                     echo '</button>';

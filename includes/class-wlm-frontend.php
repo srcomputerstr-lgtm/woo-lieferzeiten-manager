@@ -172,7 +172,8 @@ class WLM_Frontend {
                 $express_window = $calculator->calculate_product_window($parent_id, $variation_id, 1, $method, true);
                 if (!empty($express_window)) {
                     $express_cost = floatval($method['express_cost'] ?? 0);
-                    $express_cost_text = $express_cost > 0 ? strip_tags(wc_price($express_cost)) : __('Kostenlos', 'woo-lieferzeiten-manager');
+                    $express_cost_gross = WLM_Core::get_shipping_price_with_tax($express_cost);
+                    $express_cost_text = $express_cost > 0 ? strip_tags(wc_price($express_cost_gross)) : __('Kostenlos', 'woo-lieferzeiten-manager');
                     
                     echo '<div class="wlm-express-info">';
                     echo '⚡ ' . esc_html__('Express verfügbar:', 'woo-lieferzeiten-manager') . ' ';
@@ -414,7 +415,7 @@ class WLM_Frontend {
             'express_earliest_date' => $express_window['earliest_date'] ?? '',
             'express_latest_date' => $express_window['latest_date'] ?? '',
             'express_cost' => $express_cost,
-            'express_cost_formatted' => wc_price($express_cost),
+            'express_cost_formatted' => wc_price(WLM_Core::get_shipping_price_with_tax($express_cost)),
             'is_express_selected' => $is_express_selected,
             'method_id' => $method_id,
             'method_name' => $method_config['name'] ?? ''

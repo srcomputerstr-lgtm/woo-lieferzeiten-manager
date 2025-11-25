@@ -299,6 +299,85 @@ class WLM_Core {
     public function get_surcharges() {
         return get_option('wlm_surcharges', array());
     }
+    
+    /**
+     * Calculate gross shipping price from net price
+     * Adds tax based on customer's country or shop default
+     *
+     * @param float $net_price Net shipping price
+     * @return float Gross shipping price including tax
+     */
+    public static function get_shipping_price_with_tax($net_price) {
+        if ($net_price <= 0) {
+            return 0;
+        }
+        
+        // Get tax rate
+        $tax_rate = self::get_shipping_tax_rate();
+        
+        // Calculate gross price
+        $gross_price = $net_price * (1 + ($tax_rate / 100));
+        
+        return $gross_price;
+    }
+    
+    /**
+     * Get shipping tax rate based on customer or shop default
+     *
+     * @return float Tax rate percentage (e.g., 19 for 19%)
+     */
+    private static function get_shipping_tax_rate() {
+        // Check if customer is logged in and has a billing country
+        if (is_user_logged_in()) {
+            $customer = WC()->customer;
+            if ($customer) {
+                $country = $customer->get_billing_country();
+                $state = $customer->get_billing_state();
+                
+                if (!empty($country)) {
+                    return self::get_tax_rate_for_location($country, $state);
+                }
+            }
+        }
+        
+        // Fallback to shop base location
+        $base_location = wc_get_base_location();
+        return self::get_tax_rate_for_location($base_location['country'], $base_location['state']);
+    }
+    
+    /**
+     * Get tax rate for a specific location
+     *
+     * @param string $country Country code
+     * @param string $state State code
+     * @return float Tax rate percentage
+     */
+    private static function get_tax_rate_for_location($country, $state = '') {
+        // Get shipping tax class
+        $tax_class = get_option('woocommerce_shipping_tax_class');
+        
+        // If tax class is empty, use standard rate
+        if (empty($tax_class) || $tax_class === 'inherit') {
+            $tax_class = '';
+        }
+        
+        // Get tax rates for location
+        $tax_rates = WC_Tax::find_rates(array(
+            'country' => $country,
+            'state' => $state,
+            'city' => '',
+            'postcode' => '',
+            'tax_class' => $tax_class
+        ));
+        
+        // Sum up all tax rates (usually just one)
+        $total_rate = 0;
+        foreach ($tax_rates as $rate) {
+            $total_rate += floatval($rate['rate']);
+        }
+        
+        return $total_rate;
+    }
 
     /**
      * Ensure our shipping methods are added to all zones
