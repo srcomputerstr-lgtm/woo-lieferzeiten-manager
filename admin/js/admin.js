@@ -415,34 +415,42 @@
             e.preventDefault();
             e.stopPropagation();
             
-            var $original = $(e.currentTarget).closest('.wlm-shipping-method-item');
-            var $clone = $original.clone(true);
+            var $button = $(e.currentTarget);
+            var $methodItem = $button.closest('.wlm-shipping-method-item');
+            var methodIndex = $methodItem.data('index');
             
-            // Update name to indicate it's a copy
-            var $nameInput = $clone.find('.wlm-method-name-input');
-            var originalName = $nameInput.val();
-            $nameInput.val(originalName + ' (Kopie)');
+            // Disable button to prevent double-clicks
+            $button.prop('disabled', true);
             
-            // Update title
-            $clone.find('.wlm-method-title').text(originalName + ' (Kopie)');
+            // Show loading indicator
+            var originalHtml = $button.html();
+            $button.html('<span class="dashicons dashicons-update dashicons-spin"></span>');
             
-            // Open the cloned item
-            $clone.removeClass('closed').addClass('open');
-            $clone.find('.handlediv').attr('aria-expanded', 'true');
-            
-            // Insert after original
-            $original.after($clone);
-            
-            // Reindex all methods
-            this.reindexShippingMethods();
-            
-            // Reinitialize Select2 on cloned selects
-            $clone.find('.wlm-attribute-select, .wlm-values-select2').each(function() {
-                if ($(this).hasClass('select2-hidden-accessible')) {
-                    $(this).select2('destroy');
+            // Send AJAX request to duplicate on server
+            $.ajax({
+                url: ajaxurl,
+                type: 'POST',
+                data: {
+                    action: 'wlm_duplicate_shipping_method',
+                    nonce: wlmAdmin.nonce,
+                    method_index: methodIndex
+                },
+                success: function(response) {
+                    if (response.success) {
+                        // Reload page to show duplicated method
+                        window.location.reload();
+                    } else {
+                        alert('Fehler beim Duplizieren: ' + (response.data || 'Unbekannter Fehler'));
+                        $button.prop('disabled', false);
+                        $button.html(originalHtml);
+                    }
+                },
+                error: function() {
+                    alert('Fehler beim Duplizieren der Versandart');
+                    $button.prop('disabled', false);
+                    $button.html(originalHtml);
                 }
             });
-            this.initSelect2();
         },
 
         /**

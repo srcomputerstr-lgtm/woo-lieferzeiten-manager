@@ -40,6 +40,9 @@ class WLM_Admin {
         
         // AJAX handler for getting Germanized providers
         add_action('wp_ajax_wlm_get_germanized_providers', array($this, 'ajax_get_germanized_providers'));
+        
+        // AJAX handler for duplicating shipping method
+        add_action('wp_ajax_wlm_duplicate_shipping_method', array($this, 'ajax_duplicate_shipping_method'));
     }
 
     /**
@@ -970,9 +973,63 @@ class WLM_Admin {
             return;
         }
         
+         wp_send_json_success(array('providers' => $provider_list));
+    }
+    
+    /**
+     * AJAX handler to duplicate shipping method
+     */
+    public function ajax_duplicate_shipping_method() {
+        check_ajax_referer('wlm-admin-nonce', 'nonce');
+        
+        if (!current_user_can('manage_woocommerce')) {
+            wp_send_json_error('Insufficient permissions');
+            return;
+        }
+        
+        $method_index = isset($_POST['method_index']) ? intval($_POST['method_index']) : -1;
+        
+        if ($method_index < 0) {
+            wp_send_json_error('Invalid method index');
+            return;
+        }
+        
+        // Get all shipping methods
+        $shipping_methods = get_option('wlm_shipping_methods', array());
+        
+        if (!isset($shipping_methods[$method_index])) {
+            wp_send_json_error('Method not found');
+            return;
+        }
+        
+        // Get the method to duplicate
+        $original_method = $shipping_methods[$method_index];
+        
+        // Create a deep copy (not reference)
+        $duplicated_method = json_decode(json_encode($original_method), true);
+        
+        // Update name to indicate it's a copy
+        if (isset($duplicated_method['name'])) {
+            $duplicated_method['name'] .= ' (Kopie)';
+        } else {
+            $duplicated_method['name'] = 'Kopie';
+        }
+        
+        // Generate new unique ID
+        $duplicated_method['id'] = 'wlm_method_' . time() . '_' . wp_rand(1000, 9999);
+        
+        // Add to shipping methods array
+        $shipping_methods[] = $duplicated_method;
+        
+        // Save updated methods
+        update_option('wlm_shipping_methods', $shipping_methods);
+        
+        // Update zones
+        $this->update_zones_after_save();
+        
         wp_send_json_success(array(
-            'providers' => $provider_list,
-            'message' => sprintf('%d Provider gefunden', count($provider_list))
+            'message' => __('Versandart erfolgreich dupliziert', 'woo-lieferzeiten-manager'),
+            'new_index' => count($shipping_methods) - 1
         ));
     }
 }
