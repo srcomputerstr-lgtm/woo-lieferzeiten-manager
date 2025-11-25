@@ -162,6 +162,7 @@ class WLM_Tracking_Helper {
         }
         
         if (!$order) {
+            error_log('WLM DEBUG: get_transit_times_from_order - No order found');
             return self::get_default_transit_times();
         }
         
@@ -169,6 +170,7 @@ class WLM_Tracking_Helper {
         $shipping_methods = $order->get_shipping_methods();
         
         if (empty($shipping_methods)) {
+            error_log('WLM DEBUG: get_transit_times_from_order - No shipping methods in order ' . $order->get_id());
             return self::get_default_transit_times();
         }
         
@@ -183,17 +185,23 @@ class WLM_Tracking_Helper {
             $full_method_id .= ':' . $instance_id;
         }
         
+        error_log('WLM DEBUG: Order ' . $order->get_id() . ' - method_id: ' . $method_id . ', instance_id: ' . $instance_id . ', full: ' . $full_method_id);
+        
         // Get all WLM shipping methods
         $wlm_methods = get_option('wlm_shipping_methods', array());
         
         if (empty($wlm_methods)) {
+            error_log('WLM DEBUG: No WLM shipping methods configured');
             return self::get_default_transit_times();
         }
+        
+        error_log('WLM DEBUG: Available WLM method IDs: ' . implode(', ', array_keys($wlm_methods)));
         
         // Find exact matching method by ID
         if (isset($wlm_methods[$full_method_id])) {
             $method = $wlm_methods[$full_method_id];
             if (isset($method['transit_min']) && isset($method['transit_max'])) {
+                error_log('WLM DEBUG: Found exact match for ' . $full_method_id . ' - transit: ' . $method['transit_min'] . '-' . $method['transit_max']);
                 return array(
                     'min' => (int) $method['transit_min'],
                     'max' => (int) $method['transit_max']
@@ -205,6 +213,7 @@ class WLM_Tracking_Helper {
         if (isset($wlm_methods[$method_id])) {
             $method = $wlm_methods[$method_id];
             if (isset($method['transit_min']) && isset($method['transit_max'])) {
+                error_log('WLM DEBUG: Found match without instance for ' . $method_id . ' - transit: ' . $method['transit_min'] . '-' . $method['transit_max']);
                 return array(
                     'min' => (int) $method['transit_min'],
                     'max' => (int) $method['transit_max']
@@ -213,6 +222,7 @@ class WLM_Tracking_Helper {
         }
         
         // No matching method found, return default
+        error_log('WLM DEBUG: No matching WLM method found for ' . $full_method_id . ' - using default');
         return self::get_default_transit_times();
     }
 }
