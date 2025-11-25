@@ -464,7 +464,10 @@
                 $(this).find('input, select, textarea').each(function() {
                     var name = $(this).attr('name');
                     if (name) {
-                        name = name.replace(/\[\d+\]/, '[' + index + ']');
+                        // Only replace the FIRST index (method index), not nested indices
+                        // e.g., wlm_shipping_methods[0][...] -> wlm_shipping_methods[2][...]
+                        // But keep: attribute_conditions[0][values][] unchanged
+                        name = name.replace(/^wlm_shipping_methods\[\d+\]/, 'wlm_shipping_methods[' + index + ']');
                         $(this).attr('name', name);
                     }
                 });
