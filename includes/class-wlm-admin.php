@@ -379,10 +379,15 @@ class WLM_Admin {
                     break;
             }
             
-            // Show submit button
+            // Show submit button (normal form submit, not AJAX)
             echo '<p class="submit">';
-            echo '<button type="button" id="wlm-save-settings" class="button-primary">' . esc_html__('Änderungen speichern', 'woo-lieferzeiten-manager') . '</button>';
-            echo '<span class="wlm-save-spinner" style="display:none; margin-left: 10px;">Speichern...</span>';
+            if ($is_wc_settings) {
+                // In WooCommerce settings, use WooCommerce's submit button
+                submit_button(__('Änderungen speichern', 'woo-lieferzeiten-manager'), 'primary', 'save', false);
+            } else {
+                // In standalone page, use normal submit
+                submit_button(__('Änderungen speichern', 'woo-lieferzeiten-manager'));
+            }
             echo '</p>';
             
             if (!$is_wc_settings):
