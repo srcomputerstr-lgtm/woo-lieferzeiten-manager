@@ -989,7 +989,10 @@ class WLM_Admin {
         
         $method_index = isset($_POST['method_index']) ? intval($_POST['method_index']) : -1;
         
+        error_log('[WLM Duplicate] Received method_index: ' . $method_index);
+        
         if ($method_index < 0) {
+            error_log('[WLM Duplicate] Invalid method index');
             wp_send_json_error('Invalid method index');
             return;
         }
@@ -997,7 +1000,11 @@ class WLM_Admin {
         // Get all shipping methods
         $shipping_methods = get_option('wlm_shipping_methods', array());
         
+        error_log('[WLM Duplicate] Total shipping methods: ' . count($shipping_methods));
+        error_log('[WLM Duplicate] Available indices: ' . implode(', ', array_keys($shipping_methods)));
+        
         if (!isset($shipping_methods[$method_index])) {
+            error_log('[WLM Duplicate] Method not found at index ' . $method_index);
             wp_send_json_error('Method not found');
             return;
         }
@@ -1005,8 +1012,13 @@ class WLM_Admin {
         // Get the method to duplicate
         $original_method = $shipping_methods[$method_index];
         
+        error_log('[WLM Duplicate] Original method name: ' . ($original_method['name'] ?? 'N/A'));
+        error_log('[WLM Duplicate] Original method data: ' . print_r($original_method, true));
+        
         // Create a deep copy (not reference)
         $duplicated_method = json_decode(json_encode($original_method), true);
+        
+        error_log('[WLM Duplicate] Deep copy created');
         
         // Update name to indicate it's a copy
         if (isset($duplicated_method['name'])) {
@@ -1015,14 +1027,23 @@ class WLM_Admin {
             $duplicated_method['name'] = 'Kopie';
         }
         
+        error_log('[WLM Duplicate] New name: ' . $duplicated_method['name']);
+        
         // Generate new unique ID
         $duplicated_method['id'] = 'wlm_method_' . time() . '_' . wp_rand(1000, 9999);
+        
+        error_log('[WLM Duplicate] New ID: ' . $duplicated_method['id']);
+        error_log('[WLM Duplicate] Duplicated method data: ' . print_r($duplicated_method, true));
         
         // Add to shipping methods array
         $shipping_methods[] = $duplicated_method;
         
+        error_log('[WLM Duplicate] Added to array, new total: ' . count($shipping_methods));
+        
         // Save updated methods
         update_option('wlm_shipping_methods', $shipping_methods);
+        
+        error_log('[WLM Duplicate] Saved to database');
         
         // Update zones
         $this->update_zones_after_save();

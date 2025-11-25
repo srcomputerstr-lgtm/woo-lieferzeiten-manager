@@ -419,6 +419,11 @@
             var $methodItem = $button.closest('.wlm-shipping-method-item');
             var methodIndex = $methodItem.data('index');
             
+            console.log('[WLM Duplicate] Button clicked');
+            console.log('[WLM Duplicate] Method item:', $methodItem);
+            console.log('[WLM Duplicate] Method index from data-index:', methodIndex);
+            console.log('[WLM Duplicate] Method name:', $methodItem.find('.wlm-method-name-input').val());
+            
             // Disable button to prevent double-clicks
             $button.prop('disabled', true);
             
@@ -436,10 +441,13 @@
                     method_index: methodIndex
                 },
                 success: function(response) {
+                    console.log('[WLM Duplicate] AJAX response:', response);
                     if (response.success) {
+                        console.log('[WLM Duplicate] Success! Reloading page...');
                         // Reload page to show duplicated method
                         window.location.reload();
                     } else {
+                        console.error('[WLM Duplicate] Error:', response.data);
                         alert('Fehler beim Duplizieren: ' + (response.data || 'Unbekannter Fehler'));
                         $button.prop('disabled', false);
                         $button.html(originalHtml);
