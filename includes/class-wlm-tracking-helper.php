@@ -147,4 +147,72 @@ class WLM_Tracking_Helper {
     public static function get_shipping_method_name($order_id) {
         return get_post_meta($order_id, '_wlm_shipping_method_name', true);
     }
+    
+    /**
+     * Get transit times from order's actual shipping method (not provider-based)
+     * This ensures we get the correct transit times even when multiple methods
+     * are mapped to the same Shiptastic provider
+     *
+     * @param int|WC_Order $order Order ID or Order object
+     * @return array ['min' => int, 'max' => int] Transit times in business days
+     */
+    public static function get_transit_times_from_order($order) {
+        if (is_numeric($order)) {
+            $order = wc_get_order($order);
+        }
+        
+        if (!$order) {
+            return self::get_default_transit_times();
+        }
+        
+        // Get shipping methods from order
+        $shipping_methods = $order->get_shipping_methods();
+        
+        if (empty($shipping_methods)) {
+            return self::get_default_transit_times();
+        }
+        
+        // Get first shipping method
+        $shipping_method = reset($shipping_methods);
+        $method_id = $shipping_method->get_method_id();
+        $instance_id = $shipping_method->get_instance_id();
+        
+        // Build full method ID (e.g., 'flat_rate:5')
+        $full_method_id = $method_id;
+        if ($instance_id) {
+            $full_method_id .= ':' . $instance_id;
+        }
+        
+        // Get all WLM shipping methods
+        $wlm_methods = get_option('wlm_shipping_methods', array());
+        
+        if (empty($wlm_methods)) {
+            return self::get_default_transit_times();
+        }
+        
+        // Find exact matching method by ID
+        if (isset($wlm_methods[$full_method_id])) {
+            $method = $wlm_methods[$full_method_id];
+            if (isset($method['transit_min']) && isset($method['transit_max'])) {
+                return array(
+                    'min' => (int) $method['transit_min'],
+                    'max' => (int) $method['transit_max']
+                );
+            }
+        }
+        
+        // Fallback: try without instance ID
+        if (isset($wlm_methods[$method_id])) {
+            $method = $wlm_methods[$method_id];
+            if (isset($method['transit_min']) && isset($method['transit_max'])) {
+                return array(
+                    'min' => (int) $method['transit_min'],
+                    'max' => (int) $method['transit_max']
+                );
+            }
+        }
+        
+        // No matching method found, return default
+        return self::get_default_transit_times();
+    }
 }
