@@ -195,29 +195,40 @@ class WLM_Tracking_Helper {
             return self::get_default_transit_times();
         }
         
-        error_log('WLM DEBUG: Available WLM method IDs: ' . implode(', ', array_keys($wlm_methods)));
+        error_log('WLM DEBUG: WLM methods array has ' . count($wlm_methods) . ' entries');
         
-        // Find exact matching method by ID
-        if (isset($wlm_methods[$full_method_id])) {
-            $method = $wlm_methods[$full_method_id];
-            if (isset($method['transit_min']) && isset($method['transit_max'])) {
-                error_log('WLM DEBUG: Found exact match for ' . $full_method_id . ' - transit: ' . $method['transit_min'] . '-' . $method['transit_max']);
-                return array(
-                    'min' => (int) $method['transit_min'],
-                    'max' => (int) $method['transit_max']
-                );
+        // WLM stores methods as numeric array (0, 1, 2...)
+        // Each method has an 'id' property that matches the WooCommerce method ID
+        foreach ($wlm_methods as $key => $method) {
+            if (!is_array($method)) {
+                continue;
             }
-        }
-        
-        // Fallback: try without instance ID
-        if (isset($wlm_methods[$method_id])) {
-            $method = $wlm_methods[$method_id];
-            if (isset($method['transit_min']) && isset($method['transit_max'])) {
-                error_log('WLM DEBUG: Found match without instance for ' . $method_id . ' - transit: ' . $method['transit_min'] . '-' . $method['transit_max']);
-                return array(
-                    'min' => (int) $method['transit_min'],
-                    'max' => (int) $method['transit_max']
-                );
+            
+            // Get method ID from config
+            $wlm_method_id = isset($method['id']) ? $method['id'] : '';
+            
+            error_log('WLM DEBUG: Checking method ' . $key . ' - id: ' . $wlm_method_id);
+            
+            // Try exact match first (with instance ID)
+            if ($wlm_method_id === $full_method_id) {
+                if (isset($method['transit_min']) && isset($method['transit_max'])) {
+                    error_log('WLM DEBUG: Found exact match! Transit: ' . $method['transit_min'] . '-' . $method['transit_max']);
+                    return array(
+                        'min' => (int) $method['transit_min'],
+                        'max' => (int) $method['transit_max']
+                    );
+                }
+            }
+            
+            // Try match without instance ID
+            if ($wlm_method_id === $method_id) {
+                if (isset($method['transit_min']) && isset($method['transit_max'])) {
+                    error_log('WLM DEBUG: Found match without instance! Transit: ' . $method['transit_min'] . '-' . $method['transit_max']);
+                    return array(
+                        'min' => (int) $method['transit_min'],
+                        'max' => (int) $method['transit_max']
+                    );
+                }
             }
         }
         
