@@ -149,9 +149,8 @@ class WLM_Tracking_Helper {
     }
     
     /**
-     * Get transit times from order's actual shipping method (not provider-based)
-     * This ensures we get the correct transit times even when multiple methods
-     * are mapped to the same Shiptastic provider
+     * Get transit times from order's WLM data
+     * Calculates transit times based on the delivery window that was stored at order time
      *
      * @param int|WC_Order $order Order ID or Order object
      * @return array ['min' => int, 'max' => int] Transit times in business days
@@ -162,78 +161,64 @@ class WLM_Tracking_Helper {
         }
         
         if (!$order) {
-            error_log('WLM DEBUG: get_transit_times_from_order - No order found');
             return self::get_default_transit_times();
         }
         
-        // Get shipping methods from order
-        $shipping_methods = $order->get_shipping_methods();
+        // Get WLM data from order meta
+        $ship_by = $order->get_meta('_wlm_ship_by_date');
+        $earliest = $order->get_meta('_wlm_earliest_delivery');
+        $latest = $order->get_meta('_wlm_latest_delivery');
         
-        if (empty($shipping_methods)) {
-            error_log('WLM DEBUG: get_transit_times_from_order - No shipping methods in order ' . $order->get_id());
+        // If no WLM data, return default
+        if (empty($ship_by) || empty($earliest) || empty($latest)) {
             return self::get_default_transit_times();
         }
         
-        // Get first shipping method
-        $shipping_method = reset($shipping_methods);
-        $method_id = $shipping_method->get_method_id();
-        $instance_id = $shipping_method->get_instance_id();
+        // Calculate transit times from the stored delivery window
+        // Transit = business days between ship_by_date and delivery dates
+        $ship_by_ts = strtotime($ship_by);
+        $earliest_ts = strtotime($earliest);
+        $latest_ts = strtotime($latest);
         
-        // Build full method ID (e.g., 'flat_rate:5')
-        $full_method_id = $method_id;
-        if ($instance_id) {
-            $full_method_id .= ':' . $instance_id;
-        }
-        
-        error_log('WLM DEBUG: Order ' . $order->get_id() . ' - method_id: ' . $method_id . ', instance_id: ' . $instance_id . ', full: ' . $full_method_id);
-        
-        // Get all WLM shipping methods
-        $wlm_methods = get_option('wlm_shipping_methods', array());
-        
-        if (empty($wlm_methods)) {
-            error_log('WLM DEBUG: No WLM shipping methods configured');
+        if (!$ship_by_ts || !$earliest_ts || !$latest_ts) {
             return self::get_default_transit_times();
         }
         
-        error_log('WLM DEBUG: WLM methods array has ' . count($wlm_methods) . ' entries');
+        // Calculate business days between ship_by and earliest/latest
+        $transit_min = self::count_business_days($ship_by_ts, $earliest_ts);
+        $transit_max = self::count_business_days($ship_by_ts, $latest_ts);
         
-        // WLM stores methods as numeric array (0, 1, 2...)
-        // Each method has an 'id' property that matches the WooCommerce method ID
-        foreach ($wlm_methods as $key => $method) {
-            if (!is_array($method)) {
-                continue;
-            }
+        // Ensure reasonable values
+        if ($transit_min < 0) $transit_min = 0;
+        if ($transit_max < $transit_min) $transit_max = $transit_min;
+        
+        return array(
+            'min' => $transit_min,
+            'max' => $transit_max
+        );
+    }
+    
+    /**
+     * Count business days between two timestamps
+     *
+     * @param int $start_ts Start timestamp
+     * @param int $end_ts End timestamp
+     * @return int Number of business days
+     */
+    private static function count_business_days($start_ts, $end_ts) {
+        $days = 0;
+        $current = $start_ts;
+        
+        while ($current < $end_ts) {
+            $current = strtotime('+1 day', $current);
+            $weekday = (int) date('N', $current);
             
-            // Get method ID from config
-            $wlm_method_id = isset($method['id']) ? $method['id'] : '';
-            
-            error_log('WLM DEBUG: Checking method ' . $key . ' - id: ' . $wlm_method_id);
-            
-            // Try exact match first (with instance ID)
-            if ($wlm_method_id === $full_method_id) {
-                if (isset($method['transit_min']) && isset($method['transit_max'])) {
-                    error_log('WLM DEBUG: Found exact match! Transit: ' . $method['transit_min'] . '-' . $method['transit_max']);
-                    return array(
-                        'min' => (int) $method['transit_min'],
-                        'max' => (int) $method['transit_max']
-                    );
-                }
-            }
-            
-            // Try match without instance ID
-            if ($wlm_method_id === $method_id) {
-                if (isset($method['transit_min']) && isset($method['transit_max'])) {
-                    error_log('WLM DEBUG: Found match without instance! Transit: ' . $method['transit_min'] . '-' . $method['transit_max']);
-                    return array(
-                        'min' => (int) $method['transit_min'],
-                        'max' => (int) $method['transit_max']
-                    );
-                }
+            // Count only weekdays (Monday to Friday, 1-5)
+            if ($weekday < 6) {
+                $days++;
             }
         }
         
-        // No matching method found, return default
-        error_log('WLM DEBUG: No matching WLM method found for ' . $full_method_id . ' - using default');
-        return self::get_default_transit_times();
+        return $days;
     }
 }
