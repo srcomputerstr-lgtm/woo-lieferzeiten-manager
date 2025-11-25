@@ -78,8 +78,8 @@
          * Bind events
          */
         bindEvents: function() {
-        // Save settings via normal form submit (removed AJAX)
-        // Form will submit normally and page will reload
+        // Save settings via AJAX
+        $(document).on('click', '#wlm-save-settings, .submit input[name="save"]', this.saveSettings.bind(this));
         
         // Shipping methods
         $(document).on('click', '#wlm-add-shipping-method', this.addShippingMethod.bind(this));

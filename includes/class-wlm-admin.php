@@ -529,38 +529,51 @@ class WLM_Admin {
                 
                 // Validate attribute_conditions structure
                 if (isset($method['attribute_conditions']) && is_array($method['attribute_conditions'])) {
-                    // Filter out empty or invalid conditions
-                    $method['attribute_conditions'] = array_filter($method['attribute_conditions'], function($cond) {
-                        // Must have attribute and at least one value
-                        if (empty($cond['attribute'])) {
-                            return false;
+                    error_log('[WLM Validate] Method ' . $method_index . ' BEFORE validation: ' . print_r($method['attribute_conditions'], true));
+                    
+                    // Clean up conditions but preserve valid ones
+                    foreach ($method['attribute_conditions'] as $cond_index => &$cond) {
+                        // Ensure logic field exists
+                        if (!isset($cond['logic'])) {
+                            $cond['logic'] = 'at_least_one';
+                        }
+                        
+                        // Ensure type field exists
+                        if (!isset($cond['type'])) {
+                            $cond['type'] = 'attribute';
+                        }
+                        
+                        // Ensure attribute field exists (even if empty)
+                        if (!isset($cond['attribute'])) {
+                            $cond['attribute'] = '';
                         }
                         
                         // Ensure values is an array
-                        if (!isset($cond['values']) || !is_array($cond['values'])) {
-                            return false;
+                        if (!isset($cond['values'])) {
+                            $cond['values'] = array();
+                        } elseif (!is_array($cond['values'])) {
+                            $cond['values'] = array($cond['values']);
                         }
                         
                         // Filter out empty values
                         $cond['values'] = array_filter($cond['values'], function($val) {
-                            return !empty($val);
+                            return !empty($val) && $val !== '';
                         });
                         
-                        // Must have at least one value
-                        return !empty($cond['values']);
+                        // Re-index values array
+                        $cond['values'] = array_values($cond['values']);
+                    }
+                    unset($cond);
+                    
+                    // Only remove conditions that are COMPLETELY empty (no attribute AND no values)
+                    $method['attribute_conditions'] = array_filter($method['attribute_conditions'], function($cond) {
+                        return !empty($cond['attribute']) || !empty($cond['values']);
                     });
                     
                     // Re-index array
                     $method['attribute_conditions'] = array_values($method['attribute_conditions']);
                     
-                    // Ensure logic field exists for each condition
-                    foreach ($method['attribute_conditions'] as &$cond) {
-                        if (!isset($cond['logic'])) {
-                            $cond['logic'] = 'at_least_one';
-                        }
-                    }
-                    unset($cond);
-                    
+                    error_log('[WLM Validate] Method ' . $method_index . ' AFTER validation: ' . print_r($method['attribute_conditions'], true));
                     WLM_Core::log('WLM: Validated attribute_conditions for method ' . $method_index . ': ' . print_r($method['attribute_conditions'], true));
                 }
             }
