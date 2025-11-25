@@ -40,6 +40,9 @@ class WLM_Admin {
         
         // AJAX handler for getting Germanized providers
         add_action('wp_ajax_wlm_get_germanized_providers', array($this, 'ajax_get_germanized_providers'));
+        
+        // DEBUG: AJAX handler to test status change hook
+        add_action('wp_ajax_wlm_debug_status_change', array($this, 'ajax_debug_status_change'));
     }
 
     /**
@@ -974,5 +977,62 @@ class WLM_Admin {
             'providers' => $provider_list,
             'message' => sprintf('%d Provider gefunden', count($provider_list))
         ));
+    }
+    
+    /**
+     * DEBUG: Test status change hook and ship-by date recalculation
+     */
+    public function ajax_debug_status_change() {
+        check_ajax_referer('wlm-admin-nonce', 'nonce');
+        
+        if (!current_user_can('manage_woocommerce')) {
+            wp_send_json_error('Insufficient permissions');
+            return;
+        }
+        
+        $order_id = intval($_POST['order_id'] ?? 0);
+        
+        if (!$order_id) {
+            wp_send_json_error('No order ID provided');
+            return;
+        }
+        
+        $order = wc_get_order($order_id);
+        
+        if (!$order) {
+            wp_send_json_error('Order not found');
+            return;
+        }
+        
+        $debug_info = array(
+            'order_id' => $order_id,
+            'current_status' => $order->get_status(),
+            'ship_by_date' => $order->get_meta('_wlm_ship_by_date'),
+            'earliest_delivery' => $order->get_meta('_wlm_earliest_delivery'),
+            'latest_delivery' => $order->get_meta('_wlm_latest_delivery'),
+            'is_pending_payment' => $order->get_meta('_wlm_is_pending_payment'),
+            'hook_exists' => has_action('woocommerce_order_status_changed'),
+            'frontend_class_loaded' => class_exists('WLM_Frontend')
+        );
+        
+        // Try to manually trigger the hook
+        $old_status = $order->get_status();
+        $order->set_status('processing');
+        $order->save();
+        
+        // Check if data changed
+        $new_ship_by = $order->get_meta('_wlm_ship_by_date');
+        $new_earliest = $order->get_meta('_wlm_earliest_delivery');
+        $new_latest = $order->get_meta('_wlm_latest_delivery');
+        
+        $debug_info['after_status_change'] = array(
+            'new_status' => $order->get_status(),
+            'ship_by_date' => $new_ship_by,
+            'earliest_delivery' => $new_earliest,
+            'latest_delivery' => $new_latest,
+            'data_changed' => ($new_ship_by !== $debug_info['ship_by_date'])
+        );
+        
+        wp_send_json_success($debug_info);
     }
 }
