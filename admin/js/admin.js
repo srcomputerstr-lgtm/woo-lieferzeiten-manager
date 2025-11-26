@@ -84,7 +84,7 @@
         // Shipping methods
         $(document).on('click', '#wlm-add-shipping-method', this.addShippingMethod.bind(this));
         $(document).on('click', '.wlm-remove-shipping-method', this.removeShippingMethod.bind(this));
-        $(document).on('click', '.wlm-duplicate-method', this.duplicateShippingMethod.bind(this));
+        // Duplicate functionality removed
         $(document).on('input', '.wlm-method-name-input', this.updateMethodTitle.bind(this));
         
         // Surcharges
