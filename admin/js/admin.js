@@ -120,8 +120,17 @@
             var $button = $('#wlm-save-settings');
             var $spinner = $('.wlm-save-spinner');
             
-            // Collect all form data
-            var formData = {};
+            // Detect active tab
+            var $activeTab = $('.nav-tab-wrapper .nav-tab-active');
+            var activeTabHref = $activeTab.attr('href');
+            var activeSection = activeTabHref ? activeTabHref.replace('#', '') : 'shipping';
+            
+            console.log('[WLM Save] Active tab:', activeSection);
+            
+            // Collect form data based on active tab
+            var formData = {
+                _active_section: activeSection  // Tell backend which section is being saved
+            };
             
             // Collect wlm_settings
             $('[name^="wlm_settings"]').each(function() {
@@ -155,9 +164,10 @@
                 }
             });
             
-            // Collect wlm_shipping_methods
-            formData.wlm_shipping_methods = [];
-            $('.wlm-shipping-method-item').each(function() {
+            // Collect wlm_shipping_methods (only if on shipping tab)
+            if (activeSection === 'shipping' || activeSection === 'wlm') {
+                formData.wlm_shipping_methods = [];
+                $('.wlm-shipping-method-item').each(function() {
                 var method = {};
                 $(this).find('[name^="wlm_shipping_methods"]').each(function() {
                     var name = $(this).attr('name');
@@ -216,14 +226,16 @@
                         }
                     }
                 });
-                if (Object.keys(method).length > 0) {
-                    formData.wlm_shipping_methods.push(method);
-                }
-            });
+                    if (Object.keys(method).length > 0) {
+                        formData.wlm_shipping_methods.push(method);
+                    }
+                });
+            }
             
-            // Collect wlm_surcharges (using same logic as shipping methods)
-            formData.wlm_surcharges = [];
-            $('.wlm-surcharge-item').each(function() {
+            // Collect wlm_surcharges (only if on surcharges tab)
+            if (activeSection === 'surcharges') {
+                formData.wlm_surcharges = [];
+                $('.wlm-surcharge-item').each(function() {
                 var surcharge = {};
                 $(this).find('[name^="wlm_surcharges"]').each(function() {
                     var name = $(this).attr('name');
@@ -282,10 +294,11 @@
                         }
                     }
                 });
-                if (Object.keys(surcharge).length > 0) {
-                    formData.wlm_surcharges.push(surcharge);
-                }
-            });
+                    if (Object.keys(surcharge).length > 0) {
+                        formData.wlm_surcharges.push(surcharge);
+                    }
+                });
+            }
             
             // Collect shipping selection strategy
             var shippingStrategy = $('#wlm_shipping_selection_strategy').val();
