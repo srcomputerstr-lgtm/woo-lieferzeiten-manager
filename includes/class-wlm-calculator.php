@@ -543,8 +543,16 @@ class WLM_Calculator {
             $attr_slug = $condition['attribute'] ?? '';
             $values = $condition['values'] ?? array();
             $logic = $condition['logic'] ?? 'at_least_one';
+            $type = $condition['type'] ?? '';
+            
+            // Handle shipping_class type - use product_shipping_class taxonomy
+            if ($type === 'shipping_class') {
+                $attr_slug = 'product_shipping_class';
+                WLM_Core::log('[WLM DEBUG] Detected type=shipping_class, using taxonomy: product_shipping_class');
+            }
             
             if (empty($attr_slug) || empty($values)) {
+                WLM_Core::log('[WLM DEBUG] Skipping condition - empty attr_slug or values');
                 continue;
             }
             
@@ -1075,8 +1083,16 @@ class WLM_Calculator {
             $attr_slug = $condition['attribute'] ?? '';
             $values = $condition['values'] ?? array();
             $logic = $condition['logic'] ?? 'at_least_one';
+            $type = $condition['type'] ?? '';
+            
+            // Handle shipping_class type - use product_shipping_class taxonomy
+            if ($type === 'shipping_class') {
+                $attr_slug = 'product_shipping_class';
+                WLM_Core::log('[WLM DEBUG] Detected type=shipping_class, using taxonomy: product_shipping_class');
+            }
             
             if (empty($attr_slug) || empty($values)) {
+                WLM_Core::log('[WLM DEBUG] Skipping condition - empty attr_slug or values');
                 continue;
             }
             
