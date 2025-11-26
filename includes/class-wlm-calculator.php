@@ -562,9 +562,21 @@ class WLM_Calculator {
             WLM_Core::log('[WLM DEBUG] Checking attribute: ' . $attr_slug);
             WLM_Core::log('[WLM DEBUG] Required values: ' . implode(', ', $values));
             WLM_Core::log('[WLM DEBUG] Logic: ' . $logic);
+            WLM_Core::log('[WLM DEBUG] Type: ' . $type);
             
-            // Check if this is a taxonomy (like shipping class)
-            if (taxonomy_exists($attr_slug)) {
+            // Handle shipping class using WooCommerce method (same as cart)
+            if ($type === 'shipping_class') {
+                WLM_Core::log('[WLM DEBUG] Using get_shipping_class() method');
+                $shipping_class = $product->get_shipping_class();
+                if ($shipping_class) {
+                    $product_values[] = $shipping_class;
+                    WLM_Core::log('[WLM DEBUG] Shipping class found: ' . $shipping_class);
+                } else {
+                    WLM_Core::log('[WLM DEBUG] No shipping class assigned to product');
+                }
+            }
+            // Check if this is a taxonomy (categories, tags, custom taxonomies)
+            elseif (taxonomy_exists($attr_slug)) {
                 WLM_Core::log('[WLM DEBUG] ' . $attr_slug . ' is a TAXONOMY');
                 // Get taxonomy terms for the product
                 $product_id = $product->get_parent_id() ? $product->get_parent_id() : $product->get_id();
