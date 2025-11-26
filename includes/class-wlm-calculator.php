@@ -545,30 +545,42 @@ class WLM_Calculator {
             // Get product attribute values
             $product_values = array();
             
-            if ($product->is_type('variation')) {
-                // Try variation attributes first
-                $variation_attrs = $product->get_attributes();
-                if (isset($variation_attrs[$attr_slug])) {
-                    $product_values[] = $variation_attrs[$attr_slug];
-                } else {
-                    // Fallback to parent product attributes
-                    $parent_id = $product->get_parent_id();
-                    if ($parent_id) {
-                        $parent_product = wc_get_product($parent_id);
-                        if ($parent_product) {
-                            $parent_attr = $parent_product->get_attribute($attr_slug);
-                            if ($parent_attr) {
-                                $product_values = array_map('trim', explode(',', $parent_attr));
-                                WLM_Core::log('[WLM] Variation inherited attribute from parent: ' . $attr_slug . ' = ' . $parent_attr);
+            // Check if this is a taxonomy (like shipping class)
+            if (taxonomy_exists($attr_slug)) {
+                // Get taxonomy terms for the product
+                $product_id = $product->get_parent_id() ? $product->get_parent_id() : $product->get_id();
+                $terms = wp_get_post_terms($product_id, $attr_slug, array('fields' => 'slugs'));
+                if (!is_wp_error($terms) && !empty($terms)) {
+                    $product_values = $terms;
+                    WLM_Core::log('[WLM] Taxonomy ' . $attr_slug . ' values: ' . implode(',', $product_values));
+                }
+            } else {
+                // Regular product attribute
+                if ($product->is_type('variation')) {
+                    // Try variation attributes first
+                    $variation_attrs = $product->get_attributes();
+                    if (isset($variation_attrs[$attr_slug])) {
+                        $product_values[] = $variation_attrs[$attr_slug];
+                    } else {
+                        // Fallback to parent product attributes
+                        $parent_id = $product->get_parent_id();
+                        if ($parent_id) {
+                            $parent_product = wc_get_product($parent_id);
+                            if ($parent_product) {
+                                $parent_attr = $parent_product->get_attribute($attr_slug);
+                                if ($parent_attr) {
+                                    $product_values = array_map('trim', explode(',', $parent_attr));
+                                    WLM_Core::log('[WLM] Variation inherited attribute from parent: ' . $attr_slug . ' = ' . $parent_attr);
+                                }
                             }
                         }
                     }
-                }
-            } else {
-                $product_attr = $product->get_attribute($attr_slug);
-                if ($product_attr) {
-                    // Split by comma for multi-value attributes
-                    $product_values = array_map('trim', explode(',', $product_attr));
+                } else {
+                    $product_attr = $product->get_attribute($attr_slug);
+                    if ($product_attr) {
+                        // Split by comma for multi-value attributes
+                        $product_values = array_map('trim', explode(',', $product_attr));
+                    }
                 }
             }
             
