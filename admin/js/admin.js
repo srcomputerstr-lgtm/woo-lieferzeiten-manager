@@ -121,22 +121,31 @@
             var $spinner = $('.wlm-save-spinner');
             
             // Detect active tab/section
-            // WooCommerce uses URL parameters like ?page=wc-settings&tab=shipping&section=wlm
+            // WooCommerce uses URL parameters like ?page=wc-settings&tab=shipping&section=wlm&wlm_tab=shipping
             var activeSection = 'shipping';  // Default
             
             // Try to get from URL parameters
             var urlParams = new URLSearchParams(window.location.search);
             var wcSection = urlParams.get('section');
+            var wlmTab = urlParams.get('wlm_tab');
+            var standAloneTab = urlParams.get('tab');
             
-            if (wcSection) {
-                // We're on a specific section (e.g., 'wlm', 'surcharges')
-                activeSection = wcSection;
+            // Logic to determine the correct section to save
+            if (wlmTab) {
+                // If wlm_tab is present (e.g. 'shipping', 'surcharges', 'times'), use it
+                activeSection = wlmTab;
+            } else if (wcSection === 'wlm') {
+                // If section is wlm but no wlm_tab, we are likely on the default tab (Times)
+                activeSection = 'times';
+            } else if (standAloneTab && standAloneTab !== 'shipping') {
+                // Standalone page support (e.g. ?page=wlm-settings&tab=surcharges)
+                activeSection = standAloneTab;
             } else {
-                // Check if there are visible shipping methods or surcharges
+                // Fallback: Check visibility of elements
                 if ($('.wlm-surcharge-item:visible').length > 0) {
                     activeSection = 'surcharges';
                 } else if ($('.wlm-shipping-method-item:visible').length > 0) {
-                    activeSection = 'wlm';
+                    activeSection = 'shipping'; // changed from 'wlm' to 'shipping' for consistency
                 }
             }
             
@@ -147,39 +156,43 @@
                 _active_section: activeSection  // Tell backend which section is being saved
             };
             
-            // Collect wlm_settings
-            $('[name^="wlm_settings"]').each(function() {
-                var name = $(this).attr('name');
-                // Match wlm_settings[key] or wlm_settings[key][]
-                // Use [^\]]+ to match everything except ] to avoid capturing the trailing ][]
-                var match = name.match(/wlm_settings\[([^\]]+)\](?:\[\])?/);
-                if (match) {
-                    var key = match[1];
-                    var isArray = name.endsWith('[]'); // Check if field name ends with []
-                    
-                    if (!formData.wlm_settings) formData.wlm_settings = {};
-                    
-                    if ($(this).is(':checkbox')) {
-                        // Checkboxes: collect checked values into array
-                        if (!formData.wlm_settings[key]) formData.wlm_settings[key] = [];
-                        if ($(this).is(':checked')) {
-                            formData.wlm_settings[key].push($(this).val());
+            // Collect wlm_settings (General settings like times, holidays are always present/safe to save or separate)
+            // Note: On shipping/surcharges tabs, wlm_settings inputs might not be present, so check existence
+            if ($('[name^="wlm_settings"]').length > 0) {
+                $('[name^="wlm_settings"]').each(function() {
+                    var name = $(this).attr('name');
+                    // Match wlm_settings[key] or wlm_settings[key][]
+                    // Use [^\]]+ to match everything except ] to avoid capturing the trailing ][]
+                    var match = name.match(/wlm_settings\[([^\]]+)\](?:\[\])?/);
+                    if (match) {
+                        var key = match[1];
+                        var isArray = name.endsWith('[]'); // Check if field name ends with []
+                        
+                        if (!formData.wlm_settings) formData.wlm_settings = {};
+                        
+                        if ($(this).is(':checkbox')) {
+                            // Checkboxes: collect checked values into array
+                            if (!formData.wlm_settings[key]) formData.wlm_settings[key] = [];
+                            if ($(this).is(':checked')) {
+                                formData.wlm_settings[key].push($(this).val());
+                            }
+                        } else if (isArray) {
+                            // Array notation (e.g., holidays[]): collect all values into array
+                            if (!formData.wlm_settings[key]) formData.wlm_settings[key] = [];
+                            var value = $(this).val();
+                            if (value) { // Only add non-empty values
+                                formData.wlm_settings[key].push(value);
+                            }
+                        } else {
+                            // Single value
+                            formData.wlm_settings[key] = $(this).val();
                         }
-                    } else if (isArray) {
-                        // Array notation (e.g., holidays[]): collect all values into array
-                        if (!formData.wlm_settings[key]) formData.wlm_settings[key] = [];
-                        var value = $(this).val();
-                        if (value) { // Only add non-empty values
-                            formData.wlm_settings[key].push(value);
-                        }
-                    } else {
-                        // Single value
-                        formData.wlm_settings[key] = $(this).val();
                     }
-                }
-            });
+                });
+            }
             
             // Collect wlm_shipping_methods (only if on shipping tab)
+            // IMPORTANT: activeSection must be explicitly 'shipping' (or 'wlm' for legacy)
             if (activeSection === 'shipping' || activeSection === 'wlm') {
                 formData.wlm_shipping_methods = [];
                 $('.wlm-shipping-method-item').each(function() {
@@ -315,16 +328,20 @@
                 });
             }
             
-            // Collect shipping selection strategy
-            var shippingStrategy = $('#wlm_shipping_selection_strategy').val();
-            if (shippingStrategy) {
-                formData.wlm_shipping_selection_strategy = shippingStrategy;
+            // Collect shipping selection strategy (if on shipping tab)
+            if (activeSection === 'shipping' || activeSection === 'wlm') {
+                var shippingStrategy = $('#wlm_shipping_selection_strategy').val();
+                if (shippingStrategy) {
+                    formData.wlm_shipping_selection_strategy = shippingStrategy;
+                }
             }
             
-            // Collect surcharge application strategy
-            var surchargeStrategy = $('#wlm_surcharge_application_strategy').val();
-            if (surchargeStrategy) {
-                formData.wlm_surcharge_application_strategy = surchargeStrategy;
+            // Collect surcharge application strategy (if on surcharges tab)
+            if (activeSection === 'surcharges') {
+                var surchargeStrategy = $('#wlm_surcharge_application_strategy').val();
+                if (surchargeStrategy) {
+                    formData.wlm_surcharge_application_strategy = surchargeStrategy;
+                }
             }
             
             // DEBUG: Log collected data
@@ -689,7 +706,7 @@
             html += '<option value="cart_item">Warenkorb-Position</option>';
             html += '<option value="quantity_unit">Mengeneinheit</option>';
             html += '</select>';
-            html += '<p class="description">Wie oft wird der Zuschlag berechnet?</p></td></tr>';
+            html += '<p class="description">Wie oft der Zuschlag berechnet wird</p></td></tr>';
             
             // Gewicht Min/Max
             html += '<tr><th scope="row"><label>Gewicht Min/Max (kg)</label></th>';
