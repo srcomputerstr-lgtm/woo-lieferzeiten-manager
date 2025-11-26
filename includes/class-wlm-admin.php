@@ -480,11 +480,9 @@ class WLM_Admin {
             update_option('wlm_shipping_selection_strategy', sanitize_text_field($data['wlm_shipping_selection_strategy']));
         }
         
-        // Save shipping methods (only if present in data - respects active tab)
-        if (isset($data['wlm_shipping_methods'])) {
-            // Only save if array is not empty OR if we're explicitly on the shipping tab
-            // This prevents accidental deletion from other tabs
-            if (!empty($data['wlm_shipping_methods']) || $active_section === 'shipping' || $active_section === 'wlm') {
+        // Save shipping methods (ONLY when on shipping tab to prevent data loss)
+        if ($active_section === 'shipping' || $active_section === 'wlm') {
+            if (isset($data['wlm_shipping_methods'])) {
             // Normalize data: Convert flat keys to nested arrays
             foreach ($data['wlm_shipping_methods'] as $method_index => &$method) {
                 // Fix flat keys like "attribute_conditions][0][logic" to nested structure
@@ -585,18 +583,19 @@ class WLM_Admin {
             }
             unset($method); // Break reference
             
-                error_log('Saving wlm_shipping_methods (normalized): ' . print_r($data['wlm_shipping_methods'], true));
-                update_option('wlm_shipping_methods', $data['wlm_shipping_methods']);
-                error_log('After save, wlm_shipping_methods from DB: ' . print_r(get_option('wlm_shipping_methods'), true));
+            error_log('Saving wlm_shipping_methods (normalized): ' . print_r($data['wlm_shipping_methods'], true));
+            update_option('wlm_shipping_methods', $data['wlm_shipping_methods']);
+            error_log('After save, wlm_shipping_methods from DB: ' . print_r(get_option('wlm_shipping_methods'), true));
             } else {
-                error_log('[WLM Save] Skipping empty wlm_shipping_methods (not on shipping tab)');
+                error_log('[WLM Save] No wlm_shipping_methods in data, keeping existing');
             }
+        } else {
+            error_log('[WLM Save] Not on shipping tab (' . $active_section . '), skipping wlm_shipping_methods save');
         }
         
-        // Save surcharges (only if present in data - respects active tab)
-        if (isset($data['wlm_surcharges'])) {
-            // Only save if array is not empty OR if we're explicitly on the surcharges tab
-            if (!empty($data['wlm_surcharges']) || $active_section === 'surcharges') {
+        // Save surcharges (ONLY when on surcharges tab to prevent data loss)
+        if ($active_section === 'surcharges') {
+            if (isset($data['wlm_surcharges'])) {
             error_log('Saving wlm_surcharges: ' . print_r($data['wlm_surcharges'], true));
             
             // Normalize data: Convert flat keys to nested arrays (same as shipping methods)
@@ -670,8 +669,10 @@ class WLM_Admin {
             update_option('wlm_surcharges', $data['wlm_surcharges']);
             error_log('After save, wlm_surcharges from DB: ' . print_r(get_option('wlm_surcharges'), true));
             } else {
-                error_log('[WLM Save] Skipping empty wlm_surcharges (not on surcharges tab)');
+                error_log('[WLM Save] No wlm_surcharges in data, keeping existing');
             }
+        } else {
+            error_log('[WLM Save] Not on surcharges tab (' . $active_section . '), skipping wlm_surcharges save');
         }
         
         // Force shipping methods to re-register
