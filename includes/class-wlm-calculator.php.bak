@@ -471,14 +471,8 @@ class WLM_Calculator {
      * @return bool
      */
     private function check_shipping_method_conditions($method, $product, $quantity, $shipping_zone) {
-        WLM_Core::log('[WLM DEBUG] ========== check_shipping_method_conditions START ==========');
-        WLM_Core::log('[WLM DEBUG] Method: ' . ($method['name'] ?? 'unknown'));
-        WLM_Core::log('[WLM DEBUG] Product: ' . $product->get_name() . ' (ID: ' . $product->get_id() . ')');
-        WLM_Core::log('[WLM DEBUG] Product Type: ' . $product->get_type());
-        
         // Check if method is enabled
         if (isset($method['enabled']) && !$method['enabled']) {
-            WLM_Core::log('[WLM DEBUG] Method is disabled - returning false');
             return false;
         }
         
@@ -551,26 +545,16 @@ class WLM_Calculator {
             // Get product attribute values
             $product_values = array();
             
-            WLM_Core::log('[WLM DEBUG] Checking attribute: ' . $attr_slug);
-            WLM_Core::log('[WLM DEBUG] Required values: ' . implode(', ', $values));
-            WLM_Core::log('[WLM DEBUG] Logic: ' . $logic);
-            
             // Check if this is a taxonomy (like shipping class)
             if (taxonomy_exists($attr_slug)) {
-                WLM_Core::log('[WLM DEBUG] ' . $attr_slug . ' is a TAXONOMY');
                 // Get taxonomy terms for the product
                 $product_id = $product->get_parent_id() ? $product->get_parent_id() : $product->get_id();
-                WLM_Core::log('[WLM DEBUG] Using product ID: ' . $product_id);
                 $terms = wp_get_post_terms($product_id, $attr_slug, array('fields' => 'slugs'));
-                WLM_Core::log('[WLM DEBUG] wp_get_post_terms result: ' . print_r($terms, true));
                 if (!is_wp_error($terms) && !empty($terms)) {
                     $product_values = $terms;
-                    WLM_Core::log('[WLM DEBUG] Taxonomy ' . $attr_slug . ' values: ' . implode(',', $product_values));
-                } else {
-                    WLM_Core::log('[WLM DEBUG] No taxonomy terms found or error');
+                    WLM_Core::log('[WLM] Taxonomy ' . $attr_slug . ' values: ' . implode(',', $product_values));
                 }
             } else {
-                WLM_Core::log('[WLM DEBUG] ' . $attr_slug . ' is NOT a taxonomy, checking as attribute');
                 // Regular product attribute
                 if ($product->is_type('variation')) {
                     // Try variation attributes first
@@ -600,23 +584,15 @@ class WLM_Calculator {
                 }
             }
             
-            WLM_Core::log('[WLM DEBUG] Product values found: ' . implode(', ', $product_values));
-            
             // Apply logic operator
             $condition_met = $this->check_attribute_logic($product_values, $values, $logic);
             
-            WLM_Core::log('[WLM DEBUG] Condition check result: ' . ($condition_met ? 'PASSED' : 'FAILED'));
-            WLM_Core::log('[WLM DEBUG] - Attribute: ' . $attr_slug);
-            WLM_Core::log('[WLM DEBUG] - Logic: ' . $logic);
-            WLM_Core::log('[WLM DEBUG] - Required: ' . implode(',', $values));
-            WLM_Core::log('[WLM DEBUG] - Product has: ' . implode(',', $product_values));
+            WLM_Core::log('[WLM] Condition check - Attribute: ' . $attr_slug . ', Logic: ' . $logic . ', Required: ' . implode(',', $values) . ', Product has: ' . implode(',', $product_values) . ', Met: ' . ($condition_met ? 'YES' : 'NO'));
             
             if (!$condition_met) {
-                WLM_Core::log('[WLM DEBUG] Condition NOT met - returning FALSE');
-                WLM_Core::log('[WLM DEBUG] ========== check_shipping_method_conditions END (FALSE) ==========');
+                WLM_Core::log('[WLM] Condition NOT met - returning false');
                 return false;
             }
-            WLM_Core::log('[WLM DEBUG] Condition passed, continuing...');
         }
         
         // Check required categories
@@ -635,8 +611,6 @@ class WLM_Calculator {
             }
         }
 
-        WLM_Core::log('[WLM DEBUG] All conditions passed - returning TRUE');
-        WLM_Core::log('[WLM DEBUG] ========== check_shipping_method_conditions END (TRUE) ==========');
         return true;
     }
     
@@ -1109,23 +1083,15 @@ class WLM_Calculator {
                 }
             }
             
-            WLM_Core::log('[WLM DEBUG] Product values found: ' . implode(', ', $product_values));
-            
             // Apply logic operator
             $condition_met = $this->check_attribute_logic($product_values, $values, $logic);
             
-            WLM_Core::log('[WLM DEBUG] Condition check result: ' . ($condition_met ? 'PASSED' : 'FAILED'));
-            WLM_Core::log('[WLM DEBUG] - Attribute: ' . $attr_slug);
-            WLM_Core::log('[WLM DEBUG] - Logic: ' . $logic);
-            WLM_Core::log('[WLM DEBUG] - Required: ' . implode(',', $values));
-            WLM_Core::log('[WLM DEBUG] - Product has: ' . implode(',', $product_values));
+            WLM_Core::log('[WLM] Condition check - Attribute: ' . $attr_slug . ', Logic: ' . $logic . ', Required: ' . implode(',', $values) . ', Product has: ' . implode(',', $product_values) . ', Met: ' . ($condition_met ? 'YES' : 'NO'));
             
             if (!$condition_met) {
-                WLM_Core::log('[WLM DEBUG] Condition NOT met - returning FALSE');
-                WLM_Core::log('[WLM DEBUG] ========== check_shipping_method_conditions END (FALSE) ==========');
+                WLM_Core::log('[WLM] Condition NOT met - returning false');
                 return false;
             }
-            WLM_Core::log('[WLM DEBUG] Condition passed, continuing...');
         }
         
         // Check required categories
