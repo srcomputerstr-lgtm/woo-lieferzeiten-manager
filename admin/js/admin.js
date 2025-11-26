@@ -408,58 +408,7 @@
             }
         },
         
-        /**
-         * Duplicate shipping method
-         */
-        duplicateShippingMethod: function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            
-            var $button = $(e.currentTarget);
-            var $methodItem = $button.closest('.wlm-shipping-method-item');
-            var methodIndex = $methodItem.data('index');
-            
-            console.log('[WLM Duplicate] Button clicked');
-            console.log('[WLM Duplicate] Method item:', $methodItem);
-            console.log('[WLM Duplicate] Method index from data-index:', methodIndex);
-            console.log('[WLM Duplicate] Method name:', $methodItem.find('.wlm-method-name-input').val());
-            
-            // Disable button to prevent double-clicks
-            $button.prop('disabled', true);
-            
-            // Show loading indicator
-            var originalHtml = $button.html();
-            $button.html('<span class="dashicons dashicons-update dashicons-spin"></span>');
-            
-            // Send AJAX request to duplicate on server
-            $.ajax({
-                url: ajaxurl,
-                type: 'POST',
-                data: {
-                    action: 'wlm_duplicate_shipping_method',
-                    nonce: wlmAdmin.nonce,
-                    method_index: methodIndex
-                },
-                success: function(response) {
-                    console.log('[WLM Duplicate] AJAX response:', response);
-                    if (response.success) {
-                        console.log('[WLM Duplicate] Success! Reloading page...');
-                        // Reload page to show duplicated method
-                        window.location.reload();
-                    } else {
-                        console.error('[WLM Duplicate] Error:', response.data);
-                        alert('Fehler beim Duplizieren: ' + (response.data || 'Unbekannter Fehler'));
-                        $button.prop('disabled', false);
-                        $button.html(originalHtml);
-                    }
-                },
-                error: function() {
-                    alert('Fehler beim Duplizieren der Versandart');
-                    $button.prop('disabled', false);
-                    $button.html(originalHtml);
-                }
-            });
-        },
+        // Duplicate functionality removed
 
         /**
          * Update method title
@@ -1196,20 +1145,33 @@
         populateProviderSelects: function(providers) {
             $('.wlm-shiptastic-provider-select').each(function() {
                 var $select = $(this);
-                var currentValue = $select.find('option:selected').val();
+                var currentValues = $select.val() || [];  // Get currently selected values (array)
                 
-                // Keep first option ("Kein Provider")
-                $select.find('option:not(:first)').remove();
+                // Remove all options except currently selected ones
+                $select.find('option:not(:selected)').remove();
                 
-                // Add providers
+                // Add all providers
                 providers.forEach(function(provider) {
-                    var selected = (currentValue === provider.slug) ? 'selected' : '';
-                    $select.append(
-                        '<option value="' + provider.slug + '" ' + selected + '>' + 
-                        provider.title + ' (' + provider.slug + ')' +
-                        '</option>'
-                    );
+                    // Check if this provider is already in the select
+                    if ($select.find('option[value="' + provider.slug + '"]').length === 0) {
+                        var selected = currentValues.indexOf(provider.slug) !== -1 ? 'selected' : '';
+                        $select.append(
+                            '<option value="' + provider.slug + '" ' + selected + '>' + 
+                            provider.title + ' (' + provider.slug + ')' +
+                            '</option>'
+                        );
+                    }
                 });
+                
+                // Initialize Select2 for multi-select with chips
+                if (!$select.hasClass('select2-hidden-accessible')) {
+                    $select.select2({
+                        placeholder: 'Provider auswählen...',
+                        allowClear: true,
+                        width: '100%',
+                        tags: false
+                    });
+                }
             });
         }
     };

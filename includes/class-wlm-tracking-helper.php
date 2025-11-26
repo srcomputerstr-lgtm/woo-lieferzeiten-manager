@@ -27,7 +27,17 @@ class WLM_Tracking_Helper {
         
         // Find method with matching provider
         foreach ($shipping_methods as $method_id => $method) {
-            if (isset($method['shiptastic_provider']) && $method['shiptastic_provider'] === $provider_slug) {
+            $method_providers = array();
+            
+            // Support both new array format and old single provider format
+            if (isset($method['shiptastic_providers']) && is_array($method['shiptastic_providers'])) {
+                $method_providers = $method['shiptastic_providers'];
+            } elseif (isset($method['shiptastic_provider'])) {
+                $method_providers = array($method['shiptastic_provider']);
+            }
+            
+            // Check if provider matches any of the method's providers
+            if (in_array($provider_slug, $method_providers, true)) {
                 // Found matching method, return transit times
                 if (isset($method['transit_min']) && isset($method['transit_max'])) {
                     return array(
