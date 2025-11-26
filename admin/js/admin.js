@@ -120,12 +120,27 @@
             var $button = $('#wlm-save-settings');
             var $spinner = $('.wlm-save-spinner');
             
-            // Detect active tab
-            var $activeTab = $('.nav-tab-wrapper .nav-tab-active');
-            var activeTabHref = $activeTab.attr('href');
-            var activeSection = activeTabHref ? activeTabHref.replace('#', '') : 'shipping';
+            // Detect active tab/section
+            // WooCommerce uses URL parameters like ?page=wc-settings&tab=shipping&section=wlm
+            var activeSection = 'shipping';  // Default
             
-            console.log('[WLM Save] Active tab:', activeSection);
+            // Try to get from URL parameters
+            var urlParams = new URLSearchParams(window.location.search);
+            var wcSection = urlParams.get('section');
+            
+            if (wcSection) {
+                // We're on a specific section (e.g., 'wlm', 'surcharges')
+                activeSection = wcSection;
+            } else {
+                // Check if there are visible shipping methods or surcharges
+                if ($('.wlm-surcharge-item:visible').length > 0) {
+                    activeSection = 'surcharges';
+                } else if ($('.wlm-shipping-method-item:visible').length > 0) {
+                    activeSection = 'wlm';
+                }
+            }
+            
+            console.log('[WLM Save] Active section:', activeSection);
             
             // Collect form data based on active tab
             var formData = {
