@@ -120,36 +120,35 @@
             var $button = $('#wlm-save-settings');
             var $spinner = $('.wlm-save-spinner');
             
-            // Detect active tab/section
-            // WooCommerce uses URL parameters like ?page=wc-settings&tab=shipping&section=wlm&wlm_tab=shipping
-            var activeSection = 'shipping';  // Default
+            // Detect active tab/section more reliably
+            var activeSection = 'times'; // Default fallback
             
-            // Try to get from URL parameters
+            // 1. Check URL parameters first (most reliable)
             var urlParams = new URLSearchParams(window.location.search);
-            var wcSection = urlParams.get('section');
             var wlmTab = urlParams.get('wlm_tab');
             var standAloneTab = urlParams.get('tab');
             
-            // Logic to determine the correct section to save
             if (wlmTab) {
-                // If wlm_tab is present (e.g. 'shipping', 'surcharges', 'times'), use it
                 activeSection = wlmTab;
-            } else if (wcSection === 'wlm') {
-                // If section is wlm but no wlm_tab, we are likely on the default tab (Times)
-                activeSection = 'times';
             } else if (standAloneTab && standAloneTab !== 'shipping') {
-                // Standalone page support (e.g. ?page=wlm-settings&tab=surcharges)
+                // If standalone page and tab is not 'shipping' (which is the main tab in WC settings)
+                // But wait, in standalone page, tab IS the section
                 activeSection = standAloneTab;
             } else {
-                // Fallback: Check visibility of elements
-                if ($('.wlm-surcharge-item:visible').length > 0) {
+                // 2. Fallback to DOM detection if URL params are ambiguous
+                if ($('#wlm-surcharges-list').length > 0) {
                     activeSection = 'surcharges';
-                } else if ($('.wlm-shipping-method-item:visible').length > 0) {
-                    activeSection = 'shipping'; // changed from 'wlm' to 'shipping' for consistency
+                } else if ($('#wlm-shipping-methods-list').length > 0) {
+                    activeSection = 'shipping';
+                } else if ($('#wlm-export-result').length > 0) {
+                    activeSection = 'export-import';
+                } else {
+                    // Default to 'times' if nothing else matches
+                    activeSection = 'times';
                 }
             }
             
-            console.log('[WLM Save] Active section:', activeSection);
+            console.log('[WLM Save] Active section detected:', activeSection);
             
             // Collect form data based on active tab
             var formData = {
@@ -192,8 +191,8 @@
             }
             
             // Collect wlm_shipping_methods (only if on shipping tab)
-            // IMPORTANT: activeSection must be explicitly 'shipping' (or 'wlm' for legacy)
-            if (activeSection === 'shipping' || activeSection === 'wlm') {
+            // IMPORTANT: Only add wlm_shipping_methods key if we are actually saving shipping methods
+            if (activeSection === 'shipping') {
                 formData.wlm_shipping_methods = [];
                 $('.wlm-shipping-method-item').each(function() {
                 var method = {};
@@ -261,6 +260,7 @@
             }
             
             // Collect wlm_surcharges (only if on surcharges tab)
+            // IMPORTANT: Only add wlm_surcharges key if we are actually saving surcharges
             if (activeSection === 'surcharges') {
                 formData.wlm_surcharges = [];
                 $('.wlm-surcharge-item').each(function() {
@@ -329,7 +329,7 @@
             }
             
             // Collect shipping selection strategy (if on shipping tab)
-            if (activeSection === 'shipping' || activeSection === 'wlm') {
+            if (activeSection === 'shipping') {
                 var shippingStrategy = $('#wlm_shipping_selection_strategy').val();
                 if (shippingStrategy) {
                     formData.wlm_shipping_selection_strategy = shippingStrategy;
