@@ -299,3 +299,64 @@
 #mainform > p.submit:not(.wlm-settings-wrap p.submit) {
     display: none !important;
 }
+
+/* --- FIX: Toggle Buttons für Boxen sichtbar machen --- */
+
+.wlm-shipping-method-item .postbox-header,
+.wlm-surcharge-item .postbox-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #ccd0d4;
+    padding: 8px 12px;
+    background: #fcfcfc;
+}
+
+.wlm-shipping-method-item.closed .postbox-header,
+.wlm-surcharge-item.closed .postbox-header {
+    border-bottom: none;
+}
+
+.wlm-shipping-method-item .handle-actions,
+.wlm-surcharge-item .handle-actions {
+    display: flex;
+    align-items: center;
+}
+
+.wlm-shipping-method-item .handlediv,
+.wlm-surcharge-item .handlediv {
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    background: transparent;
+    border: none;
+    color: #787c82;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.wlm-shipping-method-item .handlediv:hover,
+.wlm-surcharge-item .handlediv:hover {
+    color: #2271b1;
+    background: #f0f0f1;
+    border-radius: 50%;
+}
+
+/* Dashicon für Toggle Pfeil */
+.wlm-shipping-method-item .toggle-indicator::before,
+.wlm-surcharge-item .toggle-indicator::before {
+    content: "\f142"; /* dashicons-arrow-up */
+    display: inline-block;
+    font: normal 20px/1 dashicons;
+    speak: none;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Pfeil nach unten wenn geschlossen */
+.wlm-shipping-method-item.closed .toggle-indicator::before,
+.wlm-surcharge-item.closed .toggle-indicator::before {
+    content: "\f140"; /* dashicons-arrow-down */
+}
