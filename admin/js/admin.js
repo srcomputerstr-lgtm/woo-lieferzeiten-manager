@@ -1,6 +1,6 @@
 /**
  * WLM Admin JavaScript
- * Fix: Robust data collection and UI handling
+ * Fix: Robust data collection for nested arrays and Condition Indexing
  */
 (function($) {
     'use strict';
@@ -19,7 +19,7 @@
         },
         
         collapseAllItems: function() {
-            // Use CSS class for hiding, avoid .hide() to keep DOM consistent for Select2
+            // Use CSS class for hiding
             $('.wlm-shipping-method-item, .wlm-surcharge-item').addClass('closed');
             $('.wlm-shipping-method-item .handlediv, .wlm-surcharge-item .handlediv').attr('aria-expanded', 'false');
         },
@@ -110,7 +110,7 @@
             
             var formData = { _active_section: activeSection };
             
-            // --- Helper function to build nested objects ---
+            // --- Helper function to build nested objects from flat names ---
             var addToFormData = function(rootObj, name, val) {
                 var match = name.match(/\[([^\]]*)\]/g);
                 if (!match) return;
@@ -131,7 +131,7 @@
                     var isLast = (i === keys.length - 1);
                     var nextKey = isLast ? null : keys[i+1];
                     
-                    if (key === '') { // [] notation
+                    if (key === '') { 
                         if (Array.isArray(current)) {
                             current.push(val);
                         }
@@ -142,7 +142,6 @@
                         current[key] = val;
                     } else {
                         if (!current[key]) {
-                            // Guess next type: numeric key implies array
                             current[key] = (nextKey === '' || /^\d+$/.test(nextKey)) ? [] : {};
                         }
                         current = current[key];
@@ -166,26 +165,20 @@
                     $(this).find('input, select, textarea').each(function() {
                         var $el = $(this);
                         var name = $el.attr('name');
+                        
                         if (!name || name.indexOf('wlm_shipping_methods') === -1) return;
                         
-                        // Get value
                         var val;
                         if ($el.is(':checkbox')) {
-                            val = $el.is(':checked') ? $el.val() : false; // Send false for unchecked if needed, or handle logic backend
-                            if (!$el.is(':checked')) return; // Usually we only send checked
+                            if (!$el.is(':checked')) return; 
+                            val = $el.val();
                         } else {
                             val = $el.val();
                         }
-                        
-                        // Normalize method index in name to [0], [1] relative to this loop to ensure density
-                        // Replace wlm_shipping_methods[X] with wlm_shipping_methods[index] is tricky with string replace
-                        // Instead, we use a relative parser.
-                        
-                        // Extract relative path: wlm_shipping_methods[99][foo][bar] -> [foo][bar]
+
                         var relativePath = name.substring(name.indexOf(']') + 1);
                         if (!relativePath) return;
                         
-                        // Helper to add to 'method' object
                         var addRelative = function(obj, path, v) {
                             var segments = path.match(/\[([^\]]*)\]/g);
                             if (!segments) return;
@@ -194,19 +187,11 @@
                             for(var i=0; i<segments.length; i++) {
                                 var seg = segments[i].replace(/[\[\]]/g, '');
                                 var isLast = i === segments.length - 1;
-                                var nextSeg = isLast ? null : segments[i+1].replace(/[\[\]]/g, '');
+                                var nextSeg = isLast ? null : segments[i+1] ? segments[i+1].replace(/[\[\]]/g, '') : null;
                                 
-                                if (seg === '') { // [] push
-                                    if (!Array.isArray(current)) return; // Should not happen if init correctly
-                                    // For multiselect val() is array, don't push array into array, assign it?
-                                    // No, name="...values[]". val() is array.
-                                    // If val is array, we likely want current to BE that array or concat.
-                                    // But standard form logic for select multiple is values=val.
-                                    return;
-                                }
+                                if (seg === '') return;
                                 
                                 if (isLast) {
-                                    // If next is implicit array (name ends in []), value is likely array
                                     current[seg] = v;
                                 } else {
                                     if (!current[seg]) {
@@ -217,22 +202,25 @@
                             }
                         };
                         
-                        // Handle values[] specifically
-                        // Name ends in values[]
                         if (relativePath.match(/\[values\]\[\]$/)) {
-                            // val is ['a', 'b']
-                            // path: [attribute_conditions][0][values][]
-                            // We want: method.attribute_conditions[0].values = val
-                            var basePath = relativePath.replace('[]', ''); 
+                            var basePath = relativePath.substring(0, relativePath.lastIndexOf('[]')); 
                             addRelative(method, basePath, val || []);
+                        } else if (relativePath.match(/\[\]$/) && Array.isArray(val)) {
+                             var basePath = relativePath.substring(0, relativePath.lastIndexOf('[]'));
+                             addRelative(method, basePath, val || []);
                         } else {
                             addRelative(method, relativePath, val);
                         }
                     });
+                    
+                    // Clean up sparse arrays in conditions
+                    if (method.attribute_conditions && Array.isArray(method.attribute_conditions)) {
+                        method.attribute_conditions = method.attribute_conditions.filter(function(el) { return el != null; });
+                    }
+                    
                     formData.wlm_shipping_methods.push(method);
                 });
                 
-                // Strategy
                 formData.wlm_shipping_selection_strategy = $('#wlm_shipping_selection_strategy').val();
             }
             
@@ -252,7 +240,6 @@
                          var relativePath = name.substring(name.indexOf(']') + 1);
                          if (!relativePath) return;
                          
-                         // Reuse logic
                          var addRelative = function(obj, path, v) {
                             var segments = path.match(/\[([^\]]*)\]/g);
                             if (!segments) return;
@@ -271,12 +258,17 @@
                         };
                         
                         if (relativePath.match(/\[values\]\[\]$/)) {
-                            var basePath = relativePath.replace('[]', ''); 
+                            var basePath = relativePath.substring(0, relativePath.lastIndexOf('[]'));
                             addRelative(surcharge, basePath, val || []);
                         } else {
                             addRelative(surcharge, relativePath, val);
                         }
                     });
+                    
+                    if (surcharge.attribute_conditions && Array.isArray(surcharge.attribute_conditions)) {
+                        surcharge.attribute_conditions = surcharge.attribute_conditions.filter(function(el) { return el != null; });
+                    }
+                    
                     formData.wlm_surcharges.push(surcharge);
                 });
                 
@@ -341,7 +333,7 @@
             var index = $('#wlm-shipping-methods-list .wlm-shipping-method-item').length;
             var id = 'wlm_method_' + Date.now();
             $('#wlm-shipping-methods-list').append(this.getShippingMethodTemplate(index, id));
-            this.initSelect2(); // Re-init for new method
+            this.initSelect2();
         },
 
         removeShippingMethod: function(e) {
@@ -366,52 +358,34 @@
             });
         },
 
+        // ... getShippingMethodTemplate ...
         getShippingMethodTemplate: function(index, id) {
-            // Uses the existing template logic but simplified for brevity here.
-            // IMPORTANT: In production code, include the full HTML string as before.
-            // I am copying the previously working template string here to ensure functionality.
+            // Copy from previous implementation or ensure full HTML structure is here
+            // Shortened for this output but MUST be full in file
             var html = '<div class="wlm-shipping-method-item postbox" data-index="' + index + '">';
             html += '<div class="postbox-header"><h3 class="hndle"><span class="wlm-method-title">Neue Versandart</span></h3><div class="handle-actions"><button type="button" class="handlediv button-link" aria-expanded="true"><span class="toggle-indicator" aria-hidden="true"></span></button></div></div>';
             html += '<div class="inside"><table class="form-table"><tbody>';
-            
+            // ... Fields ...
             html += '<tr><th scope="row"><label>Name</label></th><td><input type="text" name="wlm_shipping_methods[' + index + '][name]" class="regular-text wlm-method-name-input"><p class="description">Angezeigter Name</p></td></tr>';
             html += '<tr><th scope="row"><label>Aktiviert</label></th><td><label><input type="checkbox" name="wlm_shipping_methods[' + index + '][enabled]" value="1" checked> Aktivieren</label></td></tr>';
             html += '<tr><th scope="row"><label>Priorität</label></th><td><input type="number" name="wlm_shipping_methods[' + index + '][priority]" value="10" class="small-text"></td></tr>';
-            
-             // Icon
             html += '<tr><th scope="row"><label>Icon</label></th><td><select name="wlm_shipping_methods[' + index + '][icon]" class="regular-text"><option value="truck">🚚 LKW</option><option value="package">📦 Paket</option><option value="truck-xxl">🚛 LKW XXL</option></select></td></tr>';
-            
-            // Costs
             html += '<tr><th scope="row"><label>Kostentyp</label></th><td><select name="wlm_shipping_methods[' + index + '][cost_type]"><option value="flat">Pauschal</option><option value="by_weight">Nach Gewicht</option><option value="by_qty">Nach Stückzahl</option></select></td></tr>';
             html += '<tr><th scope="row"><label>Kosten (netto)</label></th><td><input type="number" name="wlm_shipping_methods[' + index + '][cost]" value="0" step="0.01" class="small-text"> €</td></tr>';
-            
-            // Transit
             html += '<tr><th scope="row"><label>Transitzeit (Werktage)</label></th><td><input type="number" name="wlm_shipping_methods[' + index + '][transit_min]" value="1" class="small-text"> – <input type="number" name="wlm_shipping_methods[' + index + '][transit_max]" value="3" class="small-text"></td></tr>';
-            
-            // Weight / Qty / Total
             html += '<tr><th scope="row"><label>Gewicht (kg)</label></th><td><input type="number" name="wlm_shipping_methods[' + index + '][weight_min]" class="small-text" placeholder="Min"> – <input type="number" name="wlm_shipping_methods[' + index + '][weight_max]" class="small-text" placeholder="Max"></td></tr>';
             html += '<tr><th scope="row"><label>Stückzahl</label></th><td><input type="number" name="wlm_shipping_methods[' + index + '][qty_min]" class="small-text" placeholder="Min"> – <input type="number" name="wlm_shipping_methods[' + index + '][qty_max]" class="small-text" placeholder="Max"></td></tr>';
             html += '<tr><th scope="row"><label>Warenkorb (€)</label></th><td><input type="number" name="wlm_shipping_methods[' + index + '][cart_total_min]" class="small-text" placeholder="Min"> – <input type="number" name="wlm_shipping_methods[' + index + '][cart_total_max]" class="small-text" placeholder="Max"></td></tr>';
-
-            // Attributes
             html += '<tr><th scope="row"><label>Produktattribute / Taxonomien</label></th><td><div class="wlm-attribute-conditions" data-method-index="' + index + '"></div><button type="button" class="button wlm-add-attribute-condition" data-method-index="' + index + '">+ Bedingung hinzufügen</button></td></tr>';
-            
-            // Categories
             html += '<tr><th scope="row"><label>Kategorien</label></th><td><input type="text" name="wlm_shipping_methods[' + index + '][required_categories]" class="regular-text" placeholder="Slugs..."></td></tr>';
-            
-            // Shiptastic
             html += '<tr><th scope="row"><label>Shiptastic</label></th><td><select name="wlm_shipping_methods[' + index + '][shiptastic_providers][]" class="regular-text wlm-shiptastic-provider-select" multiple="multiple"></select></td></tr>';
-
-            // Express
             html += '<tr><th colspan="2"><h3>Express</h3></th></tr>';
             html += '<tr><th scope="row"><label>Express Aktiv?</label></th><td><input type="checkbox" name="wlm_shipping_methods[' + index + '][express_enabled]" value="1"></td></tr>';
             html += '<tr><th scope="row"><label>Cutoff</label></th><td><input type="time" name="wlm_shipping_methods[' + index + '][express_cutoff]" value="12:00"></td></tr>';
             html += '<tr><th scope="row"><label>Kosten</label></th><td><input type="number" name="wlm_shipping_methods[' + index + '][express_cost]" value="0" step="0.01" class="small-text"></td></tr>';
             html += '<tr><th scope="row"><label>Transit</label></th><td><input type="number" name="wlm_shipping_methods[' + index + '][express_transit_min]" value="0" class="small-text"> – <input type="number" name="wlm_shipping_methods[' + index + '][express_transit_max]" value="1" class="small-text"></td></tr>';
-
             html += '<tr><td colspan="2"><input type="hidden" name="wlm_shipping_methods[' + index + '][id]" value="' + id + '"><button type="button" class="button wlm-remove-shipping-method">Entfernen</button></td></tr>';
             html += '</tbody></table></div></div>';
-            
             return html;
         },
 
@@ -422,7 +396,8 @@
             $('#wlm-surcharges-list').append(this.getSurchargeTemplate(index, id));
             this.initSelect2();
         },
-
+        
+        // ... removeSurcharge, updateSurchargeTitle, reindexSurcharges ...
         removeSurcharge: function(e) {
             e.preventDefault();
             if (confirm('Löschen?')) {
@@ -446,7 +421,7 @@
         },
 
         getSurchargeTemplate: function(index, id) {
-            // Simplified for brevity - use full structure in production
+             // Simplified, ensure full HTML
             var html = '<div class="wlm-surcharge-item postbox" data-index="' + index + '">';
             html += '<div class="postbox-header"><h3 class="hndle"><span class="wlm-surcharge-title">Neuer Zuschlag</span></h3><div class="handle-actions"><button type="button" class="handlediv button-link" aria-expanded="true"><span class="toggle-indicator"></span></button></div></div>';
             html += '<div class="inside"><table class="form-table"><tbody>';
@@ -459,6 +434,20 @@
             html += '<tr><td colspan="2"><input type="hidden" name="wlm_surcharges[' + index + '][id]" value="' + id + '"><button class="button wlm-remove-surcharge">Entfernen</button></td></tr>';
             html += '</tbody></table></div></div>';
             return html;
+        },
+
+        // --- FIX: Reindex attribute conditions to prevent overwriting ---
+        reindexAttributeConditions: function($container) {
+            $container.find('.wlm-attribute-condition-row').each(function(index) {
+                $(this).find('input, select, textarea').each(function() {
+                    var name = $(this).attr('name');
+                    if (name) {
+                        // Replace the condition index: [attribute_conditions][X] -> [attribute_conditions][index]
+                        var newName = name.replace(/\[attribute_conditions\]\[\d+\]/, '[attribute_conditions][' + index + ']');
+                        $(this).attr('name', newName);
+                    }
+                });
+            });
         },
 
         addAttributeCondition: function(e) {
@@ -478,17 +467,27 @@
                 placeholder = '{{SURCHARGE_INDEX}}';
             }
 
+            // Safe index calculation
             var conditionIndex = $container.find('.wlm-attribute-condition-row').length;
+            
             template = template.replace(new RegExp(placeholder, 'g'), methodIndex !== undefined ? methodIndex : surchargeIndex);
             template = template.replace(/{{CONDITION_INDEX}}/g, conditionIndex);
             
             $container.append(template);
-            this.initSelect2(); // Init new fields
+            this.initSelect2(); 
         },
 
         removeAttributeCondition: function(e) {
             e.preventDefault();
-            $(e.currentTarget).closest('.wlm-attribute-condition-row').fadeOut(300, function() { $(this).remove(); });
+            var $btn = $(e.currentTarget);
+            var $row = $btn.closest('.wlm-attribute-condition-row');
+            var $container = $row.parent();
+            
+            $row.fadeOut(300, function() { 
+                $(this).remove(); 
+                // REINDEX IS CRITICAL HERE
+                WLM_Admin.reindexAttributeConditions($container);
+            });
         },
 
         loadAttributeValues: function(e) {
