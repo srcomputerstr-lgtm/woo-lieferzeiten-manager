@@ -719,9 +719,24 @@ class WLM_Calculator {
         $stock_quantity = $product->get_stock_quantity();
         $settings = WLM_Core::instance()->get_settings();
         
-        // Get max visible stock (product-specific or global)
-        $product_max_visible = get_post_meta($product->get_id(), '_wlm_max_visible_stock', true);
-        $max_visible = !empty($product_max_visible) ? absint($product_max_visible) : ($settings['max_visible_stock'] ?? 100);
+        // Get max visible stock with priority: attribute > meta field > global setting
+        // Priority 1: Check product attribute pa_maximal_sichtbarer_bestand
+        $attribute_max_visible = $product->get_attribute('pa_maximal_sichtbarer_bestand');
+        if (!empty($attribute_max_visible) && is_numeric($attribute_max_visible)) {
+            $max_visible = absint($attribute_max_visible);
+            WLM_Core::log('[WLM] Using max_visible_stock from attribute pa_maximal_sichtbarer_bestand: ' . $max_visible);
+        } else {
+            // Priority 2: Check product meta field _wlm_max_visible_stock
+            $product_max_visible = get_post_meta($product->get_id(), '_wlm_max_visible_stock', true);
+            if (!empty($product_max_visible)) {
+                $max_visible = absint($product_max_visible);
+                WLM_Core::log('[WLM] Using max_visible_stock from meta field: ' . $max_visible);
+            } else {
+                // Priority 3: Use global setting
+                $max_visible = $settings['max_visible_stock'] ?? 100;
+                WLM_Core::log('[WLM] Using max_visible_stock from global setting: ' . $max_visible);
+            }
+        }
 
         $result = array(
             'status' => $stock_status,
