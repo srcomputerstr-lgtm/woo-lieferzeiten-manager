@@ -231,6 +231,21 @@ class WLM_REST_API {
             )
         ));
         
+        // Trigger ship notification (for external cron)
+        register_rest_route(self::NAMESPACE, '/cron/ship-notification', array(
+            'methods' => 'POST',
+            'callback' => array($this, 'trigger_ship_notification'),
+            'permission_callback' => array($this, 'check_cron_permission'),
+            'args' => array(
+                'key' => array(
+                    'required' => true,
+                    'validate_callback' => function($param) {
+                        return is_string($param);
+                    }
+                )
+            )
+        ));
+        
         // Get ship-by date only
         register_rest_route(self::NAMESPACE, '/orders/(?P<id>\d+)/ship-by-date', array(
             'methods' => 'GET',
@@ -1026,6 +1041,45 @@ class WLM_REST_API {
             'date' => $date,
             'count' => count($result),
             'orders' => $result,
+        ));
+    }
+    
+    /**
+     * Check cron permission (uses secret key)
+     *
+     * @param WP_REST_Request $request Request object.
+     * @return bool
+     */
+    public function check_cron_permission($request) {
+        $provided_key = $request->get_param('key');
+        $stored_key = get_option('wlm_cron_secret_key');
+        
+        // Generate key if not exists
+        if (empty($stored_key)) {
+            $stored_key = wp_generate_password(32, false);
+            update_option('wlm_cron_secret_key', $stored_key);
+        }
+        
+        return $provided_key === $stored_key;
+    }
+    
+    /**
+     * Trigger ship notification (for external cron)
+     *
+     * @param WP_REST_Request $request Request object.
+     * @return WP_REST_Response
+     */
+    public function trigger_ship_notification($request) {
+        WLM_Core::log('[WLM REST API] Ship notification triggered via external cron');
+        
+        // Get ship notifications instance and trigger
+        $notifications = new WLM_Ship_Notifications();
+        $notifications->trigger_manual();
+        
+        return rest_ensure_response(array(
+            'success' => true,
+            'message' => 'Ship notification triggered successfully',
+            'timestamp' => current_time('mysql')
         ));
     }
 }

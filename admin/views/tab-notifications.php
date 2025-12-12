@@ -111,6 +111,40 @@ $next_run_formatted = $next_run ? date_i18n('d.m.Y H:i', $next_run) : 'Nicht gep
         </tr>
 
         <tr>
+            <th scope="row">Externe Cronjob-URL</th>
+            <td>
+                <?php
+                $cron_key = get_option('wlm_cron_secret_key');
+                if (empty($cron_key)) {
+                    $cron_key = wp_generate_password(32, false);
+                    update_option('wlm_cron_secret_key', $cron_key);
+                }
+                $cron_url = rest_url('wlm/v1/cron/ship-notification');
+                ?>
+                <input type="text" 
+                       value="<?php echo esc_attr($cron_url); ?>" 
+                       readonly 
+                       class="large-text" 
+                       onclick="this.select();" 
+                       style="font-family: monospace; background: #f5f5f5;">
+                <p class="description">
+                    <strong>POST-Parameter:</strong> <code>key=<?php echo esc_html($cron_key); ?></code>
+                </p>
+                <p class="description">
+                    Für zuverlässige Ausführung bei All-Inkl: Erstelle einen Server-Cronjob mit dieser URL.
+                </p>
+                <details style="margin-top: 10px;">
+                    <summary style="cursor: pointer; color: #2271b1;">📋 Beispiel für All-Inkl Cronjob</summary>
+                    <div style="background: #f5f5f5; padding: 15px; margin-top: 10px; border-radius: 4px; font-family: monospace; font-size: 12px;">
+                        <p><strong>Befehl:</strong></p>
+                        <code>curl -X POST "<?php echo esc_html($cron_url); ?>" -d "key=<?php echo esc_html($cron_key); ?>"</code>
+                        <p style="margin-top: 15px;"><strong>Zeitplan:</strong> Täglich zur gewünschten Uhrzeit (z.B. 08:00)</p>
+                    </div>
+                </details>
+            </td>
+        </tr>
+
+        <tr>
             <th scope="row">Test-E-Mail senden</th>
             <td>
                 <button type="button" id="wlm-send-test-notification" class="button button-secondary">
