@@ -29,6 +29,9 @@ class WLM_Admin {
         // AJAX handler for running cronjob manually
         add_action('wp_ajax_wlm_run_cronjob', array($this, 'ajax_run_cronjob'));
         
+        // AJAX handler for sending test notification
+        add_action('wp_ajax_wlm_send_test_notification', array($this, 'ajax_send_test_notification'));
+        
         // AJAX handler for getting shipping classes
         add_action('wp_ajax_wlm_get_shipping_classes', array($this, 'ajax_get_shipping_classes'));
         
@@ -352,6 +355,9 @@ class WLM_Admin {
                 <a href="<?php echo $is_wc_settings ? 'admin.php?page=wc-settings&tab=shipping&section=wlm&wlm_tab=surcharges' : '?page=wlm-settings&tab=surcharges'; ?>" class="nav-tab <?php echo $active_tab === 'surcharges' ? 'nav-tab-active' : ''; ?>">
                     <?php esc_html_e('Zuschläge', 'woo-lieferzeiten-manager'); ?>
                 </a>
+                <a href="<?php echo $is_wc_settings ? 'admin.php?page=wc-settings&tab=shipping&section=wlm&wlm_tab=notifications' : '?page=wlm-settings&tab=notifications'; ?>" class="nav-tab <?php echo $active_tab === 'notifications' ? 'nav-tab-active' : ''; ?>">
+                    <?php esc_html_e('Benachrichtigungen', 'woo-lieferzeiten-manager'); ?>
+                </a>
                 <a href="<?php echo $is_wc_settings ? 'admin.php?page=wc-settings&tab=shipping&section=wlm&wlm_tab=export-import' : '?page=wlm-settings&tab=export-import'; ?>" class="nav-tab <?php echo $active_tab === 'export-import' ? 'nav-tab-active' : ''; ?>">
                     <?php esc_html_e('Export / Import', 'woo-lieferzeiten-manager'); ?>
                 </a>
@@ -372,6 +378,9 @@ class WLM_Admin {
                     break;
                 case 'surcharges':
                     $this->render_surcharges_tab();
+                    break;
+                case 'notifications':
+                    $this->render_notifications_tab();
                     break;
                 case 'export-import':
                     $this->render_export_import_tab();
@@ -430,6 +439,13 @@ class WLM_Admin {
      */
     private function render_export_import_tab() {
         require_once WLM_PLUGIN_DIR . 'admin/views/tab-export-import.php';
+    }
+
+    /**
+     * Render notifications tab
+     */
+    private function render_notifications_tab() {
+        require_once WLM_PLUGIN_DIR . 'admin/views/tab-notifications.php';
     }
 
     /**
@@ -749,6 +765,35 @@ class WLM_Admin {
                 }
             }
         }
+    }
+    
+    /**
+     * AJAX handler for sending test notification
+     */
+    public function ajax_send_test_notification() {
+        // Verify nonce
+        if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'wlm-admin-nonce')) {
+            wp_send_json_error(array('message' => 'Invalid nonce'));
+            return;
+        }
+        
+        // Check permissions
+        if (!current_user_can('manage_woocommerce')) {
+            wp_send_json_error(array('message' => 'Insufficient permissions'));
+            return;
+        }
+        
+        WLM_Core::log('[WLM AJAX] Sending test notification...');
+        
+        // Get ship notifications instance
+        $notifications = new WLM_Ship_Notifications();
+        
+        // Trigger manual notification
+        $notifications->trigger_manual();
+        
+        wp_send_json_success(array(
+            'message' => 'Test-E-Mail wurde erfolgreich versendet!'
+        ));
     }
     
     /**
