@@ -233,7 +233,7 @@ class WLM_REST_API {
         
         // Trigger ship notification (for external cron)
         register_rest_route(self::NAMESPACE, '/cron/ship-notification', array(
-            'methods' => 'POST',
+            'methods' => 'GET',
             'callback' => array($this, 'trigger_ship_notification'),
             'permission_callback' => array($this, 'check_cron_permission'),
             'args' => array(

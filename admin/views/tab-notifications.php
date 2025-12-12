@@ -120,25 +120,31 @@ $next_run_formatted = $next_run ? date_i18n('d.m.Y H:i', $next_run) : 'Nicht gep
                     update_option('wlm_cron_secret_key', $cron_key);
                 }
                 $cron_url = rest_url('wlm/v1/cron/ship-notification');
+                $full_url = $cron_url . '?key=' . $cron_key;
                 ?>
                 <input type="text" 
-                       value="<?php echo esc_attr($cron_url); ?>" 
+                       value="<?php echo esc_attr($full_url); ?>" 
                        readonly 
                        class="large-text" 
                        onclick="this.select();" 
-                       style="font-family: monospace; background: #f5f5f5;">
+                       style="font-family: monospace; background: #fffacd; font-size: 13px;">
                 <p class="description">
-                    <strong>POST-Parameter:</strong> <code>key=<?php echo esc_html($cron_key); ?></code>
-                </p>
-                <p class="description">
-                    Für zuverlässige Ausführung bei All-Inkl: Erstelle einen Server-Cronjob mit dieser URL.
+                    👆 <strong>Kopiere diese URL für deinen All-Inkl Cronjob</strong> (enthält bereits den Sicherheitsschlüssel)
                 </p>
                 <details style="margin-top: 10px;">
-                    <summary style="cursor: pointer; color: #2271b1;">📋 Beispiel für All-Inkl Cronjob</summary>
-                    <div style="background: #f5f5f5; padding: 15px; margin-top: 10px; border-radius: 4px; font-family: monospace; font-size: 12px;">
-                        <p><strong>Befehl:</strong></p>
-                        <code>curl -X POST "<?php echo esc_html($cron_url); ?>" -d "key=<?php echo esc_html($cron_key); ?>"</code>
-                        <p style="margin-top: 15px;"><strong>Zeitplan:</strong> Täglich zur gewünschten Uhrzeit (z.B. 08:00)</p>
+                    <summary style="cursor: pointer; color: #2271b1;">📋 Anleitung für All-Inkl Cronjob</summary>
+                    <div style="background: #f5f5f5; padding: 15px; margin-top: 10px; border-radius: 4px;">
+                        <ol style="margin: 0; padding-left: 20px;">
+                            <li>Logge dich bei <strong>All-Inkl KAS</strong> ein</li>
+                            <li>Gehe zu <strong>Tools → Cronjobs</strong></li>
+                            <li>Klicke auf <strong>"Neuer Cronjob"</strong></li>
+                            <li>Kopiere die gelbe URL oben und füge sie als <strong>URL</strong> ein</li>
+                            <li>Wähle <strong>"Täglich"</strong> und stelle die Uhrzeit ein (z.B. 08:00)</li>
+                            <li>Speichern</li>
+                        </ol>
+                        <p style="margin-top: 15px; padding: 10px; background: #e7f3ff; border-left: 4px solid #2271b1;">
+                            <strong>💡 Tipp:</strong> Bei All-Inkl kannst du einfach die URL eingeben - keine curl-Befehle nötig!
+                        </p>
                     </div>
                 </details>
             </td>

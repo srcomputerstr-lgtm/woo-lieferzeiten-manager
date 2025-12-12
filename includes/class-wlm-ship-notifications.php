@@ -76,7 +76,7 @@ class WLM_Ship_Notifications {
         // Check if notifications are enabled
         if (!get_option('wlm_ship_notification_enabled', false)) {
             WLM_Core::log('Ship notifications are disabled, skipping');
-            return;
+            return false;
         }
         
         $today = date('Y-m-d');
@@ -86,17 +86,20 @@ class WLM_Ship_Notifications {
         // Get orders that need to be shipped today
         $orders = $this->get_orders_to_ship_today($today);
         
+        WLM_Core::log('Found ' . count($orders) . ' orders to ship today');
+        
         if (empty($orders)) {
             WLM_Core::log('No orders to ship today');
             
             // Check if we should send email even when no orders
             if (!get_option('wlm_ship_notification_send_empty', false)) {
-                return;
+                WLM_Core::log('send_empty is disabled, not sending email');
+                return false;
             }
         }
         
         // Send email
-        $this->send_notification_email($orders, $today);
+        return $this->send_notification_email($orders, $today);
     }
     
     /**
@@ -473,6 +476,19 @@ class WLM_Ship_Notifications {
      * Manual trigger for testing
      */
     public function trigger_manual() {
-        $this->send_daily_notification();
+        WLM_Core::log('[WLM Ship Notifications] Manual trigger called');
+        
+        // Force enable for testing
+        $was_enabled = get_option('wlm_ship_notification_enabled', false);
+        update_option('wlm_ship_notification_enabled', true);
+        
+        $result = $this->send_daily_notification();
+        
+        // Restore original setting
+        update_option('wlm_ship_notification_enabled', $was_enabled);
+        
+        WLM_Core::log('[WLM Ship Notifications] Manual trigger completed');
+        
+        return $result;
     }
 }
