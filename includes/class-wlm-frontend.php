@@ -857,30 +857,6 @@ class WLM_Frontend {
         echo '</div>';
         
         echo '</div>'; // end timeline
-        
-        // DEBUG: Output ship-by-date for verification
-        echo '<div style="margin-top: 20px; padding: 15px; background: #f0f0f0; border: 2px dashed #999; font-family: monospace; font-size: 12px;">';
-        echo '<strong style="color: #d63638;">🔍 DEBUG INFO (Ship-By-Date):</strong><br>';
-        echo 'Ship-By-Date (saved): <strong>' . esc_html($ship_by_date) . '</strong><br>';
-        echo 'Earliest Delivery: <strong>' . esc_html($delivery_data['earliest']) . '</strong><br>';
-        echo 'Latest Delivery: <strong>' . esc_html($delivery_data['latest']) . '</strong><br>';
-        echo 'Delivery Window: <strong>' . esc_html($delivery_data['window']) . '</strong><br>';
-        echo 'Order Date: <strong>' . esc_html($order->get_date_created()->date('Y-m-d H:i:s')) . '</strong><br>';
-        echo 'Order Status: <strong>' . esc_html($order->get_status()) . '</strong>';
-        echo '</div>';
-        
-        // Console log for JavaScript debugging
-        echo '<script>';
-        echo 'console.log("[WLM DEBUG] Ship-By-Date Verification:", {';
-        echo '  "ship_by_date": "' . esc_js($ship_by_date) . '",';
-        echo '  "earliest": "' . esc_js($delivery_data['earliest']) . '",';
-        echo '  "latest": "' . esc_js($delivery_data['latest']) . '",';
-        echo '  "window": "' . esc_js($delivery_data['window']) . '",';
-        echo '  "order_date": "' . esc_js($order->get_date_created()->date('Y-m-d H:i:s')) . '",';
-        echo '  "order_status": "' . esc_js($order->get_status()) . '"';
-        echo '});';
-        echo '</script>';
-        
         echo '</section>';
         
         // Cleanup session
