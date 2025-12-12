@@ -134,6 +134,7 @@ class WLM_Ship_Notifications {
                 'number' => $order->get_order_number(),
                 'date' => $order->get_date_created()->date('d.m.Y H:i'),
                 'customer' => $order->get_billing_first_name() . ' ' . $order->get_billing_last_name(),
+                'postcode' => $order->get_shipping_postcode() ?: $order->get_billing_postcode(),
                 'total' => $order->get_total(),
                 'status' => $order->get_status(),
                 'ship_by' => $order->get_meta('_wlm_ship_by_date'),
@@ -340,17 +341,28 @@ class WLM_Ship_Notifications {
         <body>
             <div class="email-container">
                 <div class="email-header">
+                    <img src="https://mega-holz.de/wp-content/uploads/2020/10/mega-holz-logo-128.png" alt="MEGA Holz" style="max-width: 128px; margin-bottom: 15px;">
                     <h1>📦 Versandliste</h1>
                     <p><?php echo esc_html($date_formatted); ?></p>
                 </div>
                 
                 <div class="email-body">
+                    <?php
+                    $overdue_count = 0;
+                    foreach ($orders as $order) {
+                        if (strtotime($order['ship_by']) < strtotime($date)) {
+                            $overdue_count++;
+                        }
+                    }
+                    ?>
                     <div class="summary-box">
                         <h2>Zusammenfassung</h2>
                         <p><strong><?php echo $order_count; ?></strong> Bestellung(en) müssen heute versendet werden</p>
-                        <p style="margin: 5px 0 0 0; color: #6c757d; font-size: 14px;">
-                            Ship-By-Date: <?php echo esc_html($date_formatted); ?>
+                        <?php if ($overdue_count > 0): ?>
+                        <p style="margin: 5px 0 0 0; color: #856404; font-size: 14px;">
+                            ⚠️ Davon sind <strong><?php echo $overdue_count; ?></strong> überfällig und farblich markiert
                         </p>
+                        <?php endif; ?>
                     </div>
                     
                     <?php if (empty($orders)): ?>
@@ -367,11 +379,10 @@ class WLM_Ship_Notifications {
                                 <tr>
                                     <th>Bestellung</th>
                                     <th>Kunde</th>
-                                    <th>Artikel</th>
-                                    <th>Versandart</th>
+                                    <th>PLZ</th>
+                                    <th>Ship-By-Date</th>
                                     <th>Lieferzeitraum</th>
-                                    <th>Status</th>
-                                    <th>Gesamt</th>
+                                    <th>Auftragswert</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -390,31 +401,16 @@ class WLM_Ship_Notifications {
                                             </div>
                                         </td>
                                         <td><?php echo esc_html($order['customer']); ?></td>
+                                        <td><?php echo esc_html($order['postcode'] ?: '-'); ?></td>
                                         <td>
-                                            <?php foreach ($order['items'] as $item): ?>
-                                                <div class="items-list">
-                                                    <?php echo esc_html($item['quantity']); ?>x 
-                                                    <?php echo esc_html($item['name']); ?>
-                                                    <?php if ($item['sku']): ?>
-                                                        <span style="color: #adb5bd;">(<?php echo esc_html($item['sku']); ?>)</span>
-                                                    <?php endif; ?>
-                                                </div>
-                                            <?php endforeach; ?>
-                                        </td>
-                                        <td><?php echo esc_html($order['shipping_method'] ?: '-'); ?></td>
-                                        <td>
-                                            <?php echo esc_html($order['delivery_window'] ?: '-'); ?>
+                                            <?php echo date_i18n('d.m.Y', strtotime($order['ship_by'])); ?>
                                             <?php if ($is_urgent): ?>
                                                 <div style="color: #856404; font-size: 12px; margin-top: 4px;">
-                                                    ⚠️ Überfällig seit <?php echo date_i18n('d.m.Y', strtotime($order['ship_by'])); ?>
+                                                    ⚠️ Überfällig
                                                 </div>
                                             <?php endif; ?>
                                         </td>
-                                        <td>
-                                            <span class="status-badge status-<?php echo esc_attr($order['status']); ?>">
-                                                <?php echo esc_html(ucfirst($order['status'])); ?>
-                                            </span>
-                                        </td>
+                                        <td><?php echo esc_html($order['delivery_window'] ?: '-'); ?></td>
                                         <td><strong><?php echo wc_price($order['total']); ?></strong></td>
                                     </tr>
                                 <?php endforeach; ?>
