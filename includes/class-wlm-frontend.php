@@ -893,26 +893,8 @@ class WLM_Frontend {
         }
         
         // Always recalculate when moving to processing (payment received)
-        error_log("WLM DEBUG: Recalculating ship-by date for order #{$order_id}");
-        WLM_Core::log('Order ' . $order_id . ' status changed to processing, recalculating ship-by date from payment date');
-        
-        // Get earliest and latest delivery dates (should already be saved)
-        $earliest = $order->get_meta('_wlm_earliest_delivery');
-        $latest = $order->get_meta('_wlm_latest_delivery');
-        
-        if (empty($earliest) || empty($latest)) {
-            WLM_Core::log('No delivery dates found for order ' . $order_id . ', skipping ship-by calculation');
-            return;
-        }
-        
-        // Calculate ship-by date from NOW (payment received date) + processing days
-        $payment_received_date = current_time('timestamp');
-        $processing_days = (float) get_option('wlm_processing_days', 1);
-        $ship_by_timestamp = strtotime('+' . $processing_days . ' days', $payment_received_date);
-        $ship_by_date = date('Y-m-d', $ship_by_timestamp);
-        
-        // Also recalculate delivery dates based on new ship-by date
-        $calculator = new WLM_Calculator();
+        error_log("WLM DEBUG: Recalculating delivery dates for order #{$order_id}");
+        WLM_Core::log('Order ' . $order_id . ' status changed to processing, recalculating from current time');
         
         // Get shipping method from order
         $shipping_methods = $order->get_shipping_methods();
@@ -923,63 +905,38 @@ class WLM_Frontend {
             break;
         }
         
-        $transit_min = null;
-        $transit_max = null;
-        
-        if ($shipping_method_id) {
-            // Get transit times from shipping method
-            $settings = get_option('wlm_settings', array());
-            $shipping_method = null;
-            
-            foreach ($settings['shipping_methods'] ?? array() as $method) {
-                if ($method['id'] === $shipping_method_id) {
-                    $shipping_method = $method;
-                    break;
-                }
-            }
-            
-            if ($shipping_method) {
-                $transit_min = (int) ($shipping_method['transit_min'] ?? 1);
-                $transit_max = (int) ($shipping_method['transit_max'] ?? 3);
-                error_log("WLM DEBUG: Found WLM shipping method with transit: min={$transit_min}, max={$transit_max}");
-            } else {
-                error_log("WLM DEBUG: Shipping method ID '{$shipping_method_id}' not found in WLM settings");
-            }
+        if (!$shipping_method_id) {
+            error_log("WLM DEBUG: No shipping method found for order #{$order_id}");
+            return;
         }
         
-        // FALLBACK: If no transit times found, calculate from old dates
-        if ($transit_min === null || $transit_max === null) {
-            error_log("WLM DEBUG: Using fallback - calculating transit from old dates");
-            
-            $old_ship_by = $order->get_meta('_wlm_ship_by_date');
-            $old_earliest = $order->get_meta('_wlm_earliest_delivery');
-            $old_latest = $order->get_meta('_wlm_latest_delivery');
-            
-            if ($old_ship_by && $old_earliest && $old_latest) {
-                // Calculate transit days from old dates
-                $old_ship_by_ts = strtotime($old_ship_by);
-                $old_earliest_ts = strtotime($old_earliest);
-                $old_latest_ts = strtotime($old_latest);
-                
-                $transit_min = max(0, round(($old_earliest_ts - $old_ship_by_ts) / (24 * 60 * 60)));
-                $transit_max = max(0, round(($old_latest_ts - $old_ship_by_ts) / (24 * 60 * 60)));
-                
-                error_log("WLM DEBUG: Calculated transit from old dates: min={$transit_min}, max={$transit_max}");
-            } else {
-                // Last resort: use defaults
-                $transit_min = 1;
-                $transit_max = 3;
-                error_log("WLM DEBUG: No old dates found, using defaults: min={$transit_min}, max={$transit_max}");
-            }
+        // Get WLM shipping method config
+        $shipping_methods_manager = WLM_Core::instance()->shipping_methods;
+        $method_config = $shipping_methods_manager->get_method_by_id($shipping_method_id);
+        
+        if (!$method_config) {
+            error_log("WLM DEBUG: Shipping method '{$shipping_method_id}' not found in WLM settings");
+            return;
         }
         
-        // Calculate new delivery dates from ship-by date + transit
-        $earliest_timestamp = $calculator->add_business_days($ship_by_timestamp, $transit_min);
-        $latest_timestamp = $calculator->add_business_days($ship_by_timestamp, $transit_max);
+        // Check if this was an express order
+        $is_express = (strpos($shipping_method_id, '_express') !== false);
         
-        $new_earliest = date('Y-m-d', $earliest_timestamp);
-        $new_latest = date('Y-m-d', $latest_timestamp);
-        $new_window = date_i18n(get_option('date_format'), $earliest_timestamp) . ' – ' . date_i18n(get_option('date_format'), $latest_timestamp);
+        // Recalculate delivery window using the existing calculator
+        // This will consider product availability, processing time, and transit time
+        $calculator = WLM_Core::instance()->calculator;
+        $window = $calculator->calculate_cart_window($method_config, $is_express);
+        
+        if (empty($window)) {
+            error_log("WLM DEBUG: Could not calculate delivery window for order #{$order_id}");
+            return;
+        }
+        
+        // Extract dates from calculated window
+        $new_earliest = date('Y-m-d', $window['earliest']);
+        $new_latest = date('Y-m-d', $window['latest']);
+        $ship_by_date = date('Y-m-d', $window['ship_by']);
+        $new_window = $window['window_formatted'];
         
         // Update order meta with recalculated dates
         $order->update_meta_data('_wlm_ship_by_date', $ship_by_date);
