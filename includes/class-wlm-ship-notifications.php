@@ -234,7 +234,7 @@ class WLM_Ship_Notifications {
                     overflow: hidden;
                 }
                 .email-header {
-                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    background: linear-gradient(135deg, #F39200 0%, #000000 100%);
                     color: white;
                     padding: 30px;
                     text-align: center;
@@ -242,25 +242,27 @@ class WLM_Ship_Notifications {
                 .email-header h1 {
                     margin: 0 0 10px 0;
                     font-size: 28px;
+                    color: white;
+                    text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
                 }
                 .email-header p {
                     margin: 0;
-                    opacity: 0.9;
+                    color: white;
                     font-size: 16px;
                 }
                 .email-body {
                     padding: 30px;
                 }
                 .summary-box {
-                    background-color: #f8f9fa;
-                    border-left: 4px solid #667eea;
+                    background-color: #fff8f0;
+                    border-left: 4px solid #F39200;
                     padding: 20px;
                     margin-bottom: 30px;
                     border-radius: 4px;
                 }
                 .summary-box h2 {
                     margin: 0 0 10px 0;
-                    color: #667eea;
+                    color: #F39200;
                     font-size: 20px;
                 }
                 table {
@@ -270,7 +272,7 @@ class WLM_Ship_Notifications {
                     background-color: white;
                 }
                 thead {
-                    background-color: #667eea;
+                    background-color: #F39200;
                     color: white;
                 }
                 th {
@@ -303,7 +305,7 @@ class WLM_Ship_Notifications {
                     color: #721c24;
                 }
                 .order-link {
-                    color: #667eea;
+                    color: #F39200;
                     text-decoration: none;
                     font-weight: 600;
                 }
