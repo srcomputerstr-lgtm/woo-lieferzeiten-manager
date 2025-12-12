@@ -135,6 +135,7 @@ class WLM_Calculator {
         $cart_items = WC()->cart->get_cart();
         $earliest = null;
         $latest = null;
+        $ship_by = null;
 
         foreach ($cart_items as $cart_item) {
             $product_id = $cart_item['product_id'];
@@ -155,6 +156,13 @@ class WLM_Calculator {
             if ($latest === null || $window['latest'] > $latest) {
                 $latest = $window['latest'];
             }
+            
+            // Track the latest ship_by_date (when all products must be ready to ship)
+            if (isset($window['ship_by_date'])) {
+                if ($ship_by === null || $window['ship_by_date'] > $ship_by) {
+                    $ship_by = $window['ship_by_date'];
+                }
+            }
         }
 
         if ($earliest === null || $latest === null) {
@@ -164,6 +172,7 @@ class WLM_Calculator {
         return array(
             'earliest' => $earliest,
             'latest' => $latest,
+            'ship_by' => $ship_by,
             'earliest_formatted' => $this->format_date($earliest),
             'latest_formatted' => $this->format_date($latest),
             'window_formatted' => $this->format_date_range($earliest, $latest)
