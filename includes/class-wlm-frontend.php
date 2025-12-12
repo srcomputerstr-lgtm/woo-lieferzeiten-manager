@@ -42,6 +42,8 @@ class WLM_Frontend {
         add_action('wp_ajax_nopriv_wlm_get_shipping_delivery_info', array($this, 'ajax_get_shipping_delivery_info'));
         add_action('wp_ajax_wlm_save_delivery_to_session', array($this, 'ajax_save_delivery_to_session'));
         add_action('wp_ajax_nopriv_wlm_save_delivery_to_session', array($this, 'ajax_save_delivery_to_session'));
+        add_action('wp_ajax_wlm_load_delivery_panel', array($this, 'ajax_load_delivery_panel'));
+        add_action('wp_ajax_nopriv_wlm_load_delivery_panel', array($this, 'ajax_load_delivery_panel'));
         
         // Thank-You page (priority 5 to display at top)
         add_action('woocommerce_thankyou', array($this, 'display_and_save_delivery_timeframe_on_thankyou'), 5, 1);
@@ -112,6 +114,7 @@ class WLM_Frontend {
 
     /**
      * Display product delivery info on product page
+     * Renders placeholder and loads content via AJAX to prevent caching
      */
     public function display_product_delivery_info() {
         global $product;
@@ -120,19 +123,43 @@ class WLM_Frontend {
             return;
         }
 
-        $calculator = WLM_Core::instance()->calculator;
         $product_id = $product->get_id();
         $variation_id = $product->is_type('variation') ? $product_id : 0;
         $parent_id = $variation_id > 0 ? $product->get_parent_id() : $product_id;
 
-        $window = $calculator->calculate_product_window($parent_id, $variation_id, 1);
+        // Render placeholder that will be populated via AJAX
+        ?>
+        <div class="wlm-pdp-panel" 
+             data-product-id="<?php echo esc_attr($parent_id); ?>" 
+             data-variation-id="<?php echo esc_attr($variation_id); ?>"
+             data-load-ajax="true">
+            <div class="wlm-loading">
+                <span class="wlm-spinner"></span>
+                <span><?php esc_html_e('Lieferinformationen werden geladen...', 'woo-lieferzeiten-manager'); ?></span>
+            </div>
+        </div>
+        <?php
+    }
+
+    /**
+     * Render delivery panel content (used by AJAX)
+     * 
+     * @param int $parent_id Parent product ID
+     * @param int $variation_id Variation ID (0 if not a variation)
+     * @param int $quantity Quantity
+     * @return string HTML content
+     */
+    public function render_delivery_panel_content($parent_id, $variation_id = 0, $quantity = 1) {
+        $calculator = WLM_Core::instance()->calculator;
+        $window = $calculator->calculate_product_window($parent_id, $variation_id, $quantity);
 
         if (empty($window)) {
-            return;
+            return '';
         }
 
+        ob_start();
         ?>
-        <div class="wlm-pdp-panel" data-product-id="<?php echo esc_attr($parent_id); ?>">
+        <div class="wlm-pdp-panel-content" data-product-id="<?php echo esc_attr($parent_id); ?>">
             <?php
             // Stock status
             $stock_status = $window['stock_status'];
@@ -185,6 +212,7 @@ class WLM_Frontend {
             ?>
         </div>
         <?php
+        return ob_get_clean();
     }
 
     /**
@@ -419,6 +447,31 @@ class WLM_Frontend {
             'is_express_selected' => $is_express_selected,
             'method_id' => $method_id,
             'method_name' => $method_config['name'] ?? ''
+        ));
+    }
+    
+    /**
+     * AJAX handler for loading delivery panel content
+     */
+    public function ajax_load_delivery_panel() {
+        // No nonce check needed - this is public content that should not be cached
+        
+        $product_id = isset($_POST['product_id']) ? absint($_POST['product_id']) : 0;
+        $variation_id = isset($_POST['variation_id']) ? absint($_POST['variation_id']) : 0;
+        $quantity = isset($_POST['quantity']) ? absint($_POST['quantity']) : 1;
+        
+        if (!$product_id) {
+            wp_send_json_error(array('message' => __('Ungültige Produkt-ID', 'woo-lieferzeiten-manager')));
+        }
+        
+        $html = $this->render_delivery_panel_content($product_id, $variation_id, $quantity);
+        
+        if (empty($html)) {
+            wp_send_json_error(array('message' => __('Keine Lieferinformationen verfügbar', 'woo-lieferzeiten-manager')));
+        }
+        
+        wp_send_json_success(array(
+            'html' => $html
         ));
     }
     

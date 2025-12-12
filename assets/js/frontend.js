@@ -12,7 +12,43 @@
          * Initialize
          */
         init: function() {
+            this.loadDeliveryPanels();
             this.bindEvents();
+        },
+
+        /**
+         * Load delivery panels via AJAX on page load
+         */
+        loadDeliveryPanels: function() {
+            var self = this;
+            $('.wlm-pdp-panel[data-load-ajax="true"]').each(function() {
+                var $panel = $(this);
+                var productId = $panel.data('product-id');
+                var variationId = $panel.data('variation-id') || 0;
+                var quantity = $('input.qty').val() || 1;
+
+                $.ajax({
+                    url: wlm_params.ajax_url,
+                    type: 'POST',
+                    data: {
+                        action: 'wlm_load_delivery_panel',
+                        product_id: productId,
+                        variation_id: variationId,
+                        quantity: quantity
+                    },
+                    success: function(response) {
+                        if (response.success && response.data.html) {
+                            $panel.html(response.data.html);
+                            $panel.removeAttr('data-load-ajax');
+                        } else {
+                            $panel.html('<div class="wlm-error">' + (response.data.message || 'Fehler beim Laden') + '</div>');
+                        }
+                    },
+                    error: function() {
+                        $panel.html('<div class="wlm-error">Fehler beim Laden der Lieferinformationen</div>');
+                    }
+                });
+            });
         },
 
         /**
