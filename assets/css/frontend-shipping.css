@@ -1,0 +1,119 @@
+/**
+ * Frontend Shipping Styles for Woo Lieferzeiten Manager
+ *
+ * @package WooLieferzeitenManager
+ */
+
+/* Wrapper for delivery info and express options */
+.wlm-shipping-extras {
+    display: block !important;
+    margin-top: 0.75em !important;
+    font-size: 0.9em !important;
+}
+
+/* Order window (delivery time estimate) */
+.wlm-order-window {
+    padding: 0.5em 0.75em !important;
+    background: #f8f9fa !important;
+    border-left: 3px solid #4CAF50 !important;
+    border-radius: 3px !important;
+    margin-bottom: 0.5em !important;
+}
+
+.wlm-delivery-estimate {
+    color: #333 !important;
+    line-height: 1.4 !important;
+}
+
+.wlm-delivery-estimate strong {
+    color: #2c3e50 !important;
+    font-weight: 600 !important;
+}
+
+.wlm-delivery-estimate span {
+    color: #2c3e50 !important;
+    font-size: 1.05em !important;
+}
+
+/* Express section */
+.wlm-express-section {
+    margin-top: 0.5em !important;
+}
+
+/* Express activate button */
+.wlm-activate-express {
+    width: 100% !important;
+    padding: 0.75em 1em !important;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 4px !important;
+    cursor: pointer !important;
+    font-weight: 600 !important;
+    text-align: left !important;
+    transition: all 0.3s ease !important;
+    font-size: 0.95em !important;
+}
+
+.wlm-activate-express:hover {
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4) !important;
+}
+
+/* Express active state */
+.wlm-express-active {
+    padding: 0.75em 1em !important;
+    background: #e8f5e9 !important;
+    border-left: 4px solid #4caf50 !important;
+    border-radius: 4px !important;
+}
+
+.wlm-checkmark {
+    color: #4caf50 !important;
+    font-weight: bold !important;
+    margin-right: 0.25em !important;
+}
+
+.wlm-express-active strong {
+    color: #2e7d32 !important;
+}
+
+.wlm-express-active span {
+    color: #666 !important;
+    font-size: 0.9em !important;
+}
+
+/* Express remove button */
+.wlm-remove-express {
+    margin-left: 10px !important;
+    padding: 0.25em 0.75em !important;
+    background: #f44336 !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 3px !important;
+    cursor: pointer !important;
+    font-size: 0.85em !important;
+    transition: background 0.2s ease !important;
+}
+
+.wlm-remove-express:hover {
+    background: #d32f2f !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .wlm-shipping-extras {
+        font-size: 0.85em !important;
+    }
+    
+    .wlm-activate-express {
+        font-size: 0.9em !important;
+        padding: 0.65em 0.85em !important;
+    }
+}
+
+/* WooCommerce Blocks specific adjustments */
+.wc-block-components-totals-item__label .wlm-shipping-extras {
+    /* Ensure it displays correctly in blocks checkout */
+    width: 100% !important;
+}

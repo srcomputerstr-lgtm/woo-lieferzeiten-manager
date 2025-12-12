@@ -1,0 +1,410 @@
+/**
+ * Frontend styles for Woo Lieferzeiten Manager
+ *
+ * @package WooLieferzeitenManager
+ */
+
+/* ========================================
+   SVG Icons
+   ======================================== */
+
+.wlm-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    min-width: 18px;
+    min-height: 18px;
+    max-width: 18px;
+    max-height: 18px;
+    vertical-align: middle;
+    flex-shrink: 0;
+}
+
+.wlm-icon svg {
+    width: 18px;
+    height: 18px;
+    max-width: 18px;
+    max-height: 18px;
+    display: block;
+}
+
+/* ========================================
+   Product Detail Page Panel - NEW DESIGN
+   ======================================== */
+
+.wlm-pdp-panel {
+    display: flex !important;
+    align-items: flex-start;
+    gap: 16px;
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 16px;
+    margin: 16px 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+/* Icon Circle */
+.wlm-panel-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    min-width: 48px;
+    min-height: 48px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.wlm-panel-icon .wlm-icon {
+    width: 24px;
+    height: 24px;
+    min-width: 24px;
+    min-height: 24px;
+    max-width: 24px;
+    max-height: 24px;
+    color: #ffffff;
+}
+
+.wlm-panel-icon .wlm-icon svg {
+    width: 24px;
+    height: 24px;
+    max-width: 24px;
+    max-height: 24px;
+}
+
+/* Stock Status Colors for Circle */
+.wlm-pdp-panel.wlm--in-stock .wlm-panel-icon {
+    background: #10b981; /* Green */
+}
+
+.wlm-pdp-panel.wlm--restock .wlm-panel-icon {
+    background: #f59e0b; /* Orange */
+}
+
+.wlm-pdp-panel.wlm--out-of-stock .wlm-panel-icon {
+    background: #ef4444; /* Red */
+}
+
+/* Content Area */
+.wlm-panel-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+/* Text Lines */
+.wlm-line {
+    font-size: 14px;
+    line-height: 1.6;
+    color: #374151;
+}
+
+.wlm-line-stock {
+    font-weight: 600;
+    color: #111827;
+}
+
+.wlm-line-shipping {
+    color: #6b7280;
+}
+
+.wlm-line-shipping strong {
+    color: #111827;
+    font-weight: 600;
+}
+
+.wlm-line-delivery {
+    color: #6b7280;
+}
+
+.wlm-line-delivery strong {
+    color: #111827;
+    font-weight: 600;
+}
+
+.wlm-line-surcharge {
+    margin-top: 4px;
+    padding: 6px 10px;
+    background: #fef2f2;
+    border-left: 3px solid #ef4444;
+    border-radius: 4px;
+    font-size: 13px;
+    color: #991b1b;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.wlm-line-surcharge .wlm-icon {
+    color: #ef4444;
+}
+
+/* Calendar Icon in Delivery Line */
+.wlm-calendar-icon {
+    width: 14px;
+    height: 14px;
+    min-width: 14px;
+    min-height: 14px;
+    max-width: 14px;
+    max-height: 14px;
+    color: #6366f1;
+}
+
+.wlm-calendar-icon svg {
+    width: 14px;
+    height: 14px;
+    max-width: 14px;
+    max-height: 14px;
+}
+
+/* Tooltip */
+.wlm-tooltip {
+    display: inline-flex;
+    align-items: center;
+    cursor: help;
+    opacity: 0.7;
+    transition: opacity 0.2s ease;
+}
+
+.wlm-tooltip:hover {
+    opacity: 1;
+}
+
+.wlm-tooltip .wlm-icon {
+    width: 14px;
+    height: 14px;
+    min-width: 14px;
+    min-height: 14px;
+    max-width: 14px;
+    max-height: 14px;
+    color: #6b7280;
+}
+
+.wlm-tooltip .wlm-icon svg {
+    width: 14px;
+    height: 14px;
+    max-width: 14px;
+    max-height: 14px;
+}
+
+/* ========================================
+   Cart/Checkout Styles
+   ======================================== */
+
+/* Cart Stock Status */
+.wlm-cart-stock {
+    font-size: 13px;
+    margin-top: 4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.wlm-cart-stock.wlm--in-stock {
+    color: #059669;
+}
+
+.wlm-cart-stock.wlm--restock {
+    color: #d97706;
+}
+
+/* Shipping Window in Cart/Checkout */
+.wlm-shipping-window {
+    margin-top: 8px;
+    font-size: 13px;
+}
+
+.wlm-delivery-estimate {
+    color: #555;
+    padding: 8px 0;
+}
+
+.wlm-delivery-estimate strong {
+    color: #000;
+}
+
+/* Express CTA */
+.wlm-express-cta {
+    margin-top: 8px;
+}
+
+.wlm-activate-express {
+    background: #10b981;
+    color: #fff;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: background 0.2s ease;
+}
+
+.wlm-activate-express:hover {
+    background: #059669;
+}
+
+/* Express Active */
+.wlm-express-active {
+    background: #d1fae5;
+    border: 1px solid #10b981;
+    border-radius: 6px;
+    padding: 10px 14px;
+    color: #065f46;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+}
+
+.wlm-checkmark {
+    font-weight: bold;
+}
+
+.wlm-remove-express {
+    background: transparent;
+    border: none;
+    color: #dc2626;
+    cursor: pointer;
+    font-size: 13px;
+    padding: 0;
+    margin-left: auto;
+    font-weight: 500;
+}
+
+.wlm-remove-express:hover {
+    text-decoration: underline;
+}
+
+/* Cart/Checkout Delivery Window */
+.wlm-cart-delivery-window td,
+.wlm-checkout-delivery-window td {
+    padding: 12px 0;
+}
+
+.wlm-cart-delivery-window .wlm-delivery-estimate,
+.wlm-checkout-delivery-window .wlm-delivery-estimate {
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 6px;
+    padding: 12px;
+    text-align: center;
+}
+
+.wlm-cart-delivery-window .wlm-delivery-estimate strong,
+.wlm-checkout-delivery-window .wlm-delivery-estimate strong {
+    display: block;
+    margin-bottom: 4px;
+    font-size: 14px;
+}
+
+/* Express Indicator */
+.wlm-express-indicator {
+    background: #10b981;
+    color: #fff;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+    display: inline-block;
+}
+
+/* ========================================
+   Responsive Design
+   ======================================== */
+
+@media (max-width: 768px) {
+    .wlm-pdp-panel {
+        gap: 12px;
+        padding: 12px;
+    }
+
+    .wlm-panel-icon {
+        width: 40px;
+        height: 40px;
+        min-width: 40px;
+        min-height: 40px;
+    }
+
+    .wlm-panel-icon .wlm-icon {
+        width: 20px;
+        height: 20px;
+        min-width: 20px;
+        min-height: 20px;
+        max-width: 20px;
+        max-height: 20px;
+    }
+
+    .wlm-panel-icon .wlm-icon svg {
+        width: 20px;
+        height: 20px;
+        max-width: 20px;
+        max-height: 20px;
+    }
+
+    .wlm-line {
+        font-size: 13px;
+    }
+
+    .wlm-activate-express {
+        width: 100%;
+        text-align: center;
+    }
+
+    .wlm-express-active {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .wlm-remove-express {
+        margin-left: 0;
+        margin-top: 4px;
+    }
+}
+
+/* ========================================
+   Loading State
+   ======================================== */
+
+.wlm-loading {
+    opacity: 0.6;
+    pointer-events: none;
+    position: relative;
+}
+
+.wlm-loading::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 20px;
+    height: 20px;
+    border: 2px solid #e5e7eb;
+    border-top-color: #3b82f6;
+    border-radius: 50%;
+    animation: wlm-spin 0.6s linear infinite;
+}
+
+@keyframes wlm-spin {
+    to {
+        transform: translate(-50%, -50%) rotate(360deg);
+    }
+}
+
+/* ========================================
+   Utility Classes
+   ======================================== */
+
+.wlm-hidden {
+    display: none !important;
+}
+
+.wlm-visible {
+    display: block !important;
+}
