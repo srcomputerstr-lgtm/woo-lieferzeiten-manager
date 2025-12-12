@@ -13,6 +13,26 @@
          */
         init: function() {
             this.bindEvents();
+            this.loadInitialProductWindow();
+        },
+
+        /**
+         * Load product window on initial page load (bypass cache)
+         */
+        loadInitialProductWindow: function() {
+            var $panel = $('.wlm-pdp-panel');
+            
+            // Only run on product pages with delivery panel
+            if ($panel.length === 0) {
+                return;
+            }
+            
+            var productId = $panel.data('product-id');
+            var variationId = $('input[name="variation_id"]').val() || 0;
+            var quantity = $('input.qty').val() || 1;
+            
+            // Call the existing update function to refresh data
+            this.updateProductWindow(productId, variationId, quantity);
         },
 
         /**
