@@ -186,11 +186,185 @@ $next_run_formatted = $next_run ? date_i18n('d.m.Y H:i', $next_run) : 'Nicht gep
     <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-left: 4px solid #667eea; border-radius: 4px;">
         <h4 style="margin: 0 0 10px 0;">💡 Hinweis</h4>
         <p style="margin: 0;">
-            Die E-Mail wird nur an Bestellungen mit Status "Processing" oder "On-Hold" gesendet. 
-            Bereits versendete oder abgeschlossene Bestellungen werden nicht berücksichtigt.
+            Die E-Mail wird nur an Bestellungen mit Status "Processing" gesendet. 
+            Bestellungen mit Status "On-Hold" (unbezahlt) werden ausgeschlossen.
         </p>
     </div>
 </div>
+
+<div class="wlm-settings-section" style="margin-top: 40px;">
+    <h2>📊 Wöchentlicher Performance Report</h2>
+    <p class="description">
+        Erhalten Sie jeden Montag einen automatischen Report mit KPIs zur Versandleistung der letzten 7 Tage.
+    </p>
+
+    <table class="form-table">
+        <tr>
+            <th scope="row">
+                <label for="wlm_performance_report_enabled">Performance Report aktivieren</label>
+            </th>
+            <td>
+                <label class="wlm-toggle">
+                    <input type="checkbox" 
+                           id="wlm_performance_report_enabled" 
+                           name="wlm_performance_report_enabled" 
+                           value="1" 
+                           <?php checked(get_option('wlm_performance_report_enabled', false)); ?>>
+                    <span class="wlm-toggle-slider"></span>
+                </label>
+                <p class="description">
+                    Aktiviert wöchentliche Performance Reports mit Versand-KPIs.
+                </p>
+            </td>
+        </tr>
+        
+        <tr>
+            <th scope="row">
+                <label for="wlm_performance_report_email">E-Mail-Adresse</label>
+            </th>
+            <td>
+                <input type="email" 
+                       id="wlm_performance_report_email" 
+                       name="wlm_performance_report_email" 
+                       value="<?php echo esc_attr(get_option('wlm_performance_report_email', get_option('admin_email'))); ?>" 
+                       class="regular-text"
+                       placeholder="<?php echo esc_attr(get_option('admin_email')); ?>">
+                <p class="description">
+                    E-Mail-Adresse für den wöchentlichen Performance Report.
+                </p>
+            </td>
+        </tr>
+        
+        <tr>
+            <th scope="row">
+                <label for="wlm_performance_report_send_empty">Leere Reports senden</label>
+            </th>
+            <td>
+                <label class="wlm-toggle">
+                    <input type="checkbox" 
+                           id="wlm_performance_report_send_empty" 
+                           name="wlm_performance_report_send_empty" 
+                           value="1" 
+                           <?php checked(get_option('wlm_performance_report_send_empty', false)); ?>>
+                    <span class="wlm-toggle-slider"></span>
+                </label>
+                <p class="description">
+                    Report auch senden, wenn keine Bestellungen im Zeitraum vorhanden sind.
+                </p>
+            </td>
+        </tr>
+        
+        <tr>
+            <th scope="row">Externe Cronjob-URL (Performance Report)</th>
+            <td>
+                <?php 
+                $perf_key = get_option('wlm_performance_report_cron_key');
+                if (empty($perf_key)) {
+                    $perf_key = bin2hex(random_bytes(16));
+                    update_option('wlm_performance_report_cron_key', $perf_key);
+                }
+                $perf_url = rest_url('wlm/v1/cron/performance-report') . '?key=' . $perf_key;
+                ?>
+                <input type="text" 
+                       value="<?php echo esc_attr($perf_url); ?>" 
+                       readonly 
+                       class="large-text" 
+                       onclick="this.select();" 
+                       style="font-family: monospace; background: #fffacd; font-size: 13px;">
+                <p class="description">
+                    👆 <strong>Kopiere diese URL für deinen All-Inkl Cronjob</strong> (enthält bereits den Sicherheitsschlüssel)
+                </p>
+                <details style="margin-top: 10px;">
+                    <summary style="cursor: pointer; color: #2271b1;">📋 Anleitung für All-Inkl Cronjob</summary>
+                    <div style="background: #f5f5f5; padding: 15px; margin-top: 10px; border-radius: 4px;">
+                        <ol style="margin: 0; padding-left: 20px;">
+                            <li>Logge dich bei <strong>All-Inkl KAS</strong> ein</li>
+                            <li>Gehe zu <strong>Tools → Cronjobs</strong></li>
+                            <li>Klicke auf <strong>"Neuer Cronjob"</strong></li>
+                            <li>Kopiere die gelbe URL oben und füge sie als <strong>URL</strong> ein</li>
+                            <li>Wähle <strong>"Wöchentlich"</strong> und stelle <strong>Montag 08:00</strong> ein</li>
+                            <li>Speichern</li>
+                        </ol>
+                        <p style="margin-top: 15px; padding: 10px; background: #e7f3ff; border-left: 4px solid #2271b1;">
+                            <strong>💡 Empfehlung:</strong> Jeden Montag um 08:00 Uhr für Wochenstart-Briefing
+                        </p>
+                    </div>
+                </details>
+            </td>
+        </tr>
+        
+        <tr>
+            <th scope="row">Test-Report senden</th>
+            <td>
+                <button type="button" id="wlm-send-test-performance-report" class="button button-secondary">
+                    📊 Test-Report jetzt senden
+                </button>
+                <p class="description">
+                    Sendet sofort einen Test-Report mit den aktuellen Daten der letzten 7 Tage.
+                </p>
+                <div id="wlm-test-performance-report-result" style="margin-top: 10px;"></div>
+            </td>
+        </tr>
+    </table>
+
+    <hr style="margin: 40px 0;">
+
+    <h3>📊 KPIs im Performance Report</h3>
+    <p class="description">
+        Der wöchentliche Report enthält folgende Kennzahlen:
+    </p>
+    <ul style="list-style: disc; margin-left: 20px;">
+        <li><strong>Pünktlichkeit:</strong> % der Bestellungen, die rechtzeitig versendet wurden</li>
+        <li><strong>Überfällige Bestellungen:</strong> Anzahl und % der zu spät versendeten Bestellungen</li>
+        <li><strong>Durchschnittliche Processing-Time:</strong> Tatsächliche vs. Soll-Bearbeitungszeit</li>
+        <li><strong>Gesamtanzahl Bestellungen:</strong> Alle versendeten Bestellungen der letzten 7 Tage</li>
+    </ul>
+    <p class="description">
+        Alle KPIs werden mit großen, farbigen Blöcken (Grün/Gelb/Rot) dargestellt für schnelle Übersicht.
+    </p>
+
+    <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-left: 4px solid #F39200; border-radius: 4px;">
+        <h4 style="margin: 0 0 10px 0;">💡 Hinweis</h4>
+        <p style="margin: 0;">
+            Der Report analysiert nur <strong>abgeschlossene Bestellungen</strong> (Status: "Completed") der letzten 7 Tage.
+            So können Sie die tatsächliche Versandleistung und Einhaltung der Ship-By-Dates überprüfen.
+        </p>
+    </div>
+</div>
+
+<script>
+jQuery(document).ready(function($) {
+    $('#wlm-send-test-performance-report').on('click', function() {
+        var $button = $(this);
+        var $result = $('#wlm-test-performance-report-result');
+        
+        $button.prop('disabled', true).text('⏳ Sende...');
+        $result.html('');
+        
+        $.ajax({
+            url: ajaxurl,
+            type: 'POST',
+            data: {
+                action: 'wlm_send_test_performance_report',
+                nonce: '<?php echo wp_create_nonce('wlm-admin-nonce'); ?>'
+            },
+            success: function(response) {
+                if (response.success) {
+                    $result.html('<div class="notice notice-success inline"><p>✅ ' + response.data.message + '</p></div>');
+                } else {
+                    $result.html('<div class="notice notice-error inline"><p>❌ ' + response.data.message + '</p></div>');
+                }
+            },
+            error: function() {
+                $result.html('<div class="notice notice-error inline"><p>❌ Fehler beim Senden des Test-Reports.</p></div>');
+            },
+            complete: function() {
+                $button.prop('disabled', false).text('📊 Test-Report jetzt senden');
+            }
+        });
+    });
+});
+</script>
 
 <script>
 jQuery(document).ready(function($) {

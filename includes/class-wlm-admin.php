@@ -32,6 +32,9 @@ class WLM_Admin {
         // AJAX handler for sending test notification
         add_action('wp_ajax_wlm_send_test_notification', array($this, 'ajax_send_test_notification'));
         
+        // AJAX handler for sending test performance report
+        add_action('wp_ajax_wlm_send_test_performance_report', array($this, 'ajax_send_test_performance_report'));
+        
         // AJAX handler for getting shipping classes
         add_action('wp_ajax_wlm_get_shipping_classes', array($this, 'ajax_get_shipping_classes'));
         
@@ -794,6 +797,41 @@ class WLM_Admin {
         wp_send_json_success(array(
             'message' => 'Test-E-Mail wurde erfolgreich versendet!'
         ));
+    }
+    
+    /**
+     * AJAX handler for sending test performance report
+     */
+    public function ajax_send_test_performance_report() {
+        // Verify nonce
+        if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'wlm-admin-nonce')) {
+            wp_send_json_error(array('message' => 'Invalid nonce'));
+            return;
+        }
+        
+        // Check permissions
+        if (!current_user_can('manage_woocommerce')) {
+            wp_send_json_error(array('message' => 'Insufficient permissions'));
+            return;
+        }
+        
+        WLM_Core::log('[WLM AJAX] Sending test performance report...');
+        
+        // Get performance report instance
+        $report = new WLM_Performance_Report();
+        
+        // Trigger manual report
+        $result = $report->trigger_manual();
+        
+        if ($result) {
+            wp_send_json_success(array(
+                'message' => 'Test-Report wurde erfolgreich versendet!'
+            ));
+        } else {
+            wp_send_json_error(array(
+                'message' => 'Fehler beim Senden des Test-Reports. Bitte Debug-Log prüfen.'
+            ));
+        }
     }
     
     /**

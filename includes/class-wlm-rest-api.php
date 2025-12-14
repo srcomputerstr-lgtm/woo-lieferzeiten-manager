@@ -246,6 +246,21 @@ class WLM_REST_API {
             )
         ));
         
+        // Trigger performance report (for external cron)
+        register_rest_route(self::NAMESPACE, '/cron/performance-report', array(
+            'methods' => 'GET',
+            'callback' => array($this, 'trigger_performance_report'),
+            'permission_callback' => array($this, 'check_performance_cron_permission'),
+            'args' => array(
+                'key' => array(
+                    'required' => true,
+                    'validate_callback' => function($param) {
+                        return is_string($param);
+                    }
+                )
+            )
+        ));
+        
         // Get ship-by date only
         register_rest_route(self::NAMESPACE, '/orders/(?P<id>\d+)/ship-by-date', array(
             'methods' => 'GET',
@@ -1079,6 +1094,45 @@ class WLM_REST_API {
         return rest_ensure_response(array(
             'success' => true,
             'message' => 'Ship notification triggered successfully',
+            'timestamp' => current_time('mysql')
+        ));
+    }
+    
+    /**
+     * Check performance report cron permission (uses separate secret key)
+     *
+     * @param WP_REST_Request $request Request object.
+     * @return bool
+     */
+    public function check_performance_cron_permission($request) {
+        $provided_key = $request->get_param('key');
+        $stored_key = get_option('wlm_performance_report_cron_key');
+        
+        // Generate key if not exists
+        if (empty($stored_key)) {
+            $stored_key = bin2hex(random_bytes(16));
+            update_option('wlm_performance_report_cron_key', $stored_key);
+        }
+        
+        return $provided_key === $stored_key;
+    }
+    
+    /**
+     * Trigger performance report (for external cron)
+     *
+     * @param WP_REST_Request $request Request object.
+     * @return WP_REST_Response
+     */
+    public function trigger_performance_report($request) {
+        WLM_Core::log('[WLM REST API] Performance report triggered via external cron');
+        
+        // Get performance report instance and trigger
+        $report = new WLM_Performance_Report();
+        $result = $report->trigger_manual();
+        
+        return rest_ensure_response(array(
+            'success' => $result,
+            'message' => $result ? 'Performance report triggered successfully' : 'Performance report failed',
             'timestamp' => current_time('mysql')
         ));
     }

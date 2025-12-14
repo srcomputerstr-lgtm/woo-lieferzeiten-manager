@@ -111,7 +111,7 @@ class WLM_Ship_Notifications {
     private function get_orders_to_ship_today($date) {
         $args = array(
             'limit' => -1,
-            'status' => array('processing', 'on-hold'),
+            'status' => array('processing'), // Only processing orders (paid and ready to ship)
             'meta_query' => array(
                 array(
                     'key' => '_wlm_ship_by_date',
