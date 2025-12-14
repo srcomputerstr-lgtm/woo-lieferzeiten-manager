@@ -694,6 +694,22 @@ class WLM_Admin {
             error_log('[WLM Save] Not on surcharges tab (' . $active_section . '), skipping wlm_surcharges save');
         }
         
+        // Save performance report settings (always save, not tab-specific)
+        if (isset($data['wlm_performance_report_enabled'])) {
+            update_option('wlm_performance_report_enabled', (bool) $data['wlm_performance_report_enabled']);
+            error_log('[WLM Save] Performance report enabled: ' . ($data['wlm_performance_report_enabled'] ? 'true' : 'false'));
+        }
+        
+        if (isset($data['wlm_performance_report_email'])) {
+            update_option('wlm_performance_report_email', sanitize_email($data['wlm_performance_report_email']));
+            error_log('[WLM Save] Performance report email: ' . $data['wlm_performance_report_email']);
+        }
+        
+        if (isset($data['wlm_performance_report_send_empty'])) {
+            update_option('wlm_performance_report_send_empty', (bool) $data['wlm_performance_report_send_empty']);
+            error_log('[WLM Save] Performance report send empty: ' . ($data['wlm_performance_report_send_empty'] ? 'true' : 'false'));
+        }
+        
         // Force shipping methods to re-register
         do_action('woocommerce_load_shipping_methods');
         

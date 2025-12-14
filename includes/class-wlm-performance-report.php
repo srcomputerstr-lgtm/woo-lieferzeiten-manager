@@ -431,6 +431,24 @@ class WLM_Performance_Report {
      * @return bool Success status
      */
     public function trigger_manual() {
-        return $this->send_weekly_report();
+        WLM_Core::log('[WLM Performance Report] trigger_manual() called');
+        WLM_Core::log('[WLM Performance Report] Enabled setting: ' . (get_option('wlm_performance_report_enabled', false) ? 'true' : 'false'));
+        
+        // Temporarily enable for testing
+        $was_enabled = get_option('wlm_performance_report_enabled', false);
+        if (!$was_enabled) {
+            WLM_Core::log('[WLM Performance Report] Temporarily enabling for test');
+            update_option('wlm_performance_report_enabled', true);
+        }
+        
+        $result = $this->send_weekly_report();
+        
+        // Restore original setting
+        if (!$was_enabled) {
+            update_option('wlm_performance_report_enabled', false);
+        }
+        
+        WLM_Core::log('[WLM Performance Report] trigger_manual() result: ' . ($result ? 'true' : 'false'));
+        return $result;
     }
 }
