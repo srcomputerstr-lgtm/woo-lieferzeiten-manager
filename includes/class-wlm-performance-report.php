@@ -80,11 +80,11 @@ class WLM_Performance_Report {
         $end_date = current_time('Y-m-d');
         $start_date = date('Y-m-d', strtotime('-7 days', current_time('timestamp')));
         
-        // Get all completed orders from last 7 days
+        // Get all completed orders from last 7 days (by ORDER date, not completion date)
         $args = array(
             'limit' => -1,
             'status' => array('completed'),
-            'date_completed' => $start_date . '...' . $end_date,
+            'date_created' => $start_date . '...' . $end_date,
         );
         
         $orders = wc_get_orders($args);
@@ -94,6 +94,7 @@ class WLM_Performance_Report {
         $overdue = 0;
         $total_processing_days = 0;
         $orders_with_processing_data = 0;
+        $order_details = array();
         
         foreach ($orders as $order) {
             $ship_by_date = $order->get_meta('_wlm_ship_by_date');
@@ -109,7 +110,8 @@ class WLM_Performance_Report {
             $completed_timestamp = $date_completed->getTimestamp();
             
             // Check if shipped on time
-            if ($completed_timestamp <= $ship_by_timestamp) {
+            $is_on_time = $completed_timestamp <= $ship_by_timestamp;
+            if ($is_on_time) {
                 $on_time++;
             } else {
                 $overdue++;
@@ -117,11 +119,26 @@ class WLM_Performance_Report {
             
             // Calculate actual processing time
             $order_date = $order->get_date_created();
+            $processing_days = 0;
             if ($order_date) {
                 $processing_days = ($completed_timestamp - $order_date->getTimestamp()) / (60 * 60 * 24);
                 $total_processing_days += $processing_days;
                 $orders_with_processing_data++;
             }
+            
+            // Calculate overtime (days late)
+            $overtime_days = ($completed_timestamp - $ship_by_timestamp) / (60 * 60 * 24);
+            
+            // Collect order details for table
+            $order_details[] = array(
+                'order_number' => $order->get_order_number(),
+                'customer' => $order->get_billing_first_name() . ' ' . $order->get_billing_last_name(),
+                'order_date' => $order_date ? $order_date->date('Y-m-d') : '',
+                'ship_by_date' => $ship_by_date,
+                'completed_date' => $date_completed->date('Y-m-d'),
+                'overtime_days' => round($overtime_days, 1),
+                'is_on_time' => $is_on_time,
+            );
         }
         
         $on_time_percentage = $total_orders > 0 ? round(($on_time / $total_orders) * 100, 1) : 0;
@@ -142,6 +159,7 @@ class WLM_Performance_Report {
             'avg_processing_days' => $avg_processing_days,
             'target_processing_days' => $target_processing_days,
             'processing_performance' => $target_processing_days > 0 ? round(($avg_processing_days / $target_processing_days) * 100, 1) : 0,
+            'order_details' => $order_details,
         );
     }
     
@@ -305,9 +323,9 @@ class WLM_Performance_Report {
         <body>
             <div class="email-container">
                 <div class="email-header">
-                    <img src="https://mega-holz.de/wp-content/uploads/2020/10/mega-holz-logo-128.png" alt="MEGA Holz">
-                    <h1>📊 Performance Report</h1>
-                    <p>Wöchentliche Versandleistung KW <?php echo date('W'); ?></p>
+                    <img src="https://mega-holz.de/wp-content/uploads/2020/10/mega-holz-logo-128.png" alt="MEGA Holz" style="max-width: 128px; margin-bottom: 15px;">
+                    <h1 style="margin: 0 0 10px 0; font-size: 28px; color: #FFFFFF !important; text-shadow: 1px 1px 2px rgba(0,0,0,0.3);">📊 Performance Report</h1>
+                    <p style="margin: 0; font-size: 16px; color: #FFFFFF !important; opacity: 0.95;">Wöchentliche Versandleistung KW <?php echo date('W'); ?></p>
                 </div>
                 
                 <div class="email-body">
@@ -410,6 +428,58 @@ class WLM_Performance_Report {
                         <p style="font-size: 18px; margin: 0;">Keine abgeschlossenen Bestellungen in diesem Zeitraum.</p>
                     </div>
                     
+                    <?php endif; ?>
+                    
+                    <?php if (!empty($stats['order_details'])): ?>
+                    <!-- Order Details Table -->
+                    <div style="margin-top: 40px;">
+                        <h2 style="color: #333; font-size: 20px; margin-bottom: 20px; border-bottom: 2px solid #F39200; padding-bottom: 10px;">
+                            📋 Bestelldetails (<?php echo count($stats['order_details']); ?> Bestellungen)
+                        </h2>
+                        
+                        <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                            <thead>
+                                <tr style="background: #F39200; color: white;">
+                                    <th style="padding: 12px 8px; text-align: left; border: 1px solid #ddd;">Bestellung</th>
+                                    <th style="padding: 12px 8px; text-align: left; border: 1px solid #ddd;">Kunde</th>
+                                    <th style="padding: 12px 8px; text-align: left; border: 1px solid #ddd;">Bestelldatum</th>
+                                    <th style="padding: 12px 8px; text-align: left; border: 1px solid #ddd;">Ship-By-Date</th>
+                                    <th style="padding: 12px 8px; text-align: left; border: 1px solid #ddd;">Versanddatum</th>
+                                    <th style="padding: 12px 8px; text-align: right; border: 1px solid #ddd;">Overtime</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($stats['order_details'] as $detail): ?>
+                                <tr style="background: <?php echo $detail['is_on_time'] ? '#f0f9ff' : '#fff8f0'; ?>;">
+                                    <td style="padding: 10px 8px; border: 1px solid #ddd;">
+                                        <strong style="color: #F39200;">#<?php echo esc_html($detail['order_number']); ?></strong>
+                                    </td>
+                                    <td style="padding: 10px 8px; border: 1px solid #ddd;">
+                                        <?php echo esc_html($detail['customer']); ?>
+                                    </td>
+                                    <td style="padding: 10px 8px; border: 1px solid #ddd;">
+                                        <?php echo date_i18n('d.m.Y', strtotime($detail['order_date'])); ?>
+                                    </td>
+                                    <td style="padding: 10px 8px; border: 1px solid #ddd;">
+                                        <?php echo date_i18n('d.m.Y', strtotime($detail['ship_by_date'])); ?>
+                                    </td>
+                                    <td style="padding: 10px 8px; border: 1px solid #ddd;">
+                                        <?php echo date_i18n('d.m.Y', strtotime($detail['completed_date'])); ?>
+                                    </td>
+                                    <td style="padding: 10px 8px; border: 1px solid #ddd; text-align: right;">
+                                        <?php if ($detail['overtime_days'] > 0): ?>
+                                            <span style="color: #dc3545; font-weight: bold;">+<?php echo esc_html($detail['overtime_days']); ?> Tage</span>
+                                        <?php elseif ($detail['overtime_days'] < 0): ?>
+                                            <span style="color: #28a745; font-weight: bold;"><?php echo esc_html($detail['overtime_days']); ?> Tage</span>
+                                        <?php else: ?>
+                                            <span style="color: #28a745; font-weight: bold;">✓ Pünktlich</span>
+                                        <?php endif; ?>
+                                    </td>
+                                </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
                     <?php endif; ?>
                 </div>
                 

@@ -344,8 +344,8 @@ class WLM_Ship_Notifications {
             <div class="email-container">
                 <div class="email-header">
                     <img src="https://mega-holz.de/wp-content/uploads/2020/10/mega-holz-logo-128.png" alt="MEGA Holz" style="max-width: 128px; margin-bottom: 15px;">
-                    <h1>📦 Versandliste</h1>
-                    <p><?php echo esc_html($date_formatted); ?></p>
+                    <h1 style="margin: 0 0 10px 0; font-size: 28px; color: #FFFFFF !important; text-shadow: 1px 1px 2px rgba(0,0,0,0.3);">📦 Versandliste</h1>
+                    <p style="margin: 0; font-size: 16px; color: #FFFFFF !important; opacity: 0.95;"><?php echo esc_html($date_formatted); ?></p>
                 </div>
                 
                 <div class="email-body">
