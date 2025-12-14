@@ -487,10 +487,12 @@ class WLM_Admin {
         $active_section = isset($data['_active_section']) ? $data['_active_section'] : 'all';
         error_log('[WLM Save] Active section: ' . $active_section);
         
-        // Save settings
+        // Save settings (MERGE with existing to prevent data loss)
         if (isset($data['wlm_settings'])) {
             error_log('Saving wlm_settings: ' . print_r($data['wlm_settings'], true));
-            update_option('wlm_settings', $data['wlm_settings']);
+            $existing_settings = get_option('wlm_settings', array());
+            $merged_settings = array_merge($existing_settings, $data['wlm_settings']);
+            update_option('wlm_settings', $merged_settings);
             error_log('After save, wlm_settings from DB: ' . print_r(get_option('wlm_settings'), true));
         }
         

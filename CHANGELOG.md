@@ -1,6 +1,23 @@
-# CHANGELOG
+# Changelog
 
 All notable changes to WooCommerce Lieferzeiten Manager will be documented in this file.
+
+## [1.40.3] - 2025-12-14
+
+### Fixed
+- **CRITICAL: Settings page data loss issue**
+  - Fixed settings being overwritten when saving individual tabs
+  - Settings now merge with existing values instead of replacing them
+  - Prevents loss of processing_days, default_lead_time, and other settings
+  - Fixes issue where default delivery time reset to 3 days after updates
+
+- **Email header text readability**
+  - Changed header text color from white to black in both email templates
+  - Fixed white-on-white text issue in daily ship notifications
+  - Fixed white-on-white text issue in weekly performance reports
+  - Removed complex CSS workarounds that didn't work in email clients
+
+---
 
 ## [1.29.0] - 2025-11-22
 

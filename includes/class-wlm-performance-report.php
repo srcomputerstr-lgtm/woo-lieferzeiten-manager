@@ -324,8 +324,8 @@ class WLM_Performance_Report {
             <div class="email-container">
                 <div class="email-header">
                     <img src="https://mega-holz.de/wp-content/uploads/2020/10/mega-holz-logo-128.png" alt="MEGA Holz" style="max-width: 128px; margin-bottom: 15px;">
-                    <h1 style="margin: 0 0 10px 0; font-size: 28px; color: #FFFFFF !important; text-shadow: 1px 1px 2px rgba(0,0,0,0.3);">📊 Performance Report</h1>
-                    <p style="margin: 0; font-size: 16px; color: #FFFFFF !important; opacity: 0.95;">Wöchentliche Versandleistung KW <?php echo date('W'); ?></p>
+                    <h1 style="margin: 0 0 10px 0; font-size: 28px; color: #000000 !important;">📊 Performance Report</h1>
+                    <p style="margin: 0; font-size: 16px; color: #000000 !important;">Wöchentliche Versandleistung KW <?php echo date('W'); ?></p>
                 </div>
                 
                 <div class="email-body">
