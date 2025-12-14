@@ -575,6 +575,21 @@
                     }
                 });
             });
+        },
+        
+        addHoliday: function(e) {
+            e.preventDefault();
+            var $list = $('#wlm-holidays-list');
+            var html = '<div class="wlm-holiday-item">' +
+                '<input type="date" name="wlm_settings[holidays][]" value="" class="regular-text">' +
+                '<button type="button" class="button wlm-remove-holiday">Entfernen</button>' +
+                '</div>';
+            $list.append(html);
+        },
+        
+        removeHoliday: function(e) {
+            e.preventDefault();
+            $(e.currentTarget).closest('.wlm-holiday-item').remove();
         }
     };
 

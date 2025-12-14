@@ -148,6 +148,9 @@ class WLM_Performance_Report {
         // Get target processing days from settings
         $target_processing_days = (float) get_option('wlm_processing_days', 1);
         
+        // Get target on-time rate (default 90%)
+        $target_on_time_rate = (float) get_option('wlm_target_on_time_rate', 90);
+        
         return array(
             'period_start' => $start_date,
             'period_end' => $end_date,
@@ -158,7 +161,7 @@ class WLM_Performance_Report {
             'overdue_percentage' => $overdue_percentage,
             'avg_processing_days' => $avg_processing_days,
             'target_processing_days' => $target_processing_days,
-            'processing_performance' => $target_processing_days > 0 ? round(($avg_processing_days / $target_processing_days) * 100, 1) : 0,
+            'target_on_time_rate' => $target_on_time_rate,
             'order_details' => $order_details,
         );
     }
@@ -175,7 +178,7 @@ class WLM_Performance_Report {
         
         // Determine performance colors
         $on_time_color = $stats['on_time_percentage'] >= 90 ? '#28a745' : ($stats['on_time_percentage'] >= 75 ? '#ffc107' : '#dc3545');
-        $processing_color = $stats['processing_performance'] <= 100 ? '#28a745' : ($stats['processing_performance'] <= 120 ? '#ffc107' : '#dc3545');
+        $processing_color = $stats['avg_processing_days'] <= $stats['target_processing_days'] ? '#28a745' : ($stats['avg_processing_days'] <= $stats['target_processing_days'] * 1.2 ? '#ffc107' : '#dc3545');
         
         ob_start();
         ?>
@@ -359,7 +362,7 @@ class WLM_Performance_Report {
                         </div>
                         
                         <!-- Processing Time -->
-                        <div class="kpi-card <?php echo $stats['processing_performance'] <= 100 ? 'success' : ($stats['processing_performance'] <= 120 ? 'warning' : 'danger'); ?>">
+                        <div class="kpi-card <?php echo $stats['avg_processing_days'] <= $stats['target_processing_days'] ? 'success' : ($stats['avg_processing_days'] <= $stats['target_processing_days'] * 1.2 ? 'warning' : 'danger'); ?>">
                             <div class="kpi-label">Ø Processing-Time</div>
                             <div class="kpi-value" style="color: <?php echo esc_attr($processing_color); ?>">
                                 <?php echo esc_html($stats['avg_processing_days']); ?>
@@ -409,14 +412,14 @@ class WLM_Performance_Report {
                         </div>
                         <div class="summary-item">
                             <span class="summary-label">Performance vs. Ziel</span>
-                            <span class="summary-value" style="color: <?php echo esc_attr($processing_color); ?>">
-                                <?php echo esc_html($stats['processing_performance']); ?>%
-                                <?php if ($stats['processing_performance'] <= 100): ?>
-                                    ✅ Ziel erreicht!
-                                <?php elseif ($stats['processing_performance'] <= 120): ?>
-                                    ⚠️ Leicht über Ziel
+                            <span class="summary-value" style="color: <?php echo esc_attr($on_time_color); ?>">
+                                <?php echo esc_html($stats['on_time_percentage']); ?>% pünktlich
+                                <?php if ($stats['on_time_percentage'] >= $stats['target_on_time_rate']): ?>
+                                    ✅ Ziel erreicht! (Ziel: ≥<?php echo esc_html($stats['target_on_time_rate']); ?>%)
+                                <?php elseif ($stats['on_time_percentage'] >= 75): ?>
+                                    ⚠️ Unter Ziel (Ziel: ≥<?php echo esc_html($stats['target_on_time_rate']); ?>%)
                                 <?php else: ?>
-                                    ❌ Ziel verfehlt
+                                    ❌ Ziel verfehlt (Ziel: ≥<?php echo esc_html($stats['target_on_time_rate']); ?>%)
                                 <?php endif; ?>
                             </span>
                         </div>

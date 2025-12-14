@@ -2,6 +2,23 @@
 
 All notable changes to WooCommerce Lieferzeiten Manager will be documented in this file.
 
+## [1.40.4] - 2025-12-14
+
+### Fixed
+- **Holiday add button not working**
+  - Added missing `addHoliday()` and `removeHoliday()` JavaScript functions
+  - Button now correctly adds new holiday date fields
+  - Remove button correctly deletes holiday entries
+
+- **Performance report calculation incorrect**
+  - Fixed "Performance vs. Ziel" showing wrong metric
+  - Now shows on-time rate (e.g., 23.5%) instead of processing time ratio
+  - Previously showed 100% even when 76% of orders were overdue
+  - Added configurable target on-time rate (default: 90%)
+  - Color coding now reflects actual on-time performance
+
+---
+
 ## [1.40.3] - 2025-12-14
 
 ### Fixed
