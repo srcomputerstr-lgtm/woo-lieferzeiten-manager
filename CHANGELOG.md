@@ -2,6 +2,19 @@
 
 All notable changes to WooCommerce Lieferzeiten Manager will be documented in this file.
 
+## [1.40.6] - 2025-12-14
+
+### Fixed
+- **Performance report logic corrected**
+  - Reverted KPI to show average processing time (order date to ship date)
+  - Added "Tats. Processing" column to order details table
+  - Keeps "Overtime" column separate to avoid confusion
+  - Now clearly shows: Processing Time vs. Target, and Overtime separately
+  - Summary now includes both average processing time AND average overtime
+  - Processing time color: Green (≤target), Yellow (≤target*1.5), Red (>target*1.5)
+
+---
+
 ## [1.40.5] - 2025-12-14
 
 ### Fixed
