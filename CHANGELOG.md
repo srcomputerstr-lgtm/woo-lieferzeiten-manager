@@ -2,6 +2,19 @@
 
 All notable changes to WooCommerce Lieferzeiten Manager will be documented in this file.
 
+## [1.40.5] - 2025-12-14
+
+### Fixed
+- **Performance report average processing time misleading**
+  - Changed from "Ø Processing-Time" to "Ø Overtime"
+  - Now shows average days late/early instead of order-to-ship duration
+  - Previously showed 1 day (order date to ship date average)
+  - Now shows actual overtime (e.g., +0.8 days when orders are late)
+  - Color coding: Green (≤0), Yellow (≤0.5), Red (>0.5)
+  - More accurately reflects shipping performance vs. promised dates
+
+---
+
 ## [1.40.4] - 2025-12-14
 
 ### Fixed

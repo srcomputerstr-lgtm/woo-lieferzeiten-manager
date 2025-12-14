@@ -93,6 +93,7 @@ class WLM_Performance_Report {
         $on_time = 0;
         $overdue = 0;
         $total_processing_days = 0;
+        $total_overtime_days = 0;
         $orders_with_processing_data = 0;
         $order_details = array();
         
@@ -128,6 +129,7 @@ class WLM_Performance_Report {
             
             // Calculate overtime (days late)
             $overtime_days = ($completed_timestamp - $ship_by_timestamp) / (60 * 60 * 24);
+            $total_overtime_days += $overtime_days;
             
             // Collect order details for table
             $order_details[] = array(
@@ -144,6 +146,7 @@ class WLM_Performance_Report {
         $on_time_percentage = $total_orders > 0 ? round(($on_time / $total_orders) * 100, 1) : 0;
         $overdue_percentage = $total_orders > 0 ? round(($overdue / $total_orders) * 100, 1) : 0;
         $avg_processing_days = $orders_with_processing_data > 0 ? round($total_processing_days / $orders_with_processing_data, 1) : 0;
+        $avg_overtime_days = $total_orders > 0 ? round($total_overtime_days / $total_orders, 1) : 0;
         
         // Get target processing days from settings
         $target_processing_days = (float) get_option('wlm_processing_days', 1);
@@ -160,6 +163,7 @@ class WLM_Performance_Report {
             'on_time_percentage' => $on_time_percentage,
             'overdue_percentage' => $overdue_percentage,
             'avg_processing_days' => $avg_processing_days,
+            'avg_overtime_days' => $avg_overtime_days,
             'target_processing_days' => $target_processing_days,
             'target_on_time_rate' => $target_on_time_rate,
             'order_details' => $order_details,
@@ -178,7 +182,7 @@ class WLM_Performance_Report {
         
         // Determine performance colors
         $on_time_color = $stats['on_time_percentage'] >= 90 ? '#28a745' : ($stats['on_time_percentage'] >= 75 ? '#ffc107' : '#dc3545');
-        $processing_color = $stats['avg_processing_days'] <= $stats['target_processing_days'] ? '#28a745' : ($stats['avg_processing_days'] <= $stats['target_processing_days'] * 1.2 ? '#ffc107' : '#dc3545');
+        $overtime_color = $stats['avg_overtime_days'] <= 0 ? '#28a745' : ($stats['avg_overtime_days'] <= 0.5 ? '#ffc107' : '#dc3545');
         
         ob_start();
         ?>
@@ -361,14 +365,14 @@ class WLM_Performance_Report {
                             </div>
                         </div>
                         
-                        <!-- Processing Time -->
-                        <div class="kpi-card <?php echo $stats['avg_processing_days'] <= $stats['target_processing_days'] ? 'success' : ($stats['avg_processing_days'] <= $stats['target_processing_days'] * 1.2 ? 'warning' : 'danger'); ?>">
-                            <div class="kpi-label">Ø Processing-Time</div>
-                            <div class="kpi-value" style="color: <?php echo esc_attr($processing_color); ?>">
-                                <?php echo esc_html($stats['avg_processing_days']); ?>
+                        <!-- Average Overtime -->
+                        <div class="kpi-card <?php echo $stats['avg_overtime_days'] <= 0 ? 'success' : ($stats['avg_overtime_days'] <= 0.5 ? 'warning' : 'danger'); ?>">
+                            <div class="kpi-label">Ø Overtime</div>
+                            <div class="kpi-value" style="color: <?php echo esc_attr($overtime_color); ?>">
+                                <?php echo $stats['avg_overtime_days'] > 0 ? '+' : ''; ?><?php echo esc_html($stats['avg_overtime_days']); ?>
                             </div>
                             <div class="kpi-subtitle">
-                                Tage (Soll: <?php echo esc_html($stats['target_processing_days']); ?>)
+                                Tage (Soll: ≤0)
                             </div>
                         </div>
                         
@@ -403,12 +407,10 @@ class WLM_Performance_Report {
                             <span class="summary-value" style="color: #dc3545;"><?php echo esc_html($stats['overdue']); ?> (<?php echo esc_html($stats['overdue_percentage']); ?>%)</span>
                         </div>
                         <div class="summary-item">
-                            <span class="summary-label">Durchschnittliche Processing-Time</span>
-                            <span class="summary-value"><?php echo esc_html($stats['avg_processing_days']); ?> Tage</span>
-                        </div>
-                        <div class="summary-item">
-                            <span class="summary-label">Ziel Processing-Time</span>
-                            <span class="summary-value"><?php echo esc_html($stats['target_processing_days']); ?> Tage</span>
+                            <span class="summary-label">Durchschnittliche Overtime</span>
+                            <span class="summary-value" style="color: <?php echo esc_attr($overtime_color); ?>">
+                                <?php echo $stats['avg_overtime_days'] > 0 ? '+' : ''; ?><?php echo esc_html($stats['avg_overtime_days']); ?> Tage
+                            </span>
                         </div>
                         <div class="summary-item">
                             <span class="summary-label">Performance vs. Ziel</span>
