@@ -2,6 +2,20 @@
 
 All notable changes to WooCommerce Lieferzeiten Manager will be documented in this file.
 
+## [1.40.7] - 2025-12-14
+
+### Fixed
+- **CRITICAL: Processing time and overtime calculations were incorrect**
+  - Fixed timestamp calculations to use date-only comparison (midnight normalization)
+  - Previously used timestamps with time, causing fractional day errors
+  - Example error: Order at 14:30, ship at 18:00 = 0.15 days (should be 0 or 1 day)
+  - Now all dates normalized to 00:00:00 for consistent day-based calculation
+  - Processing time: Order date (midnight) to ship date (midnight)
+  - Overtime: Ship date (midnight) to ship-by-date (midnight)
+  - Numbers are now consistent and transparent
+
+---
+
 ## [1.40.6] - 2025-12-14
 
 ### Fixed

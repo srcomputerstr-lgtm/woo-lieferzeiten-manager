@@ -107,10 +107,18 @@ class WLM_Performance_Report {
             
             $total_orders++;
             
-            $ship_by_timestamp = strtotime($ship_by_date);
-            $completed_timestamp = $date_completed->getTimestamp();
+            // Get dates without time for consistent calculation
+            $order_date = $order->get_date_created();
+            $order_date_only = $order_date ? $order_date->date('Y-m-d') : '';
+            $completed_date_only = $date_completed->date('Y-m-d');
+            $ship_by_date_only = $ship_by_date; // Already date-only format
             
-            // Check if shipped on time
+            // Convert to timestamps at midnight for day-based calculation
+            $order_timestamp = strtotime($order_date_only . ' 00:00:00');
+            $completed_timestamp = strtotime($completed_date_only . ' 00:00:00');
+            $ship_by_timestamp = strtotime($ship_by_date_only . ' 00:00:00');
+            
+            // Check if shipped on time (date comparison only)
             $is_on_time = $completed_timestamp <= $ship_by_timestamp;
             if ($is_on_time) {
                 $on_time++;
@@ -118,16 +126,15 @@ class WLM_Performance_Report {
                 $overdue++;
             }
             
-            // Calculate actual processing time
-            $order_date = $order->get_date_created();
+            // Calculate actual processing time (order date to ship date, in days)
             $processing_days = 0;
-            if ($order_date) {
-                $processing_days = ($completed_timestamp - $order_date->getTimestamp()) / (60 * 60 * 24);
+            if ($order_timestamp) {
+                $processing_days = ($completed_timestamp - $order_timestamp) / (60 * 60 * 24);
                 $total_processing_days += $processing_days;
                 $orders_with_processing_data++;
             }
             
-            // Calculate overtime (days late)
+            // Calculate overtime (ship date vs. ship-by-date, in days)
             $overtime_days = ($completed_timestamp - $ship_by_timestamp) / (60 * 60 * 24);
             $total_overtime_days += $overtime_days;
             
