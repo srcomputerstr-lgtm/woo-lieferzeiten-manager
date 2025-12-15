@@ -2,6 +2,21 @@
 
 All notable changes to WooCommerce Lieferzeiten Manager will be documented in this file.
 
+## [1.40.8] - 2025-12-15
+
+### Changed
+- **Processing time and overtime now use BUSINESS DAYS**
+  - Added `count_business_days()` method to calculator class
+  - Respects business days and holidays from plugin settings
+  - Includes fractional days based on actual time of day
+  - Processing time: Business days from order creation to shipment
+  - Overtime: Business days from shipment to ship-by-date (negative if early)
+  - Example: Order Friday 14:30, ship Friday 18:00 = 0.15 business days
+  - Example: Ship Friday 18:00, ship-by Tuesday (skips weekend) = -2.25 business days
+  - Consistent with delivery time calculation logic
+
+---
+
 ## [1.40.7] - 2025-12-14
 
 ### Fixed

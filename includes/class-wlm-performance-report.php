@@ -107,18 +107,15 @@ class WLM_Performance_Report {
             
             $total_orders++;
             
-            // Get dates without time for consistent calculation
+            // Get timestamps with actual times
             $order_date = $order->get_date_created();
-            $order_date_only = $order_date ? $order_date->date('Y-m-d') : '';
-            $completed_date_only = $date_completed->date('Y-m-d');
-            $ship_by_date_only = $ship_by_date; // Already date-only format
+            $order_timestamp = $order_date ? $order_date->getTimestamp() : 0;
+            $completed_timestamp = $date_completed->getTimestamp();
             
-            // Convert to timestamps at midnight for day-based calculation
-            $order_timestamp = strtotime($order_date_only . ' 00:00:00');
-            $completed_timestamp = strtotime($completed_date_only . ' 00:00:00');
-            $ship_by_timestamp = strtotime($ship_by_date_only . ' 00:00:00');
+            // Ship-by-date is date-only, set to end of day for comparison
+            $ship_by_timestamp = strtotime($ship_by_date . ' 23:59:59');
             
-            // Check if shipped on time (date comparison only)
+            // Check if shipped on time
             $is_on_time = $completed_timestamp <= $ship_by_timestamp;
             if ($is_on_time) {
                 $on_time++;
@@ -126,16 +123,19 @@ class WLM_Performance_Report {
                 $overdue++;
             }
             
-            // Calculate actual processing time (order date to ship date, in days)
+            // Get calculator instance for business day counting
+            $calculator = WLM_Calculator::instance();
+            
+            // Calculate actual processing time in business days (with time precision)
             $processing_days = 0;
             if ($order_timestamp) {
-                $processing_days = ($completed_timestamp - $order_timestamp) / (60 * 60 * 24);
+                $processing_days = $calculator->count_business_days($order_timestamp, $completed_timestamp);
                 $total_processing_days += $processing_days;
                 $orders_with_processing_data++;
             }
             
-            // Calculate overtime (ship date vs. ship-by-date, in days)
-            $overtime_days = ($completed_timestamp - $ship_by_timestamp) / (60 * 60 * 24);
+            // Calculate overtime in business days (ship date vs. ship-by-date)
+            $overtime_days = $calculator->count_business_days($completed_timestamp, $ship_by_timestamp);
             $total_overtime_days += $overtime_days;
             
             // Collect order details for table

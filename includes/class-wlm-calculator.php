@@ -1677,4 +1677,90 @@ class WLM_Calculator {
         
         return true;
     }
+    
+    /**
+     * Count business days between two timestamps
+     * Respects business days and holidays from settings
+     * Includes fractional days based on time of day
+     *
+     * @param int $start_timestamp Start timestamp
+     * @param int $end_timestamp End timestamp
+     * @return float Number of business days (can be negative if end is before start)
+     */
+    public function count_business_days($start_timestamp, $end_timestamp) {
+        $settings = WLM_Core::instance()->get_settings();
+        $business_days = $settings['business_days'] ?? array(1, 2, 3, 4, 5);
+        $holidays = $settings['holidays'] ?? array();
+        
+        // Ensure holidays is always an array
+        if (!is_array($holidays)) {
+            $holidays = empty($holidays) ? array() : array($holidays);
+        }
+        
+        // Determine direction
+        $direction = $end_timestamp >= $start_timestamp ? 1 : -1;
+        $current = $start_timestamp;
+        $target = $end_timestamp;
+        
+        if ($direction < 0) {
+            // Swap for counting backwards
+            $current = $end_timestamp;
+            $target = $start_timestamp;
+        }
+        
+        $business_days_count = 0;
+        $current_date = date('Y-m-d', $current);
+        $target_date = date('Y-m-d', $target);
+        
+        // If same day, calculate fractional day
+        if ($current_date === $target_date) {
+            $day_of_week = (int) date('N', $current);
+            $is_business_day = in_array($day_of_week, $business_days) && !in_array($current_date, $holidays);
+            
+            if ($is_business_day) {
+                $seconds_diff = abs($target - $current);
+                $business_days_count = $seconds_diff / (60 * 60 * 24);
+            }
+            
+            return $direction * $business_days_count;
+        }
+        
+        // Count fractional day at start
+        $day_of_week = (int) date('N', $current);
+        $is_business_day = in_array($day_of_week, $business_days) && !in_array($current_date, $holidays);
+        
+        if ($is_business_day) {
+            $end_of_day = strtotime($current_date . ' 23:59:59');
+            $seconds_remaining = $end_of_day - $current;
+            $business_days_count += $seconds_remaining / (60 * 60 * 24);
+        }
+        
+        // Count full days in between
+        $current = strtotime($current_date . ' 00:00:00');
+        $target_midnight = strtotime($target_date . ' 00:00:00');
+        
+        while ($current < $target_midnight) {
+            $current = strtotime('+1 day', $current);
+            $date_str = date('Y-m-d', $current);
+            $day_of_week = (int) date('N', $current);
+            
+            $is_business_day = in_array($day_of_week, $business_days) && !in_array($date_str, $holidays);
+            
+            if ($is_business_day && $current < $target_midnight) {
+                $business_days_count += 1;
+            }
+        }
+        
+        // Count fractional day at end
+        $day_of_week = (int) date('N', $target);
+        $is_business_day = in_array($day_of_week, $business_days) && !in_array($target_date, $holidays);
+        
+        if ($is_business_day) {
+            $start_of_day = strtotime($target_date . ' 00:00:00');
+            $seconds_elapsed = $target - $start_of_day;
+            $business_days_count += $seconds_elapsed / (60 * 60 * 24);
+        }
+        
+        return $direction * $business_days_count;
+    }
 }
