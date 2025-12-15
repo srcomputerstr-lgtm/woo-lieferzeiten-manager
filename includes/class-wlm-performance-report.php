@@ -107,13 +107,8 @@ class WLM_Performance_Report {
             
             $total_orders++;
             
-            // Get timestamps with actual times
-            $order_date = $order->get_date_created();
-            $order_timestamp = $order_date ? $order_date->getTimestamp() : 0;
+            $ship_by_timestamp = strtotime($ship_by_date);
             $completed_timestamp = $date_completed->getTimestamp();
-            
-            // Ship-by-date is date-only, set to end of day for comparison
-            $ship_by_timestamp = strtotime($ship_by_date . ' 23:59:59');
             
             // Check if shipped on time
             $is_on_time = $completed_timestamp <= $ship_by_timestamp;
@@ -123,19 +118,17 @@ class WLM_Performance_Report {
                 $overdue++;
             }
             
-            // Get calculator instance for business day counting
-            $calculator = WLM_Calculator::instance();
-            
-            // Calculate actual processing time in business days (with time precision)
+            // Calculate actual processing time
+            $order_date = $order->get_date_created();
             $processing_days = 0;
-            if ($order_timestamp) {
-                $processing_days = $calculator->count_business_days($order_timestamp, $completed_timestamp);
+            if ($order_date) {
+                $processing_days = ($completed_timestamp - $order_date->getTimestamp()) / (60 * 60 * 24);
                 $total_processing_days += $processing_days;
                 $orders_with_processing_data++;
             }
             
-            // Calculate overtime in business days (ship date vs. ship-by-date)
-            $overtime_days = $calculator->count_business_days($completed_timestamp, $ship_by_timestamp);
+            // Calculate overtime (days late)
+            $overtime_days = ($completed_timestamp - $ship_by_timestamp) / (60 * 60 * 24);
             $total_overtime_days += $overtime_days;
             
             // Collect order details for table

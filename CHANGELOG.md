@@ -2,6 +2,17 @@
 
 All notable changes to WooCommerce Lieferzeiten Manager will be documented in this file.
 
+## [1.40.9] - 2025-12-15
+
+### Fixed
+- **ROLLBACK: Reverted to v1.40.6 functionality**
+  - Removed business day calculation (v1.40.8) due to critical error on production
+  - Restored calendar day calculation for processing time and overtime
+  - Performance report now works again without errors
+  - Business day feature will be reimplemented and tested in future version
+
+---
+
 ## [1.40.8] - 2025-12-15
 
 ### Changed
