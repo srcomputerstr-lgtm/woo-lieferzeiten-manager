@@ -4,11 +4,14 @@ All notable changes to WooCommerce Lieferzeiten Manager will be documented in th
 
 ## [1.41.0] - 2025-12-16
 
-### Fixed
-- **REST API Authentication:** Fixed WooCommerce API key authentication for custom WLM endpoints
-  - Updated `check_permission()` to accept WooCommerce API credentials
-  - Endpoints now work with consumer_key/consumer_secret like WooCommerce Core API
-  - Fixes "invalid user name" error when using API keys from JTL/ERP systems
+### Changed
+- **REST API Public Access:** Made order delivery info endpoints publicly accessible
+  - `/orders/{id}/ship-by-date` - No authentication required
+  - `/orders/{id}/earliest-delivery` - No authentication required
+  - `/orders/{id}/latest-delivery` - No authentication required
+  - `/orders/{id}/delivery-window` - No authentication required
+  - Fixes "invalid user name" error when accessing from JTL/ERP systems
+  - POST endpoints (data modification) still require authentication
 
 ---
 

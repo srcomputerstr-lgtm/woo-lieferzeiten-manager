@@ -265,7 +265,7 @@ class WLM_REST_API {
         register_rest_route(self::NAMESPACE, '/orders/(?P<id>\d+)/ship-by-date', array(
             'methods' => 'GET',
             'callback' => array($this, 'get_ship_by_date'),
-            'permission_callback' => array($this, 'check_permission'),
+            'permission_callback' => '__return_true',
             'args' => array(
                 'id' => array(
                     'required' => true,
@@ -280,7 +280,7 @@ class WLM_REST_API {
         register_rest_route(self::NAMESPACE, '/orders/(?P<id>\d+)/earliest-delivery', array(
             'methods' => 'GET',
             'callback' => array($this, 'get_earliest_delivery'),
-            'permission_callback' => array($this, 'check_permission'),
+            'permission_callback' => '__return_true',
             'args' => array(
                 'id' => array(
                     'required' => true,
@@ -295,7 +295,7 @@ class WLM_REST_API {
         register_rest_route(self::NAMESPACE, '/orders/(?P<id>\d+)/latest-delivery', array(
             'methods' => 'GET',
             'callback' => array($this, 'get_latest_delivery'),
-            'permission_callback' => array($this, 'check_permission'),
+            'permission_callback' => '__return_true',
             'args' => array(
                 'id' => array(
                     'required' => true,
@@ -310,7 +310,7 @@ class WLM_REST_API {
         register_rest_route(self::NAMESPACE, '/orders/(?P<id>\d+)/delivery-window', array(
             'methods' => 'GET',
             'callback' => array($this, 'get_delivery_window'),
-            'permission_callback' => array($this, 'check_permission'),
+            'permission_callback' => '__return_true',
             'args' => array(
                 'id' => array(
                     'required' => true,
@@ -348,21 +348,8 @@ class WLM_REST_API {
      * @return bool
      */
     public function check_permission($request) {
-        // Check if user is logged in with proper capabilities
-        if (current_user_can('edit_products')) {
-            return true;
-        }
-        
-        // Check if request is authenticated via WooCommerce API keys
-        // WooCommerce handles authentication automatically for REST API requests
-        // We just need to check if a user is authenticated
-        $user = wp_get_current_user();
-        if ($user && $user->ID > 0) {
-            // User is authenticated via API keys
-            return $user->has_cap('edit_products') || $user->has_cap('manage_woocommerce');
-        }
-        
-        return false;
+        // For POST endpoints (modifying data), require authentication
+        return current_user_can('edit_products');
     }
 
     /**
