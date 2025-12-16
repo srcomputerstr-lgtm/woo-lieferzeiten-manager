@@ -348,7 +348,21 @@ class WLM_REST_API {
      * @return bool
      */
     public function check_permission($request) {
-        return current_user_can('edit_products');
+        // Check if user is logged in with proper capabilities
+        if (current_user_can('edit_products')) {
+            return true;
+        }
+        
+        // Check if request is authenticated via WooCommerce API keys
+        // WooCommerce handles authentication automatically for REST API requests
+        // We just need to check if a user is authenticated
+        $user = wp_get_current_user();
+        if ($user && $user->ID > 0) {
+            // User is authenticated via API keys
+            return $user->has_cap('edit_products') || $user->has_cap('manage_woocommerce');
+        }
+        
+        return false;
     }
 
     /**
