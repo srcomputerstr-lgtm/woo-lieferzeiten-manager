@@ -1002,11 +1002,17 @@ class WLM_REST_API {
             return new WP_Error('order_not_found', 'Order not found', array('status' => 404));
         }
         
-        $window = $order->get_meta('_wlm_delivery_window');
+        $earliest = $order->get_meta('_wlm_earliest_delivery');
+        $latest = $order->get_meta('_wlm_latest_delivery');
         
-        if (!$window) {
+        if (!$earliest || !$latest) {
             return new WP_Error('no_data', 'No delivery window found for this order', array('status' => 404));
         }
+        
+        // Format: DD.MM.YYYY - DD.MM.YYYY
+        $earliest_formatted = date('d.m.Y', strtotime($earliest));
+        $latest_formatted = date('d.m.Y', strtotime($latest));
+        $window = $earliest_formatted . ' - ' . $latest_formatted;
         
         return rest_ensure_response($window);
     }

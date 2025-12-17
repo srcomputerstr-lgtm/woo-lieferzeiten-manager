@@ -2,6 +2,15 @@
 
 All notable changes to WooCommerce Lieferzeiten Manager will be documented in this file.
 
+## [1.41.1] - 2025-12-16
+
+### Fixed
+- **REST API:** Updated `/orders/{id}/delivery-window` endpoint to return formatted date range
+  - Format: `DD.MM.YYYY - DD.MM.YYYY` (e.g., "13.12.2025 - 16.12.2025")
+  - Previously returned raw meta value
+
+---
+
 ## [1.41.0] - 2025-12-16
 
 ### Changed
