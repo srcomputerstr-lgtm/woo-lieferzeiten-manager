@@ -261,6 +261,21 @@ class WLM_REST_API {
             )
         ));
         
+        // Trigger delay check (for external cron)
+        register_rest_route(self::NAMESPACE, '/cron/delay-check', array(
+            'methods' => 'GET',
+            'callback' => array($this, 'trigger_delay_check'),
+            'permission_callback' => array($this, 'check_cron_permission'),
+            'args' => array(
+                'key' => array(
+                    'required' => true,
+                    'validate_callback' => function($param) {
+                        return is_string($param);
+                    }
+                )
+            )
+        ));
+        
         // Get ship-by date only
         register_rest_route(self::NAMESPACE, '/orders/(?P<id>\d+)/ship-by-date', array(
             'methods' => 'GET',
@@ -1140,6 +1155,26 @@ class WLM_REST_API {
         return rest_ensure_response(array(
             'success' => $result,
             'message' => $result ? 'Performance report triggered successfully' : 'Performance report failed',
+            'timestamp' => current_time('mysql')
+        ));
+    }
+    
+    /**
+     * Trigger delay check (for external cron)
+     *
+     * @param WP_REST_Request $request Request object.
+     * @return WP_REST_Response
+     */
+    public function trigger_delay_check($request) {
+        WLM_Core::log('[WLM REST API] Delay check triggered via external cron');
+        
+        // Get delay notification instance and trigger
+        $delay_notification = new WLM_Delay_Notification();
+        $result = $delay_notification->check_delayed_orders();
+        
+        return rest_ensure_response(array(
+            'success' => $result !== false,
+            'message' => $result !== false ? 'Delay check completed successfully' : 'Delay check completed (no notifications sent)',
             'timestamp' => current_time('mysql')
         ));
     }

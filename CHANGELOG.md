@@ -2,6 +2,17 @@
 
 All notable changes to WooCommerce Lieferzeiten Manager will be documented in this file.
 
+## [1.42.1] - 2025-12-16
+
+### Changed
+- **Verzögerungs-Benachrichtigungen:** Umstellung auf externen Cronjob
+  - Neuer REST API Endpoint: `/wp-json/wlm/v1/cron/delay-check?key=SECRET_KEY`
+  - Entfernt: Interne WordPress Cron-Scheduling
+  - Entfernt: "Prüfzeit" Einstellung (jetzt über externen Cronjob bei All-Inkl konfigurierbar)
+  - Vorteil: Zuverlässigere Ausführung zu gewünschter Zeit
+
+---
+
 ## [1.42.0] - 2025-12-16
 
 ### Added

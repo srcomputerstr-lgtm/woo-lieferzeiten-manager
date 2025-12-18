@@ -14,61 +14,14 @@ if (!defined('ABSPATH')) {
 class WLM_Delay_Notification {
     
     /**
-     * Cron hook name
-     */
-    const CRON_HOOK = 'wlm_daily_delay_check';
-    
-    /**
      * Initialize
      */
     public function __construct() {
-        // Schedule cron on activation
-        add_action('init', array($this, 'schedule_cron'));
-        
-        // Hook the cron action
-        add_action(self::CRON_HOOK, array($this, 'check_delayed_orders'));
-        
         // Add settings
         add_filter('wlm_settings_fields', array($this, 'add_settings_fields'));
     }
     
-    /**
-     * Schedule the cron job
-     */
-    public function schedule_cron() {
-        if (!wp_next_scheduled(self::CRON_HOOK)) {
-            // Get configured time (default: 09:00)
-            $check_time = get_option('wlm_delay_check_time', '09:00');
-            list($hour, $minute) = explode(':', $check_time);
-            
-            // Schedule for today at configured time
-            $timestamp = strtotime("today {$hour}:{$minute}");
-            
-            // If time has passed today, schedule for tomorrow
-            if ($timestamp < current_time('timestamp')) {
-                $timestamp = strtotime("tomorrow {$hour}:{$minute}");
-            }
-            
-            wp_schedule_event($timestamp, 'daily', self::CRON_HOOK);
-            
-            WLM_Core::log('Scheduled delay check cron for ' . date('Y-m-d H:i:s', $timestamp));
-        }
-    }
-    
-    /**
-     * Reschedule cron when time setting changes
-     */
-    public function reschedule_cron() {
-        // Clear existing schedule
-        $timestamp = wp_next_scheduled(self::CRON_HOOK);
-        if ($timestamp) {
-            wp_unschedule_event($timestamp, self::CRON_HOOK);
-        }
-        
-        // Reschedule
-        $this->schedule_cron();
-    }
-    
+
     /**
      * Check for delayed orders and send notifications
      */
@@ -265,12 +218,7 @@ class WLM_Delay_Notification {
                     'default' => false,
                     'description' => __('Aktiviert automatische E-Mail-Benachrichtigungen bei verzögerten Bestellungen', 'woo-lieferzeiten-manager')
                 ),
-                'wlm_delay_check_time' => array(
-                    'label' => __('Prüfzeit', 'woo-lieferzeiten-manager'),
-                    'type' => 'time',
-                    'default' => '09:00',
-                    'description' => __('Uhrzeit für die tägliche Prüfung verzögerter Bestellungen', 'woo-lieferzeiten-manager')
-                ),
+
                 'wlm_delay_notification_days' => array(
                     'label' => __('Verzögerung in Tagen', 'woo-lieferzeiten-manager'),
                     'type' => 'number',
