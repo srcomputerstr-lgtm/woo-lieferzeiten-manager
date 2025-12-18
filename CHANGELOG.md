@@ -2,6 +2,21 @@
 
 All notable changes to WooCommerce Lieferzeiten Manager will be documented in this file.
 
+## [1.42.0] - 2025-12-16
+
+### Added
+- **Verzögerungs-Benachrichtigungen:** Neues System für automatische Kunden-Benachrichtigungen bei verzögerten Bestellungen
+  - Täglicher Cronjob prüft Bestellungen mit überschrittenem Ship-By-Date
+  - Konfigurierbare Verzögerungsschwelle (Tage nach Ship-By-Date)
+  - Mehrfachversand-Option mit konfigurierbarem Intervall (2-3 Benachrichtigungen)
+  - Separate E-Mail-Templates für 1., 2. und 3. Benachrichtigung
+  - Platzhalter-System: {order_number}, {customer_first_name}, {order_date}, etc.
+  - WooCommerce Email-Template-Integration (automatisch Shop-Design)
+  - Neuer Settings-Tab "Verzögerungs-Benachrichtigungen" im Backend
+  - Tracking per Order-Meta: _wlm_delay_notification_count, _wlm_last_delay_notification
+
+---
+
 ## [1.41.1] - 2025-12-16
 
 ### Fixed

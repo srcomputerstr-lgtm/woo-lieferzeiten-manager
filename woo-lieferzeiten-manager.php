@@ -3,7 +3,7 @@
  * Plugin Name: Woo Lieferzeiten Manager
  * Plugin URI: https://github.com/srcomputerstr-lgtm/woo-lieferzeiten-manager
  * Description: Zentrales Plugin für WooCommerce zur Verwaltung von Lieferzeiten, Versandarten, Express-Optionen und Versandzuschlägen mit Block-Layout-Unterstützung.
- * Version: 1.41.1
+ * Version: 1.42.0
  * Author: seoparden.de
  * Author URI: https://seoparden.de
  * Text Domain: woo-lieferzeiten-manager
@@ -22,7 +22,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Define plugin constants
-define('WLM_VERSION', '1.41.1');
+define('WLM_VERSION', '1.42.0');
 define('WLM_PLUGIN_FILE', __FILE__);
 define('WLM_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('WLM_PLUGIN_URL', plugin_dir_url(__FILE__));
@@ -76,12 +76,14 @@ function wlm_init() {
     require_once WLM_PLUGIN_DIR . 'includes/class-wlm-tracking-helper.php';
     require_once WLM_PLUGIN_DIR . 'includes/class-wlm-ship-notifications.php';
     require_once WLM_PLUGIN_DIR . 'includes/class-wlm-performance-report.php';
+    require_once WLM_PLUGIN_DIR . 'includes/class-wlm-delay-notification.php';
 
     // Initialize core
     WLM_Core::instance();
     
     // Initialize ship notifications
     new WLM_Ship_Notifications();
+    new WLM_Delay_Notification();
     
     // Initialize performance report
     new WLM_Performance_Report();
