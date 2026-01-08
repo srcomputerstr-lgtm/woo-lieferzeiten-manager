@@ -35,6 +35,9 @@ class WLM_Admin {
         // AJAX handler for sending test performance report
         add_action('wp_ajax_wlm_send_test_performance_report', array($this, 'ajax_send_test_performance_report'));
         
+        // AJAX handler for sending test delay notification
+        add_action('wp_ajax_wlm_send_test_delay_notification', array($this, 'ajax_send_test_delay_notification'));
+        
         // AJAX handler for getting shipping classes
         add_action('wp_ajax_wlm_get_shipping_classes', array($this, 'ajax_get_shipping_classes'));
         
@@ -165,6 +168,40 @@ class WLM_Admin {
                 WLM_Core::log('[WLM Admin] After save, value from DB: ' . get_option('wlm_shipping_selection_strategy'));
             } else {
                 WLM_Core::log('[WLM Admin] wlm_shipping_selection_strategy NOT in POST!');
+            }
+            
+            // Save individual performance report options
+            if (isset($_POST['wlm_performance_report_enabled'])) {
+                update_option('wlm_performance_report_enabled', true);
+            } else {
+                update_option('wlm_performance_report_enabled', false);
+            }
+            if (isset($_POST['wlm_performance_report_email'])) {
+                update_option('wlm_performance_report_email', sanitize_email($_POST['wlm_performance_report_email']));
+            }
+            if (isset($_POST['wlm_performance_report_min_date'])) {
+                update_option('wlm_performance_report_min_date', sanitize_text_field($_POST['wlm_performance_report_min_date']));
+            }
+            if (isset($_POST['wlm_performance_report_send_empty'])) {
+                update_option('wlm_performance_report_send_empty', true);
+            } else {
+                update_option('wlm_performance_report_send_empty', false);
+            }
+            
+            // Save individual delay notification options
+            if (isset($_POST['wlm_delay_notification_enabled'])) {
+                update_option('wlm_delay_notification_enabled', true);
+            } else {
+                update_option('wlm_delay_notification_enabled', false);
+            }
+            if (isset($_POST['wlm_delay_notification_min_date'])) {
+                update_option('wlm_delay_notification_min_date', sanitize_text_field($_POST['wlm_delay_notification_min_date']));
+            }
+            if (isset($_POST['wlm_delay_notification_days'])) {
+                update_option('wlm_delay_notification_days', intval($_POST['wlm_delay_notification_days']));
+            }
+            if (isset($_POST['wlm_delay_notification_bcc'])) {
+                update_option('wlm_delay_notification_bcc', sanitize_email($_POST['wlm_delay_notification_bcc']));
             }
             
             // Force shipping methods to re-register
@@ -848,6 +885,41 @@ class WLM_Admin {
         } else {
             wp_send_json_error(array(
                 'message' => 'Fehler beim Senden des Test-Reports. Bitte Debug-Log prüfen.'
+            ));
+        }
+    }
+    
+    /**
+     * AJAX handler for sending test delay notification
+     */
+    public function ajax_send_test_delay_notification() {
+        // Verify nonce
+        if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'wlm-admin-nonce')) {
+            wp_send_json_error(array('message' => 'Invalid nonce'));
+            return;
+        }
+        
+        // Check permissions
+        if (!current_user_can('manage_woocommerce')) {
+            wp_send_json_error(array('message' => 'Insufficient permissions'));
+            return;
+        }
+        
+        WLM_Core::log('[WLM AJAX] Sending test delay notification...');
+        
+        // Get delay notification instance
+        $delay_notification = new WLM_Delay_Notification();
+        
+        // Trigger manual notification
+        $result = $delay_notification->trigger_manual();
+        
+        if ($result['success']) {
+            wp_send_json_success(array(
+                'message' => $result['message']
+            ));
+        } else {
+            wp_send_json_error(array(
+                'message' => $result['message']
             ));
         }
     }

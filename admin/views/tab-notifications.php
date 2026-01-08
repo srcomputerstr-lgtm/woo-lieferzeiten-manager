@@ -81,6 +81,22 @@ $next_run_formatted = $next_run ? date_i18n('d.m.Y H:i', $next_run) : 'Nicht gep
 
         <tr>
             <th scope="row">
+                <label for="ship_notification_min_date">Bestellungen berücksichtigen ab</label>
+            </th>
+            <td>
+                <input type="date" 
+                       id="ship_notification_min_date" 
+                       name="wlm_settings[ship_notification_min_date]" 
+                       value="<?php echo esc_attr($settings['ship_notification_min_date'] ?? ''); ?>" 
+                       class="regular-text">
+                <p class="description">
+                    Nur Bestellungen ab diesem Datum werden berücksichtigt. Leer lassen für alle Bestellungen.
+                </p>
+            </td>
+        </tr>
+
+        <tr>
+            <th scope="row">
                 <label for="ship_notification_send_empty">Leere Benachrichtigungen senden</label>
             </th>
             <td>
@@ -235,6 +251,22 @@ $next_run_formatted = $next_run ? date_i18n('d.m.Y H:i', $next_run) : 'Nicht gep
             </td>
         </tr>
         
+        <tr>
+            <th scope="row">
+                <label for="wlm_performance_report_min_date">Bestellungen berücksichtigen ab</label>
+            </th>
+            <td>
+                <input type="date" 
+                       id="wlm_performance_report_min_date" 
+                       name="wlm_performance_report_min_date" 
+                       value="<?php echo esc_attr(get_option('wlm_performance_report_min_date', '')); ?>" 
+                       class="regular-text">
+                <p class="description">
+                    Nur Bestellungen ab diesem Datum werden berücksichtigt. Leer lassen für alle Bestellungen.
+                </p>
+            </td>
+        </tr>
+
         <tr>
             <th scope="row">
                 <label for="wlm_performance_report_send_empty">Leere Reports senden</label>
@@ -394,6 +426,195 @@ jQuery(document).ready(function($) {
             },
             complete: function() {
                 $button.prop('disabled', false).text('📧 Test-E-Mail jetzt senden');
+            }
+        });
+    });
+});
+</script>
+
+
+<div class="wlm-settings-section" style="margin-top: 40px;">
+    <h2>⚠️ Verzögerungs-Benachrichtigungen</h2>
+    <p class="description">
+        Senden Sie automatische E-Mails an Kunden, wenn das Ship-By-Date überschritten wurde und die Bestellung noch nicht versendet wurde.
+    </p>
+
+    <table class="form-table">
+        <tr>
+            <th scope="row">
+                <label for="wlm_delay_notification_enabled">Verzögerungs-Benachrichtigungen aktivieren</label>
+            </th>
+            <td>
+                <label class="wlm-toggle">
+                    <input type="checkbox" 
+                           id="wlm_delay_notification_enabled" 
+                           name="wlm_delay_notification_enabled" 
+                           value="1" 
+                           <?php checked(get_option('wlm_delay_notification_enabled', false)); ?>>
+                    <span class="wlm-toggle-slider"></span>
+                </label>
+                <p class="description">
+                    Aktiviert automatische Benachrichtigungen an Kunden bei Versandverzögerungen.
+                </p>
+            </td>
+        </tr>
+        
+        <tr>
+            <th scope="row">
+                <label for="wlm_delay_notification_min_date">Bestellungen berücksichtigen ab</label>
+            </th>
+            <td>
+                <input type="date" 
+                       id="wlm_delay_notification_min_date" 
+                       name="wlm_delay_notification_min_date" 
+                       value="<?php echo esc_attr(get_option('wlm_delay_notification_min_date', '')); ?>" 
+                       class="regular-text">
+                <p class="description">
+                    Nur Bestellungen ab diesem Datum werden berücksichtigt. Leer lassen für alle Bestellungen.
+                </p>
+            </td>
+        </tr>
+        
+        <tr>
+            <th scope="row">
+                <label for="wlm_delay_notification_days">Verzögerung in Tagen</label>
+            </th>
+            <td>
+                <input type="number" 
+                       id="wlm_delay_notification_days" 
+                       name="wlm_delay_notification_days" 
+                       value="<?php echo esc_attr(get_option('wlm_delay_notification_days', 1)); ?>" 
+                       min="1" 
+                       max="30" 
+                       class="small-text">
+                <p class="description">
+                    Anzahl der Tage nach Ship-By-Date, nach denen die Benachrichtigung gesendet wird (Standard: 1 Tag).
+                </p>
+            </td>
+        </tr>
+        
+        <tr>
+            <th scope="row">
+                <label for="wlm_delay_notification_bcc">BCC E-Mail-Adresse</label>
+            </th>
+            <td>
+                <input type="email" 
+                       id="wlm_delay_notification_bcc" 
+                       name="wlm_delay_notification_bcc" 
+                       value="<?php echo esc_attr(get_option('wlm_delay_notification_bcc', '')); ?>" 
+                       class="regular-text"
+                       placeholder="<?php echo esc_attr(get_option('admin_email')); ?>">
+                <p class="description">
+                    Optional: E-Mail-Adresse für BCC-Kopien aller Verzögerungs-Benachrichtigungen (z.B. für Controlling).
+                </p>
+            </td>
+        </tr>
+        
+        <tr>
+            <th scope="row">Externe Cronjob-URL (Verzögerungs-Benachrichtigungen)</th>
+            <td>
+                <?php 
+                $delay_key = get_option('wlm_delay_notification_cron_key');
+                if (empty($delay_key)) {
+                    $delay_key = bin2hex(random_bytes(16));
+                    update_option('wlm_delay_notification_cron_key', $delay_key);
+                }
+                $delay_url = rest_url('wlm/v1/cron/delay-notification') . '?key=' . $delay_key;
+                ?>
+                <input type="text" 
+                       value="<?php echo esc_attr($delay_url); ?>" 
+                       readonly 
+                       class="large-text" 
+                       onclick="this.select();" 
+                       style="font-family: monospace; background: #fffacd; font-size: 13px;">
+                <p class="description">
+                    👆 <strong>Kopiere diese URL für deinen All-Inkl Cronjob</strong> (enthält bereits den Sicherheitsschlüssel)
+                </p>
+                <details style="margin-top: 10px;">
+                    <summary style="cursor: pointer; color: #2271b1;">📋 Anleitung für All-Inkl Cronjob</summary>
+                    <div style="background: #f5f5f5; padding: 15px; margin-top: 10px; border-radius: 4px;">
+                        <ol style="margin: 0; padding-left: 20px;">
+                            <li>Logge dich bei <strong>All-Inkl KAS</strong> ein</li>
+                            <li>Gehe zu <strong>Tools → Cronjobs</strong></li>
+                            <li>Klicke auf <strong>"Neuer Cronjob"</strong></li>
+                            <li>Kopiere die gelbe URL oben und füge sie als <strong>URL</strong> ein</li>
+                            <li>Wähle <strong>"Täglich"</strong> und stelle die Uhrzeit ein (z.B. 10:00)</li>
+                            <li>Speichern</li>
+                        </ol>
+                        <p style="margin-top: 15px; padding: 10px; background: #e7f3ff; border-left: 4px solid #2271b1;">
+                            <strong>💡 Empfehlung:</strong> Täglich um 10:00 Uhr ausführen
+                        </p>
+                    </div>
+                </details>
+            </td>
+        </tr>
+        
+        <tr>
+            <th scope="row">Test-Benachrichtigung senden</th>
+            <td>
+                <button type="button" id="wlm-send-test-delay-notification" class="button button-secondary">
+                    ⚠️ Test-Benachrichtigung jetzt senden
+                </button>
+                <p class="description">
+                    Sendet sofort eine Test-Benachrichtigung für alle überfälligen Bestellungen.
+                </p>
+                <div id="wlm-test-delay-notification-result" style="margin-top: 10px;"></div>
+            </td>
+        </tr>
+    </table>
+
+    <hr style="margin: 40px 0;">
+
+    <h3>📧 E-Mail-Inhalt</h3>
+    <p class="description">
+        Die E-Mail wird an den Kunden gesendet und enthält:
+    </p>
+    <ul style="list-style: disc; margin-left: 20px;">
+        <li>Persönliche Anrede mit Kundennamen</li>
+        <li>Bestellnummer und Bestelldetails</li>
+        <li>Information über die Verzögerung</li>
+        <li>Entschuldigung und Dankeschön</li>
+        <li>Link zur Bestellübersicht</li>
+    </ul>
+
+    <div style="margin-top: 20px; padding: 15px; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 4px;">
+        <h4 style="margin: 0 0 10px 0;">⚠️ Wichtig</h4>
+        <p style="margin: 0;">
+            Die Benachrichtigung wird nur an Bestellungen mit Status <strong>"Processing"</strong> gesendet. 
+            Bestellungen mit Status "Packed" oder "Completed" werden automatisch ausgeschlossen.
+            Jede Bestellung erhält die Benachrichtigung nur einmal (wird in Order Meta gespeichert).
+        </p>
+    </div>
+</div>
+
+<script>
+jQuery(document).ready(function($) {
+    $('#wlm-send-test-delay-notification').on('click', function() {
+        var $button = $(this);
+        var $result = $('#wlm-test-delay-notification-result');
+        
+        $button.prop('disabled', true).text('⏳ Sende...');
+        $result.html('');
+        
+        $.ajax({
+            url: ajaxurl,
+            type: 'POST',
+            data: {
+                action: 'wlm_send_test_delay_notification',
+                nonce: '<?php echo wp_create_nonce('wlm-admin-nonce'); ?>'
+            },
+            success: function(response) {
+                if (response.success) {
+                    $result.html('<div class="notice notice-success inline"><p>✅ ' + response.data.message + '</p></div>');
+                } else {
+                    $result.html('<div class="notice notice-error inline"><p>❌ ' + response.data.message + '</p></div>');
+                }
+            },
+            error: function() {
+                $result.html('<div class="notice notice-error inline"><p>❌ Fehler beim Senden der Test-Benachrichtigung.</p></div>');
+            },
+            complete: function() {
+                $button.prop('disabled', false).text('⚠️ Test-Benachrichtigung jetzt senden');
             }
         });
     });

@@ -311,6 +311,52 @@ class WLM_Delay_Notification {
     }
     
     /**
+     * Trigger manual test notification
+     */
+    public function trigger_manual() {
+        WLM_Core::log('[WLM Delay Notification] Manual trigger started');
+        
+        // Check if enabled
+        if (!get_option('wlm_delay_notification_enabled', false)) {
+            return array(
+                'success' => false,
+                'message' => 'Verzögerungs-Benachrichtigungen sind nicht aktiviert.'
+            );
+        }
+        
+        // Get delayed orders
+        $delay_days = (int) get_option('wlm_delay_notification_days', 1);
+        $orders = $this->get_delayed_orders($delay_days);
+        
+        if (empty($orders)) {
+            return array(
+                'success' => true,
+                'message' => 'Keine verzögerten Bestellungen gefunden.'
+            );
+        }
+        
+        $sent_count = 0;
+        $total_count = count($orders);
+        
+        foreach ($orders as $order) {
+            if ($this->should_send_notification($order)) {
+                if ($this->send_delay_notification($order)) {
+                    $sent_count++;
+                }
+            }
+        }
+        
+        return array(
+            'success' => true,
+            'message' => sprintf(
+                '%d von %d Verzögerungs-Benachrichtigungen erfolgreich versendet.',
+                $sent_count,
+                $total_count
+            )
+        );
+    }
+    
+    /**
      * Send test notification
      */
     public function send_test_notification($order_id) {
