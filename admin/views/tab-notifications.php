@@ -209,9 +209,9 @@ $next_run_formatted = $next_run ? date_i18n('d.m.Y H:i', $next_run) : 'Nicht gep
 </div>
 
 <div class="wlm-settings-section" style="margin-top: 40px;">
-    <h2>📊 Wöchentlicher Performance Report</h2>
+    <h2>📊 Täglicher Performance Report</h2>
     <p class="description">
-        Erhalten Sie jeden Montag einen automatischen Report mit KPIs zur Versandleistung der letzten 7 Tage.
+        Erhalten Sie täglich einen automatischen Report mit KPIs zur Versandleistung des Vortages.
     </p>
 
     <table class="form-table">
@@ -229,7 +229,7 @@ $next_run_formatted = $next_run ? date_i18n('d.m.Y H:i', $next_run) : 'Nicht gep
                     <span class="wlm-toggle-slider"></span>
                 </label>
                 <p class="description">
-                    Aktiviert wöchentliche Performance Reports mit Versand-KPIs.
+                    Aktiviert tägliche Performance Reports mit Versand-KPIs.
                 </p>
             </td>
         </tr>
@@ -246,7 +246,7 @@ $next_run_formatted = $next_run ? date_i18n('d.m.Y H:i', $next_run) : 'Nicht gep
                        class="regular-text"
                        placeholder="<?php echo esc_attr(get_option('admin_email')); ?>">
                 <p class="description">
-                    E-Mail-Adresse für den wöchentlichen Performance Report.
+                    E-Mail-Adresse für den täglichen Performance Report.
                 </p>
             </td>
         </tr>
@@ -314,11 +314,11 @@ $next_run_formatted = $next_run ? date_i18n('d.m.Y H:i', $next_run) : 'Nicht gep
                             <li>Gehe zu <strong>Tools → Cronjobs</strong></li>
                             <li>Klicke auf <strong>"Neuer Cronjob"</strong></li>
                             <li>Kopiere die gelbe URL oben und füge sie als <strong>URL</strong> ein</li>
-                            <li>Wähle <strong>"Wöchentlich"</strong> und stelle <strong>Montag 08:00</strong> ein</li>
+                            <li>Wähle <strong>"Täglich"</strong> und stelle die Uhrzeit ein (z.B. 08:00)</li>
                             <li>Speichern</li>
                         </ol>
                         <p style="margin-top: 15px; padding: 10px; background: #e7f3ff; border-left: 4px solid #2271b1;">
-                            <strong>💡 Empfehlung:</strong> Jeden Montag um 08:00 Uhr für Wochenstart-Briefing
+                            <strong>💡 Empfehlung:</strong> Täglich um 08:00 Uhr für morgendliches Briefing
                         </p>
                     </div>
                 </details>
@@ -332,7 +332,7 @@ $next_run_formatted = $next_run ? date_i18n('d.m.Y H:i', $next_run) : 'Nicht gep
                     📊 Test-Report jetzt senden
                 </button>
                 <p class="description">
-                    Sendet sofort einen Test-Report mit den aktuellen Daten der letzten 7 Tage.
+                    Sendet sofort einen Test-Report mit den Daten von gestern.
                 </p>
                 <div id="wlm-test-performance-report-result" style="margin-top: 10px;"></div>
             </td>
@@ -343,13 +343,13 @@ $next_run_formatted = $next_run ? date_i18n('d.m.Y H:i', $next_run) : 'Nicht gep
 
     <h3>📊 KPIs im Performance Report</h3>
     <p class="description">
-        Der wöchentliche Report enthält folgende Kennzahlen:
+        Der tägliche Report enthält folgende Kennzahlen:
     </p>
     <ul style="list-style: disc; margin-left: 20px;">
         <li><strong>Pünktlichkeit:</strong> % der Bestellungen, die rechtzeitig versendet wurden</li>
         <li><strong>Überfällige Bestellungen:</strong> Anzahl und % der zu spät versendeten Bestellungen</li>
         <li><strong>Durchschnittliche Processing-Time:</strong> Tatsächliche vs. Soll-Bearbeitungszeit</li>
-        <li><strong>Gesamtanzahl Bestellungen:</strong> Alle versendeten Bestellungen der letzten 7 Tage</li>
+        <li><strong>Gesamtanzahl Bestellungen:</strong> Alle versendeten Bestellungen vom Vortag</li>
     </ul>
     <p class="description">
         Alle KPIs werden mit großen, farbigen Blöcken (Grün/Gelb/Rot) dargestellt für schnelle Übersicht.
@@ -358,8 +358,8 @@ $next_run_formatted = $next_run ? date_i18n('d.m.Y H:i', $next_run) : 'Nicht gep
     <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-left: 4px solid #F39200; border-radius: 4px;">
         <h4 style="margin: 0 0 10px 0;">💡 Hinweis</h4>
         <p style="margin: 0;">
-            Der Report analysiert nur <strong>abgeschlossene Bestellungen</strong> (Status: "Completed") der letzten 7 Tage.
-            So können Sie die tatsächliche Versandleistung und Einhaltung der Ship-By-Dates überprüfen.
+            Der Report analysiert nur <strong>abgeschlossene Bestellungen</strong> (Status: "Completed") vom Vortag.
+            So können Sie die tägliche Versandleistung und Einhaltung der Ship-By-Dates überprüfen.
         </p>
     </div>
 </div>

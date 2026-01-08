@@ -1,8 +1,8 @@
 <?php
 /**
- * Weekly Performance Report
+ * Daily Performance Report
  *
- * Sends weekly KPI email about shipping performance
+ * Sends daily KPI email about shipping performance (yesterday's data)
  *
  * @package WooLieferzeitenManager
  */
@@ -18,7 +18,7 @@ class WLM_Performance_Report {
      */
     public function __construct() {
         // Hook for manual trigger
-        add_action('wlm_send_performance_report', array($this, 'send_weekly_report'));
+        add_action('wlm_send_performance_report', array($this, 'send_daily_report'));
         
         // Add settings
         add_filter('wlm_settings_fields', array($this, 'add_settings_fields'));
@@ -49,11 +49,11 @@ class WLM_Performance_Report {
     }
     
     /**
-     * Send weekly performance report
+     * Send daily performance report
      *
      * @return bool Success status
      */
-    public function send_weekly_report() {
+    public function send_daily_report() {
         if (!get_option('wlm_performance_report_enabled', false)) {
             WLM_Core::log('[WLM Performance Report] Performance reports are disabled');
             return false;
@@ -61,13 +61,13 @@ class WLM_Performance_Report {
         
         $to = get_option('wlm_performance_report_email', get_option('admin_email'));
         
-        WLM_Core::log('[WLM Performance Report] Generating weekly performance report for ' . $to);
+        WLM_Core::log('[WLM Performance Report] Generating daily performance report for ' . $to);
         
-        // Get last 7 days of data
-        $stats = $this->get_weekly_stats();
+        // Get yesterday's data
+        $stats = $this->get_daily_stats();
         
         if ($stats['total_orders'] === 0) {
-            WLM_Core::log('[WLM Performance Report] No completed orders in the last 7 days');
+            WLM_Core::log('[WLM Performance Report] No completed orders yesterday');
             
             // Check if we should send empty reports
             if (!get_option('wlm_performance_report_send_empty', false)) {
@@ -99,12 +99,12 @@ class WLM_Performance_Report {
     }
     
     /**
-     * Get weekly statistics
+     * Get daily statistics
      *
      * @return array Statistics
      */
-    private function get_weekly_stats() {
-        // Get yesterday's date (1 day report instead of 7 days)
+    private function get_daily_stats() {
+        // Get yesterday's date for daily report
         $yesterday = date('Y-m-d', strtotime('-1 day', current_time('timestamp')));
         $start_date = $yesterday;
         $end_date = $yesterday;
@@ -382,7 +382,7 @@ class WLM_Performance_Report {
                 <div class="email-header">
                     <img src="https://mega-holz.de/wp-content/uploads/2020/10/mega-holz-logo-128.png" alt="MEGA Holz" style="max-width: 128px; margin-bottom: 15px;">
                     <h1 style="margin: 0 0 10px 0; font-size: 28px; color: #000000 !important;">📊 Performance Report</h1>
-                    <p style="margin: 0; font-size: 16px; color: #000000 !important;">Wöchentliche Versandleistung KW <?php echo date('W'); ?></p>
+                    <p style="margin: 0; font-size: 16px; color: #000000 !important;">Tägliche Versandleistung vom <?php echo date('d.m.Y', strtotime('-1 day')); ?></p>
                 </div>
                 
                 <div class="email-body">
@@ -580,7 +580,7 @@ class WLM_Performance_Report {
             update_option('wlm_performance_report_enabled', true);
         }
         
-        $result = $this->send_weekly_report();
+        $result = $this->send_daily_report();
         
         // Restore original setting
         if (!$was_enabled) {
