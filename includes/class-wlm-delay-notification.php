@@ -70,17 +70,28 @@ class WLM_Delay_Notification {
         $today = date('Y-m-d');
         $threshold_date = date('Y-m-d', strtotime("-{$delay_days} days"));
         
-        // Get orders with ship_by_date < threshold and status = processing or packed
-        $order_ids = $wpdb->get_col($wpdb->prepare("
+        // Get minimum order date filter
+        $min_date = get_option('wlm_delay_notification_min_date', '');
+        
+        // Build query - only processing status (not packed or completed)
+        $query = "
             SELECT DISTINCT pm.post_id
             FROM {$wpdb->postmeta} pm
             INNER JOIN {$wpdb->posts} p ON pm.post_id = p.ID
             WHERE pm.meta_key = '_wlm_ship_by_date'
             AND pm.meta_value < %s
             AND p.post_type = 'shop_order'
-            AND p.post_status IN ('wc-processing', 'wc-packed')
-            ORDER BY pm.meta_value ASC
-        ", $threshold_date));
+            AND p.post_status = 'wc-processing'
+        ";
+        
+        // Add date filter if set
+        if (!empty($min_date)) {
+            $query .= $wpdb->prepare(" AND p.post_date >= %s", $min_date . ' 00:00:00');
+        }
+        
+        $query .= " ORDER BY pm.meta_value ASC";
+        
+        $order_ids = $wpdb->get_col($wpdb->prepare($query, $threshold_date));
         
         $orders = array();
         foreach ($order_ids as $order_id) {
@@ -217,6 +228,12 @@ class WLM_Delay_Notification {
                     'type' => 'checkbox',
                     'default' => false,
                     'description' => __('Aktiviert automatische E-Mail-Benachrichtigungen bei verzögerten Bestellungen', 'woo-lieferzeiten-manager')
+                ),
+                'wlm_delay_notification_min_date' => array(
+                    'label' => __('Bestellungen berücksichtigen ab', 'woo-lieferzeiten-manager'),
+                    'type' => 'date',
+                    'default' => '',
+                    'description' => __('Nur Bestellungen ab diesem Datum werden berücksichtigt. Leer lassen für alle Bestellungen.', 'woo-lieferzeiten-manager')
                 ),
 
                 'wlm_delay_notification_days' => array(

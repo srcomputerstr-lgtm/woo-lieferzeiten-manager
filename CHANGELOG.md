@@ -2,6 +2,26 @@
 
 All notable changes to WooCommerce Lieferzeiten Manager will be documented in this file.
 
+## [1.42.2] - 2025-12-16
+
+### Added
+- **Bestelldatum-Filter für alle Benachrichtigungssysteme:**
+  - Neue Einstellung "Bestellungen berücksichtigen ab" (Datum)
+  - Verzögerungs-Benachrichtigungen: Nur Bestellungen ab diesem Datum werden geprüft
+  - Ship-By-Date Notifications: Nur Bestellungen ab diesem Datum werden berücksichtigt
+  - Performance Reports: Nur Bestellungen ab diesem Datum werden analysiert
+  - Vorteil: Alte Bestellungen mit falschen Ship-By-Dates werden ignoriert
+
+### Changed
+- **Verzögerungs-Benachrichtigungen:** Nur Status "processing" wird geprüft (nicht mehr "packed" oder "completed")
+  - Sobald Bestellung verpackt/versendet wird, keine weiteren Verzögerungs-Mails
+- **Performance Report:** Von wöchentlich auf täglich umgestellt
+  - Zeigt nur Bestellungen von gestern (statt letzte 7 Tage)
+  - Email-Betreff: "Täglicher Performance Report - DD.MM.YYYY"
+  - Bessere Übersicht durch tägliche Auswertung
+
+---
+
 ## [1.42.1] - 2025-12-16
 
 ### Changed

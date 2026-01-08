@@ -19,6 +19,33 @@ class WLM_Performance_Report {
     public function __construct() {
         // Hook for manual trigger
         add_action('wlm_send_performance_report', array($this, 'send_weekly_report'));
+        
+        // Add settings
+        add_filter('wlm_settings_fields', array($this, 'add_settings_fields'));
+    }
+    
+    /**
+     * Add settings fields
+     *
+     * @param array $fields Existing fields
+     * @return array Modified fields
+     */
+    public function add_settings_fields($fields) {
+        if (!isset($fields['performance_report'])) {
+            $fields['performance_report'] = array(
+                'title' => __('Performance Report', 'woo-lieferzeiten-manager'),
+                'fields' => array()
+            );
+        }
+        
+        $fields['performance_report']['fields']['wlm_performance_report_min_date'] = array(
+            'type' => 'date',
+            'label' => __('Bestellungen berücksichtigen ab', 'woo-lieferzeiten-manager'),
+            'description' => __('Nur Bestellungen ab diesem Datum werden in Reports berücksichtigt. Leer lassen für alle Bestellungen.', 'woo-lieferzeiten-manager'),
+            'default' => '',
+        );
+        
+        return $fields;
     }
     
     /**
@@ -49,8 +76,8 @@ class WLM_Performance_Report {
         }
         
         $subject = sprintf(
-            '📊 Wöchentlicher Performance Report - KW %s',
-            date('W')
+            '📊 Täglicher Performance Report - %s',
+            date('d.m.Y', strtotime('-1 day', current_time('timestamp')))
         );
         
         $message = $this->generate_email_html($stats);
@@ -77,15 +104,37 @@ class WLM_Performance_Report {
      * @return array Statistics
      */
     private function get_weekly_stats() {
-        $end_date = current_time('Y-m-d');
-        $start_date = date('Y-m-d', strtotime('-7 days', current_time('timestamp')));
+        // Get yesterday's date (1 day report instead of 7 days)
+        $yesterday = date('Y-m-d', strtotime('-1 day', current_time('timestamp')));
+        $start_date = $yesterday;
+        $end_date = $yesterday;
         
-        // Get all completed orders from last 7 days (by ORDER date, not completion date)
+        // Get all completed orders from yesterday (by ORDER date, not completion date)
         $args = array(
             'limit' => -1,
             'status' => array('completed'),
             'date_created' => $start_date . '...' . $end_date,
         );
+        
+        // Add minimum date filter if set
+        $min_date = get_option('wlm_performance_report_min_date', '');
+        if (!empty($min_date) && $start_date < $min_date) {
+            // If yesterday is before min_date, no orders to report
+            return array(
+                'start_date' => $start_date,
+                'end_date' => $end_date,
+                'total_orders' => 0,
+                'on_time' => 0,
+                'overdue' => 0,
+                'on_time_percentage' => 0,
+                'overdue_percentage' => 0,
+                'avg_processing_days' => 0,
+                'target_processing_days' => get_option('wlm_default_lead_time', 1),
+                'avg_overtime' => 0,
+                'processing_performance' => 0,
+                'orders' => array()
+            );
+        }
         
         $orders = wc_get_orders($args);
         

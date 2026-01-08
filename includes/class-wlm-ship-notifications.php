@@ -125,6 +125,12 @@ class WLM_Ship_Notifications {
             'order' => 'ASC',
         );
         
+        // Add date filter if set
+        $min_date = get_option('wlm_ship_notification_min_date', '');
+        if (!empty($min_date)) {
+            $args['date_created'] = '>=' . strtotime($min_date . ' 00:00:00');
+        }
+        
         $wc_orders = wc_get_orders($args);
         
         $orders = array();
@@ -444,6 +450,13 @@ class WLM_Ship_Notifications {
             'label' => 'Tägliche Versandbenachrichtigung aktivieren',
             'description' => 'Sendet täglich eine E-Mail mit allen Bestellungen, die heute versendet werden müssen.',
             'default' => false,
+        );
+        
+        $fields['ship_notification_min_date'] = array(
+            'type' => 'date',
+            'label' => 'Bestellungen berücksichtigen ab',
+            'description' => 'Nur Bestellungen ab diesem Datum werden berücksichtigt. Leer lassen für alle Bestellungen.',
+            'default' => '',
         );
         
         $fields['ship_notification_email'] = array(
