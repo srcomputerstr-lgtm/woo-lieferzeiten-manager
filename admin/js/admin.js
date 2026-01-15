@@ -157,6 +157,36 @@
                 });
             }
             
+            // Collect Performance Report fields
+            $('[name^="wlm_performance_report"]').each(function() {
+                var $el = $(this);
+                var name = $el.attr('name');
+                var val;
+                
+                if ($el.is(':checkbox')) {
+                    val = $el.is(':checked') ? '1' : '0';
+                } else {
+                    val = $el.val();
+                }
+                
+                formData[name] = val;
+            });
+            
+            // Collect Delay Notification fields
+            $('[name^="wlm_delay_notification"]').each(function() {
+                var $el = $(this);
+                var name = $el.attr('name');
+                var val;
+                
+                if ($el.is(':checkbox')) {
+                    val = $el.is(':checked') ? '1' : '0';
+                } else {
+                    val = $el.val();
+                }
+                
+                formData[name] = val;
+            });
+            
             // Collect Shipping Methods
             if (activeSection === 'shipping') {
                 formData.wlm_shipping_methods = [];
