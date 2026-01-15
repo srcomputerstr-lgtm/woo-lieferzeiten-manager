@@ -170,29 +170,7 @@ class WLM_Admin {
                 WLM_Core::log('[WLM Admin] wlm_shipping_selection_strategy NOT in POST!');
             }
             
-            // Save individual ship notification options (for backward compatibility with cronjobs)
-            if (isset($_POST['wlm_settings'])) {
-                $settings = $_POST['wlm_settings'];
-                
-                WLM_Core::log('[WLM Admin] Saving ship notification settings:');
-                WLM_Core::log('  - enabled: ' . (isset($settings['ship_notification_enabled']) ? 'true' : 'false'));
-                WLM_Core::log('  - email: ' . (isset($settings['ship_notification_email']) ? $settings['ship_notification_email'] : 'NOT SET'));
-                WLM_Core::log('  - time: ' . (isset($settings['ship_notification_time']) ? $settings['ship_notification_time'] : 'NOT SET'));
-                WLM_Core::log('  - send_empty: ' . (isset($settings['ship_notification_send_empty']) ? 'true' : 'false'));
-                WLM_Core::log('  - min_date: ' . (isset($settings['ship_notification_min_date']) ? $settings['ship_notification_min_date'] : 'NOT SET'));
-                
-                // Always save these options when wlm_settings is present
-                update_option('wlm_ship_notification_enabled', isset($settings['ship_notification_enabled']) ? true : false);
-                update_option('wlm_ship_notification_email', isset($settings['ship_notification_email']) ? sanitize_email($settings['ship_notification_email']) : '');
-                update_option('wlm_ship_notification_time', isset($settings['ship_notification_time']) ? sanitize_text_field($settings['ship_notification_time']) : '');
-                update_option('wlm_ship_notification_send_empty', isset($settings['ship_notification_send_empty']) ? true : false);
-                update_option('wlm_ship_notification_min_date', isset($settings['ship_notification_min_date']) ? sanitize_text_field($settings['ship_notification_min_date']) : '');
-                
-                WLM_Core::log('[WLM Admin] After save, checking DB:');
-                WLM_Core::log('  - DB email: ' . get_option('wlm_ship_notification_email', 'EMPTY'));
-                WLM_Core::log('  - DB min_date: ' . get_option('wlm_ship_notification_min_date', 'EMPTY'));
-            }
-            
+
             // Save individual performance report options
             if (isset($_POST['wlm_performance_report_enabled'])) {
                 update_option('wlm_performance_report_enabled', true);

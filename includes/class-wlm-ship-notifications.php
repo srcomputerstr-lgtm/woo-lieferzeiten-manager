@@ -74,7 +74,8 @@ class WLM_Ship_Notifications {
      */
     public function send_daily_notification() {
         // Check if notifications are enabled
-        if (!get_option('wlm_ship_notification_enabled', false)) {
+        $settings = get_option('wlm_settings', array());
+        if (empty($settings['ship_notification_enabled'])) {
             WLM_Core::log('Ship notifications are disabled, skipping');
             return false;
         }
@@ -92,7 +93,7 @@ class WLM_Ship_Notifications {
             WLM_Core::log('No orders to ship today');
             
             // Check if we should send email even when no orders
-            if (!get_option('wlm_ship_notification_send_empty', false)) {
+            if (empty($settings['ship_notification_send_empty'])) {
                 WLM_Core::log('send_empty is disabled, not sending email');
                 return false;
             }
@@ -126,7 +127,8 @@ class WLM_Ship_Notifications {
         );
         
         // Add date filter if set
-        $min_date = get_option('wlm_ship_notification_min_date', '');
+        $settings = get_option('wlm_settings', array());
+        $min_date = $settings['ship_notification_min_date'] ?? '';
         if (!empty($min_date)) {
             $args['date_created'] = '>=' . strtotime($min_date . ' 00:00:00');
         }
@@ -181,7 +183,8 @@ class WLM_Ship_Notifications {
      * @param string $date Date in Y-m-d format
      */
     private function send_notification_email($orders, $date) {
-        $to = get_option('wlm_ship_notification_email', get_option('admin_email'));
+        $settings = get_option('wlm_settings', array());
+        $to = $settings['ship_notification_email'] ?? get_option('admin_email');
         $subject = sprintf('Versandliste für %s - %d Bestellungen', 
             date_i18n('d.m.Y', strtotime($date)), 
             count($orders)
