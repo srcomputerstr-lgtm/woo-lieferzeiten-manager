@@ -170,6 +170,27 @@ class WLM_Admin {
                 WLM_Core::log('[WLM Admin] wlm_shipping_selection_strategy NOT in POST!');
             }
             
+            // Save individual ship notification options (for backward compatibility with cronjobs)
+            if (isset($_POST['wlm_settings']['ship_notification_enabled'])) {
+                update_option('wlm_ship_notification_enabled', true);
+            } else {
+                update_option('wlm_ship_notification_enabled', false);
+            }
+            if (isset($_POST['wlm_settings']['ship_notification_email'])) {
+                update_option('wlm_ship_notification_email', sanitize_email($_POST['wlm_settings']['ship_notification_email']));
+            }
+            if (isset($_POST['wlm_settings']['ship_notification_time'])) {
+                update_option('wlm_ship_notification_time', sanitize_text_field($_POST['wlm_settings']['ship_notification_time']));
+            }
+            if (isset($_POST['wlm_settings']['ship_notification_send_empty'])) {
+                update_option('wlm_ship_notification_send_empty', true);
+            } else {
+                update_option('wlm_ship_notification_send_empty', false);
+            }
+            if (isset($_POST['wlm_settings']['ship_notification_min_date'])) {
+                update_option('wlm_ship_notification_min_date', sanitize_text_field($_POST['wlm_settings']['ship_notification_min_date']));
+            }
+            
             // Save individual performance report options
             if (isset($_POST['wlm_performance_report_enabled'])) {
                 update_option('wlm_performance_report_enabled', true);

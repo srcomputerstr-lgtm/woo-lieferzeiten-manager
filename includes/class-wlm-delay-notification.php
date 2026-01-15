@@ -168,6 +168,12 @@ class WLM_Delay_Notification {
         
         $headers = array('Content-Type: text/html; charset=UTF-8');
         
+        // Add BCC if configured
+        $bcc_email = get_option('wlm_delay_notification_bcc_email', '');
+        if (!empty($bcc_email) && is_email($bcc_email)) {
+            $headers[] = 'Bcc: ' . $bcc_email;
+        }
+        
         $sent = wp_mail($to, $subject, $email_body, $headers);
         
         if ($sent) {

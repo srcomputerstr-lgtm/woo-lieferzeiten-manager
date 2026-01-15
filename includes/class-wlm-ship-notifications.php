@@ -126,8 +126,7 @@ class WLM_Ship_Notifications {
         );
         
         // Add date filter if set
-        $settings = get_option('wlm_settings', array());
-        $min_date = $settings['ship_notification_min_date'] ?? '';
+        $min_date = get_option('wlm_ship_notification_min_date', '');
         if (!empty($min_date)) {
             $args['date_created'] = '>=' . strtotime($min_date . ' 00:00:00');
         }
