@@ -177,9 +177,10 @@ class WLM_Admin {
             } else {
                 update_option('wlm_performance_report_enabled', false);
             }
-            if (isset($_POST['wlm_performance_report_email'])) {
-                update_option('wlm_performance_report_email', sanitize_email($_POST['wlm_performance_report_email']));
-            }
+            // Always save email, even if empty
+            $pr_email = isset($_POST['wlm_performance_report_email']) ? sanitize_email($_POST['wlm_performance_report_email']) : '';
+            update_option('wlm_performance_report_email', $pr_email);
+            WLM_Core::log('[WLM Admin] Saved performance_report_email: ' . ($pr_email ?: 'EMPTY'));
             if (isset($_POST['wlm_performance_report_min_date'])) {
                 update_option('wlm_performance_report_min_date', sanitize_text_field($_POST['wlm_performance_report_min_date']));
             }
