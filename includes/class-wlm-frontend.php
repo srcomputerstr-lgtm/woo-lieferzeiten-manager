@@ -655,7 +655,14 @@ class WLM_Frontend {
             if (!$product) continue;
             
             $quantity = $item->get_quantity();
-            $item_window = $calculator->calculate_product_window($product, $quantity, $method_config);
+            
+            // Get product IDs
+            $product_id = $product->get_id();
+            $variation_id = $product->is_type('variation') ? $product_id : 0;
+            $parent_id = $variation_id > 0 ? $product->get_parent_id() : $product_id;
+            
+            // Call with correct parameter order: (product_id, variation_id, quantity, shipping_zone, is_express)
+            $item_window = $calculator->calculate_product_window($parent_id, $variation_id, $quantity, $method_config, false);
             
             if (!$item_window) continue;
             
