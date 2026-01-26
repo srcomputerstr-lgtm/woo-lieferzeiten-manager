@@ -513,7 +513,15 @@ class WLM_Calculator {
         }
         
         // Check product price (for cart total simulation)
-        $product_price = $product->get_price() * $quantity;
+        $price = $product->get_price();
+        
+        // Safety check: Ensure price is numeric (not array or other type)
+        if (!is_numeric($price)) {
+            WLM_Core::log('[WLM Calculator] Warning: Product price is not numeric (ID: ' . $product->get_id() . ', Type: ' . gettype($price) . '). Skipping price check.');
+            $product_price = 0; // Skip price validation if price is invalid
+        } else {
+            $product_price = floatval($price) * $quantity;
+        }
         if (!empty($method['cart_total_min']) && $product_price < floatval($method['cart_total_min'])) {
             return false;
         }
