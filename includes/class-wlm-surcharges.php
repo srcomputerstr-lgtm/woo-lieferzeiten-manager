@@ -233,6 +233,32 @@ class WLM_Surcharges {
             return;
         }
 
+        // Check if a WLM shipping method is selected
+        $chosen_methods = WC()->session->get('chosen_shipping_methods');
+        $is_wlm_method = false;
+        
+        if (!empty($chosen_methods)) {
+            foreach ($chosen_methods as $chosen_method) {
+                // Extract method ID (format: method_id:instance_id)
+                $method_parts = explode(':', $chosen_method);
+                $method_id = $method_parts[0];
+                
+                // Check if it's a WLM method
+                if (strpos($method_id, 'wlm_method_') === 0) {
+                    $is_wlm_method = true;
+                    break;
+                }
+            }
+        }
+        
+        // Only apply surcharges if WLM shipping method is selected
+        if (!$is_wlm_method) {
+            WLM_Core::log('[WLM Cart Fees] No WLM shipping method selected, skipping surcharges');
+            return;
+        }
+        
+        WLM_Core::log('[WLM Cart Fees] WLM shipping method selected, processing surcharges');
+
         // Get shipping packages
         $packages = WC()->shipping()->get_packages();
         WLM_Core::log('[WLM Cart Fees] Processing ' . count($packages) . ' packages');
