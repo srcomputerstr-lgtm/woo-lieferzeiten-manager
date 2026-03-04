@@ -836,10 +836,12 @@ class WLM_Calculator {
                 }
             }
         } elseif ($stock_status === 'onbackorder') {
-            $available_from = get_post_meta($product->get_id(), '_wlm_available_from', true);
-            if ($available_from) {
-                $result['available_date'] = $available_from;
-                $result['available_date_formatted'] = $this->format_date(strtotime($available_from));
+            // Use get_product_available_from to respect manual > calculated > lead time priority
+            $available_timestamp = $this->get_product_available_from($product, $requested_quantity);
+            $current_timestamp = current_time('timestamp');
+            if ($available_timestamp && $available_timestamp > $current_timestamp) {
+                $result['available_date'] = date('Y-m-d', $available_timestamp);
+                $result['available_date_formatted'] = $this->format_date($available_timestamp);
                 $result['message'] = sprintf(__('Wieder verfügbar ab: %s', 'woo-lieferzeiten-manager'), $result['available_date_formatted']);
             } else {
                 // Use configurable out-of-stock text
@@ -847,9 +849,18 @@ class WLM_Calculator {
                 $result['message'] = $out_of_stock_text;
             }
         } elseif ($stock_status === 'outofstock') {
-            // Use configurable out-of-stock text
-            $out_of_stock_text = $settings['out_of_stock_text'] ?? __('Zurzeit nicht auf Lager', 'woo-lieferzeiten-manager');
-            $result['message'] = $out_of_stock_text;
+            // Check for available date (manual or calculated) before showing out-of-stock text
+            $available_timestamp = $this->get_product_available_from($product, $requested_quantity);
+            $current_timestamp = current_time('timestamp');
+            if ($available_timestamp && $available_timestamp > $current_timestamp) {
+                $result['available_date'] = date('Y-m-d', $available_timestamp);
+                $result['available_date_formatted'] = $this->format_date($available_timestamp);
+                $result['message'] = sprintf(__('Wieder verfügbar ab: %s', 'woo-lieferzeiten-manager'), $result['available_date_formatted']);
+            } else {
+                // Use configurable out-of-stock text
+                $out_of_stock_text = $settings['out_of_stock_text'] ?? __('Zurzeit nicht auf Lager', 'woo-lieferzeiten-manager');
+                $result['message'] = $out_of_stock_text;
+            }
         }
 
         return $result;
