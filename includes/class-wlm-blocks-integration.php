@@ -225,7 +225,7 @@ class WLM_Blocks_Integration implements IntegrationInterface {
      * @return string[]
      */
     public function get_script_handles() {
-        return array('wlm-blocks-integration');
+        return array('wlm-blocks-integration', 'wlm-cart-stock-status');
     }
 
     /**
