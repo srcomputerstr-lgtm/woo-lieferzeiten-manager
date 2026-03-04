@@ -1,6 +1,7 @@
 /**
  * Cart Stock Status Display
  * Shows stock status for each cart item using CSS ::before
+ * Shows SKU badge for each cart item using direct DOM injection
  */
 
 (function() {
@@ -39,7 +40,7 @@
             existingStyle.remove();
         }
 
-        // Create new style element
+        // Create new style element for stock status ::before
         const style = document.createElement('style');
         style.id = 'wlm-cart-stock-styles';
         let css = '';
@@ -57,26 +58,19 @@
 
             let content = '';
             let color = '';
-            let circleColor = '';
 
             if (stock.in_stock) {
-                // Green circle - In stock
-                circleColor = '#4caf50';
                 color = '#4caf50';
                 content = '🟢 Auf Lager';
             } else if (stock.available_date_formatted) {
-                // Yellow circle - Available later
-                circleColor = '#ff9800';
                 color = '#666';
                 content = '🟡 Wieder verfügbar ab ' + stock.available_date_formatted;
             } else {
-                // Red circle - Not available
-                circleColor = '#f44336';
                 color = '#f44336';
                 content = '🔴 Nicht verfügbar';
             }
 
-            // Add CSS rule for stock status
+            // Add CSS rule for stock status ::before
             css += '.wc-block-cart-items__row:nth-child(' + rowIndex + ') .wc-block-cart-item__quantity::before {\n';
             css += '    content: "' + content + '";\n';
             css += '    display: block;\n';
@@ -86,22 +80,21 @@
             css += '    white-space: nowrap;\n';
             css += '}\n';
 
-            // Add CSS rule for SKU badge
+            // Inject SKU badge as real DOM element into the quantity container
             if (stock.sku) {
-                var skuEscaped = stock.sku.replace(/"/g, '\'').replace(/'/g, "\\'");
-                css += '.wc-block-cart-items__row:nth-child(' + rowIndex + ') .wc-block-cart-item__quantity::after {\n';
-                css += '    content: "Art-Nr  ' + skuEscaped + '";\n';
-                css += '    display: block;\n';
-                css += '    margin-top: 6px;\n';
-                css += '    padding: 2px 7px;\n';
-                css += '    background: #efefef;\n';
-                css += '    border-radius: 3px;\n';
-                css += '    font-size: 11px;\n';
-                css += '    color: #555;\n';
-                css += '    font-weight: normal;\n';
-                css += '    letter-spacing: 0.02em;\n';
-                css += '    white-space: nowrap;\n';
-                css += '}\n';
+                var quantityEl = cartItems[index] ? cartItems[index].querySelector('.wc-block-cart-item__quantity') : null;
+                if (quantityEl) {
+                    // Remove existing badge if present
+                    var existing = quantityEl.querySelector('.wlm-sku-badge');
+                    if (existing) {
+                        existing.remove();
+                    }
+                    // Create badge element
+                    var badge = document.createElement('span');
+                    badge.className = 'wlm-sku-badge';
+                    badge.innerHTML = '<span class="wlm-sku-badge__label">Art-Nr</span> <span class="wlm-sku-badge__value">' + stock.sku + '</span>';
+                    quantityEl.appendChild(badge);
+                }
             }
         });
 
@@ -109,7 +102,6 @@
         document.head.appendChild(style);
         
         (window.wlm_params?.debug) && console.log('[WLM Stock] Added CSS rules for ' + cartItemKeys.length + ' items');
-        (window.wlm_params?.debug) && console.log('[WLM Stock] CSS:\\n' + css);
     }
 
     // Run when DOM is ready and after cart updates
