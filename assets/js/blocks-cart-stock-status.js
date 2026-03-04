@@ -88,18 +88,19 @@
 
             // Add CSS rule for SKU badge
             if (stock.sku) {
-                var skuEscaped = stock.sku.replace(/"/g, '\\"').replace(/'/g, "\\'");
-                css += '.wc-block-cart-items__row:nth-child(' + rowIndex + ') .wc-block-cart-item__prices::after {\n';
+                var skuEscaped = stock.sku.replace(/"/g, '\'').replace(/'/g, "\\'");
+                css += '.wc-block-cart-items__row:nth-child(' + rowIndex + ') .wc-block-cart-item__quantity::after {\n';
                 css += '    content: "Art-Nr  ' + skuEscaped + '";\n';
-                css += '    display: inline-block;\n';
+                css += '    display: block;\n';
                 css += '    margin-top: 6px;\n';
                 css += '    padding: 2px 7px;\n';
-                css += '    background: #f0f0f0;\n';
+                css += '    background: #efefef;\n';
                 css += '    border-radius: 3px;\n';
                 css += '    font-size: 11px;\n';
                 css += '    color: #555;\n';
                 css += '    font-weight: normal;\n';
                 css += '    letter-spacing: 0.02em;\n';
+                css += '    white-space: nowrap;\n';
                 css += '}\n';
             }
         });
