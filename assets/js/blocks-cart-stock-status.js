@@ -1,8 +1,8 @@
 /**
  * Cart Stock Status Display
  * Shows stock status for each cart item using CSS ::before
+ * Shows SKU badge for each cart item using CSS ::after
  */
-
 (function() {
     'use strict';
 
@@ -76,22 +76,37 @@
                 content = '🔴 Nicht verfügbar';
             }
 
-            // Add CSS rule for this specific row
-            css += '.wc-block-cart-items__row:nth-child(' + rowIndex + ') .wc-block-cart-item__quantity::before {\\n';
-            css += '    content: "' + content + '";\\n';
-            css += '    display: block;\\n';
-            css += '    margin-bottom: 8px;\\n';
-            css += '    font-size: 12px;\\n';
-            css += '    color: ' + color + ';\\n';
-            css += '    white-space: nowrap;\\n';
-            css += '}\\n';
+            // CSS ::before fuer Lagerstatus
+            css += '.wc-block-cart-items__row:nth-child(' + rowIndex + ') .wc-block-cart-item__quantity::before {\n';
+            css += '    content: "' + content + '";\n';
+            css += '    display: block;\n';
+            css += '    margin-bottom: 8px;\n';
+            css += '    font-size: 12px;\n';
+            css += '    color: ' + color + ';\n';
+            css += '    white-space: nowrap;\n';
+            css += '}\n';
+
+            // CSS ::after fuer SKU-Badge - exakt dasselbe Muster wie ::before
+            if (stock.sku) {
+                css += '.wc-block-cart-items__row:nth-child(' + rowIndex + ') .wc-block-cart-item__quantity::after {\n';
+                css += '    content: "Art-Nr ' + stock.sku + '";\n';
+                css += '    display: block;\n';
+                css += '    margin-top: 8px;\n';
+                css += '    font-size: 11px;\n';
+                css += '    color: #888;\n';
+                css += '    white-space: nowrap;\n';
+                css += '    background: #efefef;\n';
+                css += '    padding: 2px 6px;\n';
+                css += '    border-radius: 3px;\n';
+                css += '}\n';
+            }
         });
 
         style.textContent = css;
         document.head.appendChild(style);
         
         (window.wlm_params?.debug) && console.log('[WLM Stock] Added CSS rules for ' + cartItemKeys.length + ' items');
-        (window.wlm_params?.debug) && console.log('[WLM Stock] CSS:\\n' + css);
+        (window.wlm_params?.debug) && console.log('[WLM Stock] CSS:\n' + css);
     }
 
     // Run when DOM is ready and after cart updates

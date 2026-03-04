@@ -518,7 +518,8 @@ class WLM_Blocks_Integration implements IntegrationInterface {
                     'available_date' => $stock_status['available_date'] ?? null,
                     'available_date_formatted' => $stock_status['available_date_formatted'] ?? null,
                     'attributes' => $attributes,
-                    'categories' => $categories
+                    'categories' => $categories,
+                    'sku' => $product->get_sku()
                 );
             }
         }
