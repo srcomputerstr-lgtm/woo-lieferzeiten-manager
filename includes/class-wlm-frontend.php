@@ -22,6 +22,7 @@ class WLM_Frontend {
 
         // Cart
         add_action('woocommerce_after_cart_item_name', array($this, 'display_cart_item_stock_status'), 10, 2);
+        add_action('woocommerce_after_cart_item_name', array($this, 'display_cart_item_sku_badge'), 15, 2);
         add_action('woocommerce_cart_totals_before_shipping', array($this, 'display_cart_delivery_window'));
 
         // Checkout
@@ -212,6 +213,27 @@ class WLM_Frontend {
                 echo '</div>';
             }
         }
+    }
+
+    /**
+     * Display SKU badge for cart item (classic cart)
+     *
+     * @param array $cart_item Cart item data.
+     * @param string $cart_item_key Cart item key.
+     */
+    public function display_cart_item_sku_badge($cart_item, $cart_item_key) {
+        $product = $cart_item['data'];
+        if (!$product) {
+            return;
+        }
+        $sku = $product->get_sku();
+        if (empty($sku)) {
+            return;
+        }
+        echo '<span class="wlm-sku-badge">';
+        echo '<span class="wlm-sku-badge__label">' . esc_html__('Art-Nr', 'woo-lieferzeiten-manager') . '</span>';
+        echo '<span class="wlm-sku-badge__value">' . esc_html($sku) . '</span>';
+        echo '</span>';
     }
 
     /**

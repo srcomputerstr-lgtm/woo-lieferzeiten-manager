@@ -213,6 +213,31 @@
     color: #d97706;
 }
 
+/* SKU Badge in Cart (klassischer und Block-Cart) */
+.wlm-sku-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 5px;
+    padding: 2px 7px;
+    background: #efefef;
+    border-radius: 3px;
+    font-size: 11px;
+    color: #555;
+    font-weight: normal;
+    letter-spacing: 0.02em;
+    line-height: 1.5;
+}
+
+.wlm-sku-badge__label {
+    color: #888;
+    font-weight: 500;
+}
+
+.wlm-sku-badge__value {
+    color: #444;
+}
+
 /* Shipping Window in Cart/Checkout */
 .wlm-shipping-window {
     margin-top: 8px;
