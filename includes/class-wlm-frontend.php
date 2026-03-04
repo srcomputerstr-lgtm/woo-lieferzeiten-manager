@@ -195,22 +195,25 @@ class WLM_Frontend {
      */
     public function display_cart_item_stock_status($cart_item, $cart_item_key) {
         $product = $cart_item['data'];
-        $stock_status = $product->get_stock_status();
+        $quantity = $cart_item['quantity'] ?? 1;
+        $calculator = WLM_Core::instance()->calculator;
+        $stock = $calculator->get_stock_status($product, $quantity);
 
-        if ($stock_status === 'instock') {
+        if ($stock['in_stock']) {
             echo '<div class="wlm-cart-stock wlm--in-stock">';
             echo '🟢 ' . esc_html__('Auf Lager', 'woo-lieferzeiten-manager');
             echo '</div>';
-        } elseif ($stock_status === 'onbackorder') {
-            $available_from = get_post_meta($product->get_id(), '_wlm_available_from', true);
-            if ($available_from) {
-                echo '<div class="wlm-cart-stock wlm--restock">';
-                echo '🟡 ' . sprintf(
-                    esc_html__('Wieder verfügbar ab: %s', 'woo-lieferzeiten-manager'),
-                    esc_html(date_i18n('d.m.Y', strtotime($available_from)))
-                );
-                echo '</div>';
-            }
+        } elseif (!empty($stock['available_date_formatted'])) {
+            echo '<div class="wlm-cart-stock wlm--restock">';
+            echo '🟡 ' . sprintf(
+                esc_html__('Wieder verfügbar ab: %s', 'woo-lieferzeiten-manager'),
+                esc_html($stock['available_date_formatted'])
+            );
+            echo '</div>';
+        } else {
+            echo '<div class="wlm-cart-stock wlm--out-of-stock">';
+            echo '🔴 ' . esc_html($stock['message'] ?: __('Zurzeit nicht auf Lager', 'woo-lieferzeiten-manager'));
+            echo '</div>';
         }
     }
 
