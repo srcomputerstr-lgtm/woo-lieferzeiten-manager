@@ -290,6 +290,22 @@
     background-repeat: no-repeat;
 }
 `;
+            // SKU-Badge ::after - exakt dasselbe Muster
+            if (stock.sku) {
+                cssRules += `
+.wc-block-cart-items__row:nth-child(${rowIndex}) .wc-block-cart-item__quantity::after {
+    content: "Art-Nr ${stock.sku}";
+    display: block;
+    margin-top: 8px;
+    font-size: 11px;
+    color: #888;
+    white-space: nowrap;
+    background: #efefef;
+    padding: 2px 6px;
+    border-radius: 3px;
+}
+`;
+            }
         });
         
         // Apply CSS rules
