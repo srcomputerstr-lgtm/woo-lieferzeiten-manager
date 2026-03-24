@@ -336,6 +336,28 @@ class WLM_REST_API {
             )
         ));
         
+        // Get overdue orders (ship_by_date in past, not yet shipped)
+        register_rest_route(self::NAMESPACE, '/orders/overdue', array(
+            'methods' => 'GET',
+            'callback' => array($this, 'get_overdue_orders'),
+            'permission_callback' => array($this, 'check_permission'),
+        ));
+
+        // Get orders that must be shipped on exactly a specific date
+        register_rest_route(self::NAMESPACE, '/orders/ship-by-exact/(?P<date>[0-9-]+)', array(
+            'methods' => 'GET',
+            'callback' => array($this, 'get_orders_by_exact_ship_date'),
+            'permission_callback' => array($this, 'check_permission'),
+            'args' => array(
+                'date' => array(
+                    'required' => true,
+                    'validate_callback' => function($param) {
+                        return preg_match('/^\d{4}-\d{2}-\d{2}$/', $param);
+                    }
+                )
+            )
+        ));
+
         // Get orders that need to be shipped by a specific date
         register_rest_route(self::NAMESPACE, '/orders/ship-by/(?P<date>[0-9-]+)', array(
             'methods' => 'GET',
@@ -1081,6 +1103,119 @@ class WLM_REST_API {
         ));
     }
     
+    /**
+     * Get overdue orders: ship_by_date is in the past and order is not yet shipped/completed
+     *
+     * @param WP_REST_Request $request Request object.
+     * @return WP_REST_Response
+     */
+    public function get_overdue_orders($request) {
+        $today = date('Y-m-d', current_time('timestamp'));
+
+        // Statuses that count as "not yet shipped"
+        $pending_statuses = array('processing', 'on-hold', 'pending');
+
+        $args = array(
+            'limit'      => -1,
+            'status'     => $pending_statuses,
+            'meta_query' => array(
+                array(
+                    'key'     => '_wlm_ship_by_date',
+                    'value'   => $today,
+                    'compare' => '<',
+                    'type'    => 'DATE',
+                ),
+            ),
+            'orderby'  => 'meta_value',
+            'meta_key' => '_wlm_ship_by_date',
+            'order'    => 'ASC',
+        );
+
+        $orders = wc_get_orders($args);
+
+        $result = array();
+        foreach ($orders as $order) {
+            $ship_by = $order->get_meta('_wlm_ship_by_date');
+            $days_overdue = (int) floor((strtotime($today) - strtotime($ship_by)) / DAY_IN_SECONDS);
+            $result[] = array(
+                'order_id'             => $order->get_id(),
+                'order_number'         => $order->get_order_number(),
+                'status'               => $order->get_status(),
+                'ship_by_date'         => $ship_by,
+                'days_overdue'         => $days_overdue,
+                'earliest_delivery'    => $order->get_meta('_wlm_earliest_delivery'),
+                'latest_delivery'      => $order->get_meta('_wlm_latest_delivery'),
+                'delivery_window'      => $order->get_meta('_wlm_delivery_window'),
+                'shipping_method_name' => $order->get_meta('_wlm_shipping_method_name'),
+                'customer_name'        => $order->get_formatted_billing_full_name(),
+                'customer_email'       => $order->get_billing_email(),
+                'order_total'          => $order->get_total(),
+                'currency'             => $order->get_currency(),
+                'order_date'           => $order->get_date_created() ? $order->get_date_created()->date('Y-m-d') : null,
+            );
+        }
+
+        return rest_ensure_response(array(
+            'reference_date' => $today,
+            'count'          => count($result),
+            'orders'         => $result,
+        ));
+    }
+
+    /**
+     * Get orders that must be shipped on exactly a given date
+     *
+     * @param WP_REST_Request $request Request object.
+     * @return WP_REST_Response
+     */
+    public function get_orders_by_exact_ship_date($request) {
+        $date   = $request['date'];
+        $status = $request->get_param('status') ?: 'processing';
+
+        $args = array(
+            'limit'      => -1,
+            'status'     => $status,
+            'meta_query' => array(
+                array(
+                    'key'     => '_wlm_ship_by_date',
+                    'value'   => $date,
+                    'compare' => '=',
+                    'type'    => 'DATE',
+                ),
+            ),
+            'orderby'  => 'meta_value',
+            'meta_key' => '_wlm_ship_by_date',
+            'order'    => 'ASC',
+        );
+
+        $orders = wc_get_orders($args);
+
+        $result = array();
+        foreach ($orders as $order) {
+            $result[] = array(
+                'order_id'             => $order->get_id(),
+                'order_number'         => $order->get_order_number(),
+                'status'               => $order->get_status(),
+                'ship_by_date'         => $order->get_meta('_wlm_ship_by_date'),
+                'earliest_delivery'    => $order->get_meta('_wlm_earliest_delivery'),
+                'latest_delivery'      => $order->get_meta('_wlm_latest_delivery'),
+                'delivery_window'      => $order->get_meta('_wlm_delivery_window'),
+                'shipping_method_name' => $order->get_meta('_wlm_shipping_method_name'),
+                'customer_name'        => $order->get_formatted_billing_full_name(),
+                'customer_email'       => $order->get_billing_email(),
+                'order_total'          => $order->get_total(),
+                'currency'             => $order->get_currency(),
+                'order_date'           => $order->get_date_created() ? $order->get_date_created()->date('Y-m-d') : null,
+            );
+        }
+
+        return rest_ensure_response(array(
+            'date'   => $date,
+            'count'  => count($result),
+            'orders' => $result,
+        ));
+    }
+
     /**
      * Check cron permission (uses secret key)
      *
