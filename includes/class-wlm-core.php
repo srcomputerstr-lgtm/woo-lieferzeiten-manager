@@ -246,6 +246,9 @@ class WLM_Core {
         WLM_Core::log('[WLM Cronjob] Found ' . count($products) . ' products total, default_lead_time=' . $default_lead_time . ' days');
 
         foreach ($products as $product) {
+            // Clear expired manual dates without changing the calculated-date logic.
+            WLM_Product_Fields::get_valid_available_from($product->ID);
+
             // Try product-specific lead time first
             $lead_time = get_post_meta($product->ID, '_wlm_lead_time_days', true);
             

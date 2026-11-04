@@ -233,7 +233,7 @@ class WLM_Calculator {
         }
         
         // If not enough stock, check for manual available_from date (Priority 1)
-        $available_from = get_post_meta($product->get_id(), '_wlm_available_from', true);
+        $available_from = WLM_Product_Fields::get_valid_available_from($product->get_id());
 
         if ($available_from) {
             $available_timestamp = strtotime($available_from);

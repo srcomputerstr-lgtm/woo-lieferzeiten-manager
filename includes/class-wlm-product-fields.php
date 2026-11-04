@@ -21,6 +21,80 @@ class WLM_Product_Fields {
         // Add variation fields
         add_action('woocommerce_variation_options_pricing', array($this, 'add_variation_fields'), 10, 3);
         add_action('woocommerce_save_product_variation', array($this, 'save_variation_fields'), 10, 2);
+
+        // Protect this field when written through REST, imports or WooCommerce metadata.
+        add_action('added_post_meta', array($this, 'validate_saved_available_from'), 10, 4);
+        add_action('updated_post_meta', array($this, 'validate_saved_available_from'), 10, 4);
+        add_action('woocommerce_before_product_object_save', array($this, 'validate_product_available_from'));
+    }
+
+    /**
+     * Keep only a real calendar date that is today or later in the WordPress timezone.
+     *
+     * @param mixed $value Manual availability date.
+     * @return string Valid date or an empty string.
+     */
+    public static function normalize_available_from($value) {
+        if (!is_string($value) || !preg_match('/\A(\d{4})-(\d{2})-(\d{2})\z/', $value, $parts)) {
+            return '';
+        }
+
+        if (!checkdate((int) $parts[2], (int) $parts[3], (int) $parts[1])) {
+            return '';
+        }
+
+        return strcmp($value, current_time('Y-m-d')) >= 0 ? $value : '';
+    }
+
+    /**
+     * Read the manual date and remove an expired or malformed stored value.
+     * The calculated availability date is deliberately left untouched.
+     *
+     * @param int $product_id Product or variation ID.
+     * @return string Valid manual date or an empty string.
+     */
+    public static function get_valid_available_from($product_id) {
+        $value = get_post_meta($product_id, '_wlm_available_from', true);
+        $valid_value = self::normalize_available_from($value);
+
+        if ($value !== '' && $valid_value === '') {
+            delete_post_meta($product_id, '_wlm_available_from', $value);
+        }
+
+        return $valid_value;
+    }
+
+    /**
+     * Remove invalid manual dates after metadata writes, regardless of their source.
+     *
+     * @param int $meta_id Meta ID.
+     * @param int $product_id Product or variation ID.
+     * @param string $meta_key Meta key.
+     * @param mixed $value Stored value.
+     */
+    public function validate_saved_available_from($meta_id, $product_id, $meta_key, $value) {
+        if ($meta_key !== '_wlm_available_from') {
+            return;
+        }
+
+        if (!in_array(get_post_type($product_id), array('product', 'product_variation'), true)) {
+            return;
+        }
+
+        if (self::normalize_available_from($value) === '') {
+            delete_post_meta($product_id, $meta_key, $value);
+        }
+    }
+
+    /**
+     * Keep WooCommerce's in-memory metadata consistent before saving products/variations.
+     *
+     * @param WC_Product $product Product or variation object.
+     */
+    public function validate_product_available_from($product) {
+        if ($product->meta_exists('_wlm_available_from') && self::normalize_available_from($product->get_meta('_wlm_available_from', true, 'edit')) === '') {
+            $product->delete_meta_data('_wlm_available_from');
+        }
     }
 
     /**
@@ -39,7 +113,7 @@ class WLM_Product_Fields {
             'desc_tip' => true,
             'description' => __('Datum, ab dem das Produkt verfügbar ist (Format: YYYY-MM-DD). Wird automatisch berechnet, wenn nicht gesetzt.', 'woo-lieferzeiten-manager'),
             'type' => 'date',
-            'value' => get_post_meta($product_object->get_id(), '_wlm_available_from', true)
+            'value' => self::get_valid_available_from($product_object->get_id())
         ));
 
         // Lead time in days
@@ -110,21 +184,18 @@ class WLM_Product_Fields {
     public function save_product_fields($product) {
         // Save available from date
         if (isset($_POST['_wlm_available_from'])) {
-            $available_from = sanitize_text_field($_POST['_wlm_available_from']);
-            $product->update_meta_data('_wlm_available_from', $available_from);
+            $available_from = self::normalize_available_from(sanitize_text_field($_POST['_wlm_available_from']));
+            if ($available_from === '') {
+                $product->delete_meta_data('_wlm_available_from');
+            } else {
+                $product->update_meta_data('_wlm_available_from', $available_from);
+            }
         }
 
         // Save lead time
         if (isset($_POST['_wlm_lead_time_days'])) {
             $lead_time = absint($_POST['_wlm_lead_time_days']);
             $product->update_meta_data('_wlm_lead_time_days', $lead_time);
-
-            // Auto-calculate available from if not manually set
-            if (empty($_POST['_wlm_available_from']) && $lead_time > 0) {
-                $calculator = new WLM_Calculator();
-                $available_from = $calculator->calculate_available_from_date($lead_time);
-                $product->update_meta_data('_wlm_available_from', $available_from);
-            }
         }
 
         // Save max visible stock
@@ -152,7 +223,7 @@ class WLM_Product_Fields {
             'desc_tip' => true,
             'description' => __('Datum, ab dem die Variante verfügbar ist (Format: YYYY-MM-DD).', 'woo-lieferzeiten-manager'),
             'type' => 'date',
-            'value' => get_post_meta($variation->ID, '_wlm_available_from', true),
+            'value' => self::get_valid_available_from($variation->ID),
             'wrapper_class' => 'form-row form-row-full'
         ));
 
@@ -184,21 +255,18 @@ class WLM_Product_Fields {
     public function save_variation_fields($variation_id, $loop) {
         // Save available from date
         if (isset($_POST['_wlm_available_from'][$loop])) {
-            $available_from = sanitize_text_field($_POST['_wlm_available_from'][$loop]);
-            update_post_meta($variation_id, '_wlm_available_from', $available_from);
+            $available_from = self::normalize_available_from(sanitize_text_field($_POST['_wlm_available_from'][$loop]));
+            if ($available_from === '') {
+                delete_post_meta($variation_id, '_wlm_available_from');
+            } else {
+                update_post_meta($variation_id, '_wlm_available_from', $available_from);
+            }
         }
 
         // Save lead time
         if (isset($_POST['_wlm_lead_time_days'][$loop])) {
             $lead_time = absint($_POST['_wlm_lead_time_days'][$loop]);
             update_post_meta($variation_id, '_wlm_lead_time_days', $lead_time);
-
-            // Auto-calculate available from if not manually set
-            if (empty($_POST['_wlm_available_from'][$loop]) && $lead_time > 0) {
-                $calculator = new WLM_Calculator();
-                $available_from = $calculator->calculate_available_from_date($lead_time);
-                update_post_meta($variation_id, '_wlm_available_from', $available_from);
-            }
         }
     }
 }

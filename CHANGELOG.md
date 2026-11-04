@@ -2,6 +2,17 @@
 
 All notable changes to WooCommerce Lieferzeiten Manager will be documented in this file.
 
+## [1.42.20] - 2026-11-04
+
+### Fixed
+- Ausschließlich das manuelle Produkt-/Variantenfeld `_wlm_available_from` abgesichert: Leere, ungültige und vor dem heutigen WordPress-Datum liegende Werte werden entfernt; heute und zukünftige gültige Datumswerte bleiben erhalten.
+- Bestehende Fehlwerte werden beim Auslesen für Verfügbarkeit/Admin-Anzeige und im vorhandenen täglichen Verfügbarkeits-Cronjob bereinigt. Keine neue Massenmigration oder Cronplanung.
+- Neue Fehlwerte werden bei WordPress-Metadatenzugriffen und vor WooCommerce-Produktspeicherung bereinigt, einschließlich des WooCommerce-Objektzustands.
+- Admin-Leerspeichern befüllt das manuelle Feld nicht erneut automatisch. Die bestehende Berechnungspriorität greift: berechnetes Verfügbarkeitsdatum, Produkt-Lieferzeit, globale Lieferzeit.
+- Berechnung des automatisch gespeicherten Datums, Versand, Bestellungen, REST-Routen, SKU-Badge sowie Block-Cart-/Checkout-Code unverändert.
+
+---
+
 ## [1.42.2] - 2025-12-16
 
 ### Added
