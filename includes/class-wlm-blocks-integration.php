@@ -526,6 +526,13 @@ class WLM_Blocks_Integration implements IntegrationInterface {
         
         // Only the optional selected storage window overrides delivery dates; stock/SKU data stays untouched.
         if (class_exists('WLM_Free_Storage')) {
+            if (WLM_Free_Storage::instance()->is_storage_selected()) {
+                foreach ($delivery_info as $storage_method_id => $storage_info) {
+                    if (!empty($storage_info['is_express_rate'])) {
+                        unset($delivery_info[$storage_method_id]);
+                    }
+                }
+            }
             foreach ($delivery_info as $storage_method_id => &$storage_info) {
                 $storage_window = WLM_Free_Storage::instance()->get_storage_window($storage_method_id);
                 if ($storage_window) {

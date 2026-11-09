@@ -15,6 +15,7 @@ class WLM_Free_Storage {
     const NAMESPACE_ID = 'wlm-free-storage';
     const OPTION_KEY = 'wlm_free_storage';
     const SESSION_KEY = 'wlm_free_storage_selection';
+    const CONFLICT_KEY = 'wlm_free_storage_express_conflict';
     const PAYMENT_NOTICE = 'Durch die ausgewählte Einlagerungsoption können nur bestimmte Zahlungsarten angeboten werden.';
 
     private static $instance = null;
@@ -40,6 +41,13 @@ class WLM_Free_Storage {
         add_action('woocommerce_before_order_object_save', array($this, 'protect_order_dates'), 100, 2);
         add_action('woocommerce_thankyou', array($this, 'cleanup_after_thankyou'), 20);
         add_action('woocommerce_cart_emptied', array($this, 'clear_selection'));
+        add_filter('woocommerce_cart_shipping_packages', array($this, 'mark_shipping_packages'), 100);
+        add_filter('woocommerce_package_rates', array($this, 'filter_express_rates'), PHP_INT_MAX, 2);
+        add_filter('woocommerce_shipping_packages', array($this, 'filter_cached_express_rates'), PHP_INT_MAX);
+        add_action('woocommerce_before_calculate_totals', array($this, 'clear_storage_express'), 0);
+        add_action('wp_ajax_wlm_activate_express', array($this, 'reject_storage_express_activation'), 0);
+        add_action('wp_ajax_nopriv_wlm_activate_express', array($this, 'reject_storage_express_activation'), 0);
+        add_filter('rest_request_before_callbacks', array($this, 'reject_storage_express_request'), 10, 3);
     }
 
     public static function defaults() {
@@ -129,6 +137,7 @@ class WLM_Free_Storage {
         if (!$this->is_enabled()) {
             if ($session) {
                 $session->__unset(self::SESSION_KEY);
+                $session->__unset(self::CONFLICT_KEY);
             }
             return 'asap';
         }
@@ -137,10 +146,149 @@ class WLM_Free_Storage {
         return is_string($value) && '' !== $value ? $value : 'asap';
     }
 
+    public function is_storage_selected() {
+        return 'asap' !== $this->get_selection();
+    }
+
+    /** Identify this plugin's native Express variants, not unrelated shipping labels. */
+    private function express_base_id($rate_id) {
+        $method_id = explode(':', (string) $rate_id)[0];
+        if ('_express' !== substr($method_id, -8)) {
+            return null;
+        }
+        $base = substr($method_id, 0, -8);
+        foreach (WLM_Core::instance()->shipping_methods->get_configured_methods() as $method) {
+            if (is_array($method) && isset($method['id']) && $base === (string) $method['id']) {
+                return $base;
+            }
+        }
+        return null;
+    }
+
+    private function regular_rate_id($rates, $chosen) {
+        $base = $this->express_base_id($chosen);
+        if (null === $base) {
+            return isset($rates[$chosen]) ? $chosen : null;
+        }
+        foreach ($rates as $id => $rate) {
+            if ($base === explode(':', (string) $id)[0]) {
+                return $id;
+            }
+        }
+        return null;
+    }
+
+    private function calculate_preserving_shipping($chosen) {
+        $this->session()->set('chosen_shipping_methods', $chosen);
+        // A changed rate list makes WooCommerce choose its first default, even if our
+        // same-base regular choice is available. Preserve only valid choices, only here.
+        $preserve = function($default, $rates, $selected) {
+            return isset($rates[$selected]) ? $selected : $default;
+        };
+        add_filter('woocommerce_shipping_chosen_method', $preserve, PHP_INT_MAX, 3);
+        try {
+            WC()->cart->calculate_shipping();
+        } finally {
+            remove_filter('woocommerce_shipping_chosen_method', $preserve, PHP_INT_MAX);
+        }
+    }
+
+    private function record_express_conflict() {
+        $session = $this->session();
+        if (!$this->is_storage_selected() || !$session) {
+            return;
+        }
+        foreach ((array) $session->get('chosen_shipping_methods', array()) as $id) {
+            if (null !== $this->express_base_id($id)) {
+                // WooCommerce may silently resolve an unavailable Express ID to its
+                // default. Remember the conflict until an explicit valid choice/reset.
+                $session->set(self::CONFLICT_KEY, true);
+                break;
+            }
+        }
+    }
+
+    public function mark_shipping_packages($packages) {
+        if ($this->is_storage_selected() && is_array($packages)) {
+            $this->record_express_conflict();
+            foreach ($packages as &$package) {
+                // Included in WooCommerce's package hash; ASAP/disabled has no marker.
+                $package['wlm_free_storage_no_express'] = true;
+            }
+            unset($package);
+        }
+        return $packages;
+    }
+
+    public function filter_express_rates($rates, $package = array()) {
+        if (!$this->is_storage_selected() || !is_array($rates)) {
+            return $rates;
+        }
+        foreach ($rates as $id => $rate) {
+            if (null !== $this->express_base_id($id)) {
+                unset($rates[$id]);
+            }
+        }
+        return $rates;
+    }
+
+    public function filter_cached_express_rates($packages) {
+        if ($this->is_storage_selected() && is_array($packages)) {
+            foreach ($packages as &$package) {
+                $package['rates'] = $this->filter_express_rates($package['rates'] ?? array(), $package);
+            }
+            unset($package);
+        }
+        return $packages;
+    }
+
+    private function invalidate_shipping_cache() {
+        $session = $this->session();
+        if ($session && function_exists('WC') && WC()->cart) {
+            foreach (WC()->cart->get_shipping_packages() as $index => $package) {
+                $session->__unset('shipping_for_package_' . $index);
+            }
+        }
+    }
+
+    public function clear_storage_express($cart = null) {
+        $session = $this->session();
+        $this->record_express_conflict();
+        if ($this->is_storage_selected() && $session && $session->get('wlm_express_selected')) {
+            $session->__unset('wlm_express_selected');
+            $this->invalidate_shipping_cache();
+        }
+    }
+
+    public function reject_storage_express_activation() {
+        if ($this->is_storage_selected()) {
+            check_ajax_referer('wlm-express-nonce', 'nonce');
+            wp_send_json_error(array('message' => __('Express-Versand und Gratis Einlagerung können nicht gleichzeitig gewählt werden. Bitte wählen Sie zuerst „So schnell wie möglich“.', 'woo-lieferzeiten-manager')));
+        }
+    }
+
+    public function reject_storage_express_request($response, $handler, $request) {
+        if (null !== $response || 'POST' !== $request->get_method() || !preg_match('#^/wc/store/v[0-9]+/cart/select-shipping-rate$#D', $request->get_route())) {
+            return $response;
+        }
+        $controller = '\Automattic\WooCommerce\StoreApi\Utilities\CartController';
+        if (class_exists($controller)) {
+            // This route's normal callback initializes the cart too. Read the correct
+            // Store API session before any submitted shipping ID can replace its value.
+            (new $controller())->load_cart();
+        }
+        $id = $request['rate_id'] ?? '';
+        if ($this->is_storage_selected() && is_string($id) && null !== $this->express_base_id($id)) {
+            return new WP_Error('wlm_free_storage_express_conflict', 'Express-Versand und Gratis Einlagerung können nicht gleichzeitig gewählt werden. Bitte wählen Sie zuerst „So schnell wie möglich“.', array('status' => 400));
+        }
+        return $response;
+    }
+
     public function clear_selection() {
         $session = $this->session();
         if ($session) {
             $session->__unset(self::SESSION_KEY);
+            $session->__unset(self::CONFLICT_KEY);
         }
     }
 
@@ -187,16 +335,23 @@ class WLM_Free_Storage {
         $settings = $this->get_settings();
         $selection = $this->get_selection();
         $context = $settings['enabled'] || 'asap' !== $selection ? $this->baseline() : array('window' => null, 'reason' => '');
+        // Offer storage only if the regular variant can meet it, without changing ASAP Express.
+        $conflict = $this->session() && $this->session()->get(self::CONFLICT_KEY);
+        $storage_context = $settings['enabled'] && ('asap' === $selection || $conflict) ? $this->baseline(null, true) : $context;
         $options = array();
         $chosen = null;
         $reason = 'asap' === $selection ? '' : 'Das gewählte Einlagerungsfenster ist nicht mehr vorhanden. Bitte wählen Sie erneut.';
         foreach ($settings['periods'] as $period) {
-            $evaluated = $this->evaluate_period($period, $settings, $context);
+            $evaluated = $this->evaluate_period($period, $settings, $storage_context);
             $options[] = array('id' => $period['id'], 'label' => $period['label'], 'start' => $period['start'], 'end' => $period['end'], 'available' => '' === $evaluated['reason'], 'reason' => $evaluated['reason']);
             if ($period['id'] === $selection) {
                 $chosen = $evaluated['window'];
                 $reason = $evaluated['reason'];
             }
+        }
+        if ('asap' !== $selection && $conflict) {
+            $chosen = null;
+            $reason = 'Die frühere Express-Auswahl ist nicht mit Gratis Einlagerung kombinierbar. Bitte wählen Sie erneut einen Lieferzeitraum oder „So schnell wie möglich“.';
         }
         return array(
             'enabled' => $settings['enabled'], 'selected' => $selection,
@@ -214,20 +369,83 @@ class WLM_Free_Storage {
             $this->route_error('Bitte wählen Sie eine gültige Lieferoption.');
         }
         $id = $data['selection'];
-        // Reject rather than normalize client IDs; dates supplied by clients are ignored.
-        if ('asap' !== $id) {
-            // The cart/extensions callback runs before WooCommerce calculates its response.
-            // Load current rates in this request before validating the chosen shipping method.
-            if (function_exists('WC') && WC() && WC()->cart) {
-                WC()->cart->calculate_shipping();
-            }
-            $this->validated_selection($id);
-        }
         $session = $this->session();
         if (!$session) {
             $this->route_error('Die Checkout-Sitzung ist nicht verfügbar. Bitte laden Sie die Seite neu.');
         }
-        $session->set(self::SESSION_KEY, $id);
+        if ('asap' === $id) {
+            $was_storage = $this->is_storage_selected();
+            $chosen = $session->get('chosen_shipping_methods', array());
+            $session->set(self::SESSION_KEY, $id);
+            $session->__unset(self::CONFLICT_KEY);
+            // Reappear after switching back, without automatically choosing Express.
+            $this->invalidate_shipping_cache();
+            if ($was_storage && function_exists('WC') && WC() && WC()->cart && WC()->cart->needs_shipping()) {
+                $this->calculate_preserving_shipping($chosen);
+            }
+            return;
+        }
+        $settings = $this->get_settings();
+        $known = false;
+        foreach ($settings['periods'] as $period) {
+            $known = $known || $period['id'] === $id;
+        }
+        if (!$settings['enabled'] || !$known) {
+            $this->route_error('Das gewählte Einlagerungsfenster ist nicht verfügbar. Bitte wählen Sie erneut.');
+        }
+        if (!function_exists('WC') || !WC() || !WC()->cart || WC()->cart->is_empty() || !WC()->cart->needs_shipping()) {
+            $this->route_error('Für diesen Warenkorb ist keine Einlagerung verfügbar. Bitte wählen Sie „So schnell wie möglich“.');
+        }
+        $previous = $this->get_selection();
+        $previous_shipping = $session->get('chosen_shipping_methods', array());
+        $previous_express = $session->get('wlm_express_selected');
+        $previous_conflict = $session->get(self::CONFLICT_KEY);
+        try {
+            // Clearing legacy Express also removes its cost contribution from fresh rates.
+            $session->__unset('wlm_express_selected');
+            $this->invalidate_shipping_cache();
+            $this->calculate_preserving_shipping($previous_shipping);
+            $packages = WC()->shipping()->get_packages();
+            $regular = $previous_shipping;
+            foreach (WC()->cart->get_shipping_packages() as $index => $package) {
+                $chosen = $previous_shipping[$index] ?? '';
+                $regular[$index] = $this->regular_rate_id($packages[$index]['rates'] ?? array(), $chosen);
+                if (!$regular[$index]) {
+                    $this->route_error('Für Gratis Einlagerung ist keine passende reguläre Versandart verfügbar. Bitte wählen Sie „So schnell wie möglich“.');
+                }
+            }
+            $session->set('chosen_shipping_methods', $regular);
+            $session->set(self::SESSION_KEY, $id);
+            $session->__unset(self::CONFLICT_KEY);
+            $this->invalidate_shipping_cache();
+            $this->calculate_preserving_shipping($regular);
+            if ($session->get('chosen_shipping_methods') !== $regular) {
+                $this->route_error('Die reguläre Versandart ist nicht mehr verfügbar. Bitte wählen Sie erneut.');
+            }
+            // Authoritative validation uses regular transit and ignores client date fields.
+            $this->validated_selection($id);
+        } catch (Exception $e) {
+            // Failed choices must not silently cancel a customer's prior Express purchase.
+            $session->set(self::SESSION_KEY, $previous);
+            $session->set('chosen_shipping_methods', $previous_shipping);
+            if (null === $previous_express) {
+                $session->__unset('wlm_express_selected');
+            } else {
+                $session->set('wlm_express_selected', $previous_express);
+            }
+            if (null === $previous_conflict) {
+                $session->__unset(self::CONFLICT_KEY);
+            } else {
+                $session->set(self::CONFLICT_KEY, $previous_conflict);
+            }
+            $this->invalidate_shipping_cache();
+            if (function_exists('WC') && WC()->cart) {
+                $this->calculate_preserving_shipping($previous_shipping);
+                // calculate_shipping may auto-resolve stale IDs; preserve the rejected request's state.
+                $session->set('chosen_shipping_methods', $previous_shipping);
+            }
+            throw $e;
+        }
     }
 
     private function route_error($message) {
@@ -331,9 +549,13 @@ class WLM_Free_Storage {
         return null;
     }
 
-    private function baseline($method_id = null) {
+    private function baseline($method_id = null, $regular_for_storage = false) {
         $failure = array('window' => null, 'reason' => 'Für diesen Warenkorb ist kein verlässlicher gemeinsamer Liefertermin verfügbar.');
         if (!function_exists('WC') || !WC() || !WC()->cart || WC()->cart->is_empty() || !WC()->cart->needs_shipping() || !$this->session()) {
+            return $failure;
+        }
+        if (!$regular_for_storage && $this->is_storage_selected() && $this->session()->get(self::CONFLICT_KEY)) {
+            $failure['reason'] = 'Die frühere Express-Auswahl ist nicht mit Gratis Einlagerung kombinierbar. Bitte wählen Sie erneut einen Lieferzeitraum oder „So schnell wie möglich“.';
             return $failure;
         }
         $calendar = $this->calendar();
@@ -345,6 +567,19 @@ class WLM_Free_Storage {
         $packages = WC()->cart->get_shipping_packages();
         if (!is_array($chosen) || !$packages) {
             return $failure;
+        }
+        $rated_packages = WC()->shipping()->get_packages();
+        foreach ($packages as $index => $package) {
+            if ($regular_for_storage) {
+                $chosen[$index] = $this->regular_rate_id($rated_packages[$index]['rates'] ?? array(), $chosen[$index] ?? '');
+                if (!$chosen[$index]) {
+                    $failure['reason'] = 'Für Gratis Einlagerung ist keine passende reguläre Versandart verfügbar.';
+                    return $failure;
+                }
+            } elseif ($this->is_storage_selected() && null !== $this->express_base_id($chosen[$index] ?? '')) {
+                $failure['reason'] = 'Express-Versand und Gratis Einlagerung können nicht gleichzeitig gewählt werden. Bitte wählen Sie eine reguläre Versandart oder „So schnell wie möglich“.';
+                return $failure;
+            }
         }
         $ids = array();
         foreach ($packages as $index => $package) {

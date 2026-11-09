@@ -540,7 +540,7 @@ class WLM_Shipping_Methods {
             echo '</div>';
 
             // Check if express is available
-            if (!empty($method_config['express_enabled'])) {
+            if (!empty($method_config['express_enabled']) && (!class_exists('WLM_Free_Storage') || !WLM_Free_Storage::instance()->is_storage_selected())) {
                 $express_available = $calculator->is_express_available();
                 
                 if ($express_available) {

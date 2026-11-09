@@ -122,6 +122,7 @@
                             option.reason ? h('small', { id: 'wlm-storage-reason-' + option.id }, option.reason) : null));
                 })),
             busy ? h('p', { role: 'status' }, 'Liefertermin wird aktualisiert …') : null,
+            selected !== 'asap' ? h('p', { className: 'wlm-storage-express-notice', role: 'status' }, 'Gratis Einlagerung ist nicht mit Express-Versand kombinierbar. Bei „So schnell wie möglich“ stehen die regulär verfügbaren Express-Optionen wieder zur Auswahl.') : null,
             selected !== 'asap' && storage.selected_valid ? h('p', { className: 'wlm-storage-payment-notice', role: 'status' }, storage.payment_notice || 'Durch die ausgewählte Einlagerungsoption können nur bestimmte Zahlungsarten angeboten werden.') : null,
             invalid ? h('p', { className: 'wlm-storage-error', role: 'alert' }, invalidMessage) : null,
             error ? h('p', { className: 'wlm-storage-error', role: 'alert' }, error) : null);

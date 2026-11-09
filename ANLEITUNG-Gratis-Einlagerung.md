@@ -1,8 +1,8 @@
-# Gratis Einlagerung – Woo Lieferzeiten Manager 1.43.0
+# Gratis Einlagerung – Woo Lieferzeiten Manager 1.43.1
 
 ## Vor dem Update
 
-Datenbank und bisherige Plugin-Dateien sichern. Zuerst auf einer Staging-Kopie mit den tatsächlich eingesetzten Zahlungsplugins und dem JTL-Connector testen. Das Update nimmt keine bestehende Bestellung oder Produktberechnung in eine Einlagerungsaktion auf. Die neue Aktion ist nach Installation **deaktiviert**.
+Datenbank und bisherige Plugin-Dateien sichern. Zuerst auf einer Staging-Kopie mit den tatsächlich eingesetzten Zahlungsplugins und dem JTL-Connector testen. Das Update nimmt keine bestehende Bestellung oder Produktberechnung in eine Einlagerungsaktion auf. Bei erstmaliger Installation ist die Aktion **deaktiviert**; bereits gespeicherte Einstellungen bleiben bei einem Update erhalten.
 
 Es darf weiterhin nur **eine Version des Woo Lieferzeiten Managers aktiv** sein. Im Shop gab es zuvor mehrere Plugin-Ordner. Dieses ZIP enthält ausschließlich `woo-lieferzeiten-manager/`. Beim Hochladen die aktuell verwendete Installation ersetzen; nicht eine zweite Installation parallel aktivieren. Falls WordPress eine unerwartet alte Version zum Ersetzen anbietet, zunächst die Plugin-Ordner prüfen statt ein weiteres Duplikat zu aktivieren. Inaktive Altordner nicht ohne vorherige Sicherung löschen.
 
@@ -33,9 +33,21 @@ Nach Aktivierung erscheint automatisch eine Radioauswahl vor dem Zahlungsbereich
 
 Ein anderes Fenster gilt für **die gesamte Bestellung** und beschreibt das **Eintreffen beim Kunden**, nicht die Versandwoche. Neben dem gewählten Fenster erscheint in der Positionsübersicht genau eine kostenlose Zeile: `Gratis Einlagerung – Lieferung [Zeitfenster]`. Bei einem Wechsel wird sie aktualisiert; bei Rückkehr zum Standard verschwindet sie.
 
-Die neue Zeile ist kein zusätzliches Lagerprodukt und verändert weder Warenkorbmengen noch Versandbedingungen, Stock-/SKU-Anzeige, Gutscheine oder Gesamtbetrag. Beim Bestellabschluss entsteht daraus eine echte Bestellposition mit Menge 1 und 0,00 € ohne Produktreferenz/SKU. Diese Position ist im Standard-WooCommerce-Mailtemplate sichtbar.
+Die neue Zeile ist kein zusätzliches Lagerprodukt und verändert selbst weder Warenkorbmengen, Stock-/SKU-Anzeige, Gutscheine noch Gesamtbetrag. Beim Bestellabschluss entsteht daraus eine echte Bestellposition mit Menge 1 und 0,00 € ohne Produktreferenz/SKU. Diese Position ist im Standard-WooCommerce-Mailtemplate sichtbar. Ein ausdrücklich gewählter Wechsel von Express zu Einlagerung berechnet hingegen den regulären Versand ohne Expressaufschlag neu, wie im folgenden Abschnitt beschrieben.
 
 Bei Einlagerung werden nur dafür freigegebene, ohnehin in WooCommerce verfügbare Zahlungsarten angeboten. Zusätzlich erscheint: **„Durch die ausgewählte Einlagerungsoption können nur bestimmte Zahlungsarten angeboten werden.“** Die Zahlung wird auch serverseitig geprüft.
+
+## Express und Einlagerung schließen sich aus
+
+Ab 1.43.1 können WLM-Express-Versand und Gratis Einlagerung nicht gleichzeitig für einen neuen Checkout gewählt werden. Bei Einlagerung verschwinden die WLM-Express-Versandarten und deren kurzfristige Vorschautermine. Ein kurzer Hinweis erklärt den Ausschluss; manipulierte Auswahlversuche werden serverseitig abgefangen.
+
+War zuvor Express gewählt, wird beim Wechsel zu einem Einlagerungsfenster die tatsächlich verfügbare reguläre Variante derselben WLM-Versandart verwendet. Eine alte Express-Zusatzauswahl wird entfernt. Kosten und Liefertermin werden neu berechnet, bevor das Fenster übernommen wird. Ist kein regulärer Versand möglich oder ist dieser zu spät, bleibt das Fenster nicht wählbar beziehungsweise die Änderung wird abgewiesen und der vorherige Zustand wiederhergestellt. Es wird kein beliebiger anderer Versandweg ungefragt ausgewählt.
+
+Auch die angebotenen Einlagerungsfenster werden gegen den regulären Versand geprüft, wenn aktuell noch „So schnell wie möglich“ mit Express gewählt ist. Ein nur per Express erfüllbares Fenster wird daher nicht als Einlagerungsoption angeboten.
+
+Bei Rückkehr zu **„So schnell wie möglich“** oder ausgeschalteter Aktion stehen die bisher regulär verfügbaren WLM-Expressoptionen wieder zur Auswahl. Express wird dabei **nicht automatisch gewählt**, und entfernte alte Express-Zusatzauswahlen werden nicht wieder aktiviert. Außerhalb einer Einlagerung werden bestehende Expresslaufzeiten, Lager-/Mengenprüfungen und Kostenregeln nicht umgebaut.
+
+Bereits aufgegebene Bestellungen, einschließlich eventuell zuvor mit 1.43.0 aufgegebener Express-Einlagerungsbestellungen, werden nicht nachträglich umgeschrieben. Zusätzliche Expressmethoden fremder Plugins ohne bekannte WLM-Zuordnung sind nicht automatisch anhand ihrer Beschriftung erkennbar; eine hierfür gewünschte Anbindung muss anhand der tatsächlichen Method-ID gesondert geprüft werden.
 
 ## Nicht auswählbare und nachträglich ungültige Fenster
 
@@ -70,5 +82,6 @@ Der Standard-Connector überträgt nicht automatisch beliebige WooCommerce-Order
 5. Einen Artikel/Menge mit späterer Verfügbarkeit hinzufügen: zu frühe Fenster gesperrt; ungültige vorhandene Auswahl erfordert neue Entscheidung.
 6. Testbestellung abschließen: Termine, Ship-by, Mailposition und JTL-Import prüfen.
 7. Zahlung/Statuswechsel sowie Ausschalten der Aktion prüfen: aufgegebene Einlagerungsbestellung behält ihren Termin.
+8. Express wählen und danach Einlagerung: reguläre Versandvariante, kein Expressaufschlag oder Express-Vorschautermin. Zurück auf Standard: Express wieder verfügbar, aber nicht automatisch gewählt.
 
 Die lokale Testinstallation bildet nicht sämtliche Oxygen-, Theme-, Zahlungsanbieter- und JTL-Konfigurationen des Live-Shops ab. Daher keine Installation beziehungsweise Live-Aktivierung allein auf Grundlage eines pauschalen Kompatibilitätsversprechens.

@@ -2,6 +2,20 @@
 
 All notable changes to WooCommerce Lieferzeiten Manager will be documented in this file.
 
+## [1.43.1] - 2026-11-09
+
+### Fixed
+- WLM-Express und Gratis Einlagerung für neue Checkout-Auswahlen gegenseitig ausgeschlossen; native Expressraten und kurzfristige Express-Vorschautermine bei Einlagerung entfernt.
+- Wechsel von Express zu Einlagerung verwendet die verfügbare reguläre Variante derselben Versandart, entfernt alte Express-Zusatzauswahlen und validiert das Fenster neu; Fehlwahl rollt den Zustand zurück.
+- Einlagerungsfenster bei bisher ausgewähltem Express bereits gegen reguläre Laufzeit geprüft. Rückkehr zu ASAP stellt Expressverfügbarkeit wieder her, ohne Express automatisch zu aktivieren.
+- Serverseitige Paket-/Cache-Sicherung, Abwehr alter Express-Aktivierungsrequests und kurze Checkout-Erklärung ergänzt.
+
+### Scope
+- Bestehende Expressregeln außerhalb einer Einlagerung, Calculator, Produktdaten, Datums-Hotfix, Stock/SKU, Zuschläge, REST-Listen und aufgegebene Bestellungen unverändert.
+- Klassischer Express-Button erhält ausschließlich eine zusätzliche Einlagerungs-Schutzbedingung.
+
+---
+
 ## [1.43.0] - 2026-11-09
 
 ### Added
