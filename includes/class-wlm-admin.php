@@ -117,6 +117,12 @@ class WLM_Admin {
             if (!isset($_POST['_wpnonce']) || !wp_verify_nonce($_POST['_wpnonce'], 'woocommerce-settings')) {
                 return;
             }
+
+            // This tab saves only its own option, never the existing shipping/notification settings.
+            if (isset($_POST['wlm_free_storage_form'])) {
+                WLM_Free_Storage_Admin::save_from_post();
+                return;
+            }
             
             // Save settings
             if (isset($_POST['wlm_settings'])) {
@@ -400,6 +406,9 @@ class WLM_Admin {
                 <a href="<?php echo $is_wc_settings ? 'admin.php?page=wc-settings&tab=shipping&section=wlm&wlm_tab=notifications' : '?page=wlm-settings&tab=notifications'; ?>" class="nav-tab <?php echo $active_tab === 'notifications' ? 'nav-tab-active' : ''; ?>">
                     <?php esc_html_e('Benachrichtigungen', 'woo-lieferzeiten-manager'); ?>
                 </a>
+                <a href="<?php echo $is_wc_settings ? 'admin.php?page=wc-settings&tab=shipping&section=wlm&wlm_tab=free-storage' : '?page=wlm-settings&tab=free-storage'; ?>" class="nav-tab <?php echo $active_tab === 'free-storage' ? 'nav-tab-active' : ''; ?>">
+                    <?php esc_html_e('Gratis Einlagerung', 'woo-lieferzeiten-manager'); ?>
+                </a>
                 <a href="<?php echo $is_wc_settings ? 'admin.php?page=wc-settings&tab=shipping&section=wlm&wlm_tab=export-import' : '?page=wlm-settings&tab=export-import'; ?>" class="nav-tab <?php echo $active_tab === 'export-import' ? 'nav-tab-active' : ''; ?>">
                     <?php esc_html_e('Export / Import', 'woo-lieferzeiten-manager'); ?>
                 </a>
@@ -423,6 +432,9 @@ class WLM_Admin {
                     break;
                 case 'notifications':
                     $this->render_notifications_tab();
+                    break;
+                case 'free-storage':
+                    WLM_Free_Storage_Admin::render();
                     break;
                 case 'export-import':
                     $this->render_export_import_tab();

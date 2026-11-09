@@ -1,0 +1,74 @@
+# Gratis Einlagerung – Woo Lieferzeiten Manager 1.43.0
+
+## Vor dem Update
+
+Datenbank und bisherige Plugin-Dateien sichern. Zuerst auf einer Staging-Kopie mit den tatsächlich eingesetzten Zahlungsplugins und dem JTL-Connector testen. Das Update nimmt keine bestehende Bestellung oder Produktberechnung in eine Einlagerungsaktion auf. Die neue Aktion ist nach Installation **deaktiviert**.
+
+Es darf weiterhin nur **eine Version des Woo Lieferzeiten Managers aktiv** sein. Im Shop gab es zuvor mehrere Plugin-Ordner. Dieses ZIP enthält ausschließlich `woo-lieferzeiten-manager/`. Beim Hochladen die aktuell verwendete Installation ersetzen; nicht eine zweite Installation parallel aktivieren. Falls WordPress eine unerwartet alte Version zum Ersetzen anbietet, zunächst die Plugin-Ordner prüfen statt ein weiteres Duplikat zu aktivieren. Inaktive Altordner nicht ohne vorherige Sicherung löschen.
+
+## Backend
+
+Unter **WooCommerce → Einstellungen → Versand → Lieferzeiten Manager / MEGA Versandmanager → Gratis Einlagerung** liegt der neue Tab. Die Beschriftung des bestehenden Versand-Unterbereichs richtet sich nach dem bisherigen Plugin.
+
+Hier lässt sich die Aktion ein-/ausschalten. Außerdem werden Zahlungsarten per Checkbox freigegeben. Die Liste zeigt auch installierte, momentan deaktivierte Zahlungsarten; eine Einlagerungsfreigabe aktiviert diese nicht automatisch in WooCommerce. Ohne freigegebene Zahlungsmethode kann kein Einlagerungszeitfenster gewählt werden.
+
+Lieferzeitfenster haben Beginn, Ende und eine optionale Bezeichnung. Ohne individuelle Bezeichnung wird der Datumsbereich angezeigt. Fenster können geändert, hinzugefügt oder entfernt werden. Änderungen betreffen zukünftige Auswahlvorgänge; bereits aufgegebene Einlagerungsbestellungen behalten ihre gespeicherten Termine.
+
+Vorgegeben sind:
+
+| Eintreffen beim Kunden von | bis |
+|---|---|
+| 01.03.2027 | 05.03.2027 |
+| 08.03.2027 | 12.03.2027 |
+| 15.03.2027 | 19.03.2027 |
+| 22.03.2027 | 26.03.2027 |
+| 29.03.2027 | 02.04.2027 |
+| 05.04.2027 | 09.04.2027 |
+
+## Block-Checkout
+
+Nach Aktivierung erscheint automatisch eine Radioauswahl vor dem Zahlungsbereich. Der gespeicherte Seiteninhalt und das Oxygen-Layout werden nicht umgeschrieben. Die Ergänzung nutzt die nativen Checkout-Innenblöcke von WooCommerce.
+
+**So schnell wie möglich** ist Standard. Lieferzeitraum, Artikel, Preise und Zahlungsarten entsprechen dann dem bisherigen Verhalten.
+
+Ein anderes Fenster gilt für **die gesamte Bestellung** und beschreibt das **Eintreffen beim Kunden**, nicht die Versandwoche. Neben dem gewählten Fenster erscheint in der Positionsübersicht genau eine kostenlose Zeile: `Gratis Einlagerung – Lieferung [Zeitfenster]`. Bei einem Wechsel wird sie aktualisiert; bei Rückkehr zum Standard verschwindet sie.
+
+Die neue Zeile ist kein zusätzliches Lagerprodukt und verändert weder Warenkorbmengen noch Versandbedingungen, Stock-/SKU-Anzeige, Gutscheine oder Gesamtbetrag. Beim Bestellabschluss entsteht daraus eine echte Bestellposition mit Menge 1 und 0,00 € ohne Produktreferenz/SKU. Diese Position ist im Standard-WooCommerce-Mailtemplate sichtbar.
+
+Bei Einlagerung werden nur dafür freigegebene, ohnehin in WooCommerce verfügbare Zahlungsarten angeboten. Zusätzlich erscheint: **„Durch die ausgewählte Einlagerungsoption können nur bestimmte Zahlungsarten angeboten werden.“** Die Zahlung wird auch serverseitig geprüft.
+
+## Nicht auswählbare und nachträglich ungültige Fenster
+
+Die Prüfung berücksichtigt die aktuelle Warenkorbzusammensetzung und Mengen, Verfügbarkeit, Bearbeitungszeit sowie die tatsächlich gewählte WLM-Versandart. Liegt das regulär berechnete späteste Lieferdatum hinter dem angebotenen Fenster oder kann nicht rechtzeitig versendet werden, ist das Fenster ausgegraut und nicht wählbar. Bereits begonnene/abgelaufene Fenster werden ebenfalls gesperrt.
+
+Der Versandtermin wird vom Ende des gewünschten Eintrefffensters anhand der maximalen Versandlaufzeit zurückgerechnet. Die mögliche früheste/späteste Zustellung muss vollständig in das gewählte Fenster passen. Konfigurierte Werktage und Feiertage werden berücksichtigt. Feiertage müssen – wie bisher – im Plugin hinterlegt sein; diese Erweiterung lädt keinen neuen Feiertagskalender.
+
+Ändern sich Warenkorb, Adresse oder Versandart, wird erneut geprüft. Wird die bisherige Auswahl ungültig, erscheint ein Hinweis und der Bestellabschluss wird bis zur erneuten gültigen Auswahl beziehungsweise Rückkehr zu „So schnell wie möglich“ blockiert. Es wird keine unerfüllbare Einlagerungszusage still übernommen.
+
+Ohne zuverlässig berechenbare WLM-Versandart, bei virtuellen/leeren Warenkörben oder mehreren Paketen mit unterschiedlichen Versandarten bleibt der Standard möglich, aber die Einlagerungsfenster sind nicht verfügbar.
+
+## Bestelldaten und bestehende Schnittstellen
+
+Für Einlagerungsbestellungen werden die bestehenden Felder `_wlm_earliest_delivery`, `_wlm_latest_delivery`, `_wlm_delivery_window` und `_wlm_ship_by_date` auf das gewählte Fenster beziehungsweise den passenden Versandtermin gesetzt. Damit lesen vorhandene Plugin-Schnittstellen dieselben konsistenten Termine; es wird kein neuer REST-Listenendpunkt eingeführt.
+
+Zusätzlich hält die Bestellung einen Einlagerungssnapshot. Zahlungsstatuswechsel, die Danke-Seite und das spätere Ausschalten der Aktion überschreiben diesen nicht wieder mit den Standardterminen. Alte Bestellungen ohne Einlagerungssnapshot behalten ihr bisheriges Verhalten.
+
+## JTL: vor Live-Freigabe unbedingt prüfen
+
+Der geprüfte offizielle JTL-WooCommerce-Connector exportiert produktlose Artikelpositionen mit Name, Menge und Preis ohne SKU. Das ist ein positiver Exportnachweis, aber **keine Garantie für den Import oder eure Workflows in der konkret eingesetzten JTL-Wawi**.
+
+Vor Freigabe mindestens eine Einlagerungsbestellung über euren echten Connector importieren. Prüfen: genau eine kostenlose Freiposition, keine neue Lagerartikelanlage, keine zusätzliche SKU, unveränderte Beträge/Versandkosten, sichtbares Zeitfenster in Mails und erhaltene Liefer-/Versanddaten nach Zahlung.
+
+Der Standard-Connector überträgt nicht automatisch beliebige WooCommerce-Order-Metafelder. Falls eure Versandsteuerung bereits die WLM-REST-Routen verwendet, stehen dort die angepassten bestehenden Datumsfelder zur Verfügung. Falls JTL die Versandplanung aus anderen Feldern ableitet, ist diese bestehende Anbindung separat zu prüfen. Die Positionsbezeichnung allein steuert keinen JTL-Versandworkflow.
+
+## Kurzer Abnahmetest
+
+1. Aktion ausgeschaltet: Kasse, Lieferberechnung, SKU/Lagerstatus und Zahlungsarten unverändert.
+2. Aktion einschalten, mindestens eine aktive Zahlungsart freigeben und Einstellungen speichern.
+3. Standardauswahl prüfen; dann ein zulässiges Fenster wählen: eine 0-€-Zeile und nur erlaubte Zahlungen.
+4. Zwischen zwei Fenstern wechseln; anschließend auf Standard zurück: keine doppelte oder verbleibende Zeile.
+5. Einen Artikel/Menge mit späterer Verfügbarkeit hinzufügen: zu frühe Fenster gesperrt; ungültige vorhandene Auswahl erfordert neue Entscheidung.
+6. Testbestellung abschließen: Termine, Ship-by, Mailposition und JTL-Import prüfen.
+7. Zahlung/Statuswechsel sowie Ausschalten der Aktion prüfen: aufgegebene Einlagerungsbestellung behält ihren Termin.
+
+Die lokale Testinstallation bildet nicht sämtliche Oxygen-, Theme-, Zahlungsanbieter- und JTL-Konfigurationen des Live-Shops ab. Daher keine Installation beziehungsweise Live-Aktivierung allein auf Grundlage eines pauschalen Kompatibilitätsversprechens.

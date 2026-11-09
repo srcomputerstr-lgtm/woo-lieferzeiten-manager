@@ -570,6 +570,9 @@ class WLM_Core {
             WLM_Core::log('Could not get order object for ID: ' . $order_id);
             return;
         }
+        if (class_exists('WLM_Free_Storage') && WLM_Free_Storage::has_storage_order($order)) {
+            return;
+        }
         // Get chosen shipping method
         $shipping_methods = $order->get_shipping_methods();
         

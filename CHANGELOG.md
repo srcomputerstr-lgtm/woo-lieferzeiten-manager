@@ -2,6 +2,21 @@
 
 All notable changes to WooCommerce Lieferzeiten Manager will be documented in this file.
 
+## [1.43.0] - 2026-11-09
+
+### Added
+- Abschaltbare Aktion „Gratis Einlagerung“ mit eigenem Backend-Tab, pflegbaren Lieferzeitfenstern und freigegebenen Zahlungsarten; initial deaktiviert.
+- Native Radioauswahl im WooCommerce Block-Checkout für den Eintreffzeitraum der gesamten Bestellung. Standard „So schnell wie möglich“ verwendet unverändert die bisherige Berechnung.
+- Serverseitige Prüfung gegen den aktuellen Warenkorb-/Versandtermin und den konfigurierten Werktags-/Feiertagskalender; zu frühe oder nicht erfüllbare Zeitfenster werden ausgegraut und abgewiesen.
+- Kostenfreie Anzeigezeile im Checkout und genau eine echte SKU-lose 0-Euro-Bestellposition für Mails und Connector-Export; kein künstliches Warenkorbprodukt und keine Gebühr.
+- Serverseitige und Blocks-Zahlungsfilter, konsistente Liefer-/Ship-by-Daten sowie Schutz ausgewählter Bestelltermine vor späterer Standard-Neuberechnung.
+
+### Scope
+- Datums-Hotfix, zentraler Calculator, Produktfelder, SKU-/Stock-JavaScript, Versandmethoden, Zuschläge, REST-Routen und Benachrichtigungsklassen bleiben unverändert.
+- JTL-Wawi-Import und shopindividuelle Checkout-/Zahlungsanbieter müssen vor Live-Aktivierung mit einer Testbestellung geprüft werden.
+
+---
+
 ## [1.42.20] - 2026-11-04
 
 ### Fixed

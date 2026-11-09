@@ -524,6 +524,20 @@ class WLM_Blocks_Integration implements IntegrationInterface {
             }
         }
         
+        // Only the optional selected storage window overrides delivery dates; stock/SKU data stays untouched.
+        if (class_exists('WLM_Free_Storage')) {
+            foreach ($delivery_info as $storage_method_id => &$storage_info) {
+                $storage_window = WLM_Free_Storage::instance()->get_storage_window($storage_method_id);
+                if ($storage_window) {
+                    $storage_info['delivery_window'] = $storage_window['window'];
+                    $storage_info['earliest_date'] = $storage_window['earliest_date'];
+                    $storage_info['latest_date'] = $storage_window['latest_date'];
+                    $storage_info['ship_by_date'] = $storage_window['ship_by_date'];
+                }
+            }
+            unset($storage_info);
+        }
+
         return array(
             'delivery_info' => $delivery_info,
             'cart_items_stock' => $cart_items_stock

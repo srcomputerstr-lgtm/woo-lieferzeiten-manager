@@ -487,6 +487,9 @@ class WLM_Frontend {
      * @param int $order_id Order ID.
      */
     public function save_delivery_timeframe_fields($order_id) {
+        if (class_exists('WLM_Free_Storage') && WLM_Free_Storage::has_storage_order(wc_get_order($order_id))) {
+            return;
+        }
         if (!empty($_POST['wlm_earliest_delivery'])) {
             update_post_meta($order_id, '_wlm_earliest_delivery', sanitize_text_field($_POST['wlm_earliest_delivery']));
         }
@@ -583,6 +586,9 @@ class WLM_Frontend {
      * @param \WC_Order $order Order object.
      */
     public function save_delivery_timeframe_fields_blocks($order) {
+        if (class_exists('WLM_Free_Storage') && WLM_Free_Storage::has_storage_order($order)) {
+            return;
+        }
         $order_id = $order->get_id();
         
         WLM_Core::log('save_delivery_timeframe_fields_blocks called for order ' . $order_id);
@@ -775,6 +781,9 @@ class WLM_Frontend {
         
         // Get from session
         $delivery_data = WC()->session ? WC()->session->get('wlm_delivery_timeframe') : null;
+        if (class_exists('WLM_Free_Storage') && WLM_Free_Storage::has_storage_order($order)) {
+            $delivery_data = WLM_Free_Storage::order_delivery_data($order);
+        }
         
         if (!$delivery_data || empty($delivery_data['earliest']) || empty($delivery_data['latest'])) {
             WLM_Core::log('No delivery timeframe in session for order ' . $order_id);
@@ -896,6 +905,10 @@ class WLM_Frontend {
         // DEBUG: Log every time hook fires
         error_log("WLM DEBUG: Hook fired! Order #{$order_id}: {$old_status} → {$new_status}");
         
+        if (class_exists('WLM_Free_Storage') && WLM_Free_Storage::has_storage_order($order)) {
+            return;
+        }
+
         // Only recalculate when order moves to processing (payment received)
         if ($new_status !== 'processing') {
             error_log("WLM DEBUG: Skipping - new status is not 'processing'");
