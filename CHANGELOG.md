@@ -2,6 +2,22 @@
 
 All notable changes to WooCommerce Lieferzeiten Manager will be documented in this file.
 
+## [1.43.2] - 2026-11-10
+
+### Fixed
+- Kostenfreie Einlagerungszeile übernimmt horizontale Innenabstände der nativen WooCommerce-Bestellübersicht.
+- Überschrift „Liefertermin / Gratis Einlagerung“ außerhalb des umrandeten Auswahlkastens als native Checkout-Schrittüberschrift platziert.
+
+### Added
+- Automatische stabile SKU je Options-ID (EINLAGER-001, EINLAGER-002 usw.), read-only Backend-Spalte und SKU-Snapshot auf neuen Einlagerungsbestellungen/Positionen.
+- Neue Nummern werden fortlaufend vergeben; Umsortieren, Datumsänderungen oder Entfernen nummerieren vorhandene Optionen nicht um.
+- Separater optionaler JTL-Connector-Adapter ergänzt ausschließlich die exportierte SKU einer markierten produktlosen 0-Euro-Position. Gesonderte Installation und JTL-Abnahme erforderlich.
+
+### Scope
+- Calculator, Termine, Versandkosten, Express-/Zahlungsprüfung, echte Produkt-SKUs und bereits aufgegebene Bestellungen bleiben unverändert.
+
+---
+
 ## [1.43.1] - 2026-11-09
 
 ### Fixed

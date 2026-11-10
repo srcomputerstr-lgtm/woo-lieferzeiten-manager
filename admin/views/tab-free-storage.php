@@ -90,6 +90,7 @@ if (!defined('ABSPATH')) {
                         <th scope="col"><?php esc_html_e('Beginn (Eintreffen)', 'woo-lieferzeiten-manager'); ?></th>
                         <th scope="col"><?php esc_html_e('Ende (Eintreffen)', 'woo-lieferzeiten-manager'); ?></th>
                         <th scope="col"><?php esc_html_e('Bezeichnung (optional)', 'woo-lieferzeiten-manager'); ?></th>
+                        <th scope="col"><?php esc_html_e('SKU (automatisch)', 'woo-lieferzeiten-manager'); ?></th>
                         <th scope="col"><span class="screen-reader-text"><?php esc_html_e('Aktionen', 'woo-lieferzeiten-manager'); ?></span></th>
                     </tr>
                 </thead>
@@ -113,6 +114,7 @@ if (!defined('ABSPATH')) {
                             <td>
                                 <input type="text" data-field="label" name="wlm_free_storage[periods][<?php echo esc_attr($index); ?>][label]" value="<?php echo esc_attr($input_label); ?>" placeholder="<?php esc_attr_e('Automatisch aus dem Zeitraum', 'woo-lieferzeiten-manager'); ?>" aria-label="<?php esc_attr_e('Bezeichnung (optional)', 'woo-lieferzeiten-manager'); ?>">
                             </td>
+                            <td><code class="wlm-free-storage-sku"><?php echo esc_html($period['sku']); ?></code></td>
                             <td><button type="button" class="button wlm-free-storage-remove-period" aria-label="<?php esc_attr_e('Lieferzeitfenster entfernen', 'woo-lieferzeiten-manager'); ?>"><?php esc_html_e('Entfernen', 'woo-lieferzeiten-manager'); ?></button></td>
                         </tr>
                     <?php endforeach; ?>
@@ -122,6 +124,7 @@ if (!defined('ABSPATH')) {
         <p id="wlm-free-storage-empty-periods" class="description" <?php echo !empty($settings['periods']) ? 'hidden' : ''; ?>><?php esc_html_e('Es sind keine Lieferzeitfenster konfiguriert.', 'woo-lieferzeiten-manager'); ?></p>
         <p><button type="button" id="wlm-free-storage-add-period" class="button"><?php esc_html_e('Lieferzeitfenster hinzufügen', 'woo-lieferzeiten-manager'); ?></button></p>
         <p class="description"><?php esc_html_e('Zu frühe oder nicht erreichbare Lieferzeitfenster werden im Checkout ausgegraut und serverseitig abgewiesen. Versandart, Werktage und konfigurierte Feiertage werden berücksichtigt. Nach Änderungen am Warenkorb wird die Auswahl erneut geprüft.', 'woo-lieferzeiten-manager'); ?></p>
+        <p class="description"><?php esc_html_e('Jede Option erhält automatisch eine dauerhafte SKU: EINLAGER-001, EINLAGER-002 usw. Neue Optionen bekommen beim Speichern die nächste Nummer. Änderungen an Datum, Bezeichnung oder Reihenfolge ändern die SKU nicht; gelöschte Nummern werden nicht neu vergeben.', 'woo-lieferzeiten-manager'); ?></p>
         <p class="description"><?php esc_html_e('Speichern Sie über „Änderungen speichern“ im bestehenden WooCommerce-Formular. Leere oder ungültige Zeilen müssen vor dem Speichern vervollständigt oder entfernt werden.', 'woo-lieferzeiten-manager'); ?></p>
     </div>
 </div>

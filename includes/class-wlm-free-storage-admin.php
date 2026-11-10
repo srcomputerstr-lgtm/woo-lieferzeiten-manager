@@ -213,6 +213,8 @@ class WLM_Free_Storage_Admin {
             'enabled' => in_array($data['enabled'], array(true, 1, '1'), true),
             'allowed_gateways' => array_values(array_unique($allowed_gateways)),
             'periods' => $periods,
+            // The client may edit dates/labels, never assigned SKUs or retired numbers.
+            'sku_map' => WLM_Free_Storage::instance()->get_settings()['sku_map'],
         ));
     }
 

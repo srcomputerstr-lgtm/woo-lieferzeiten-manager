@@ -96,7 +96,33 @@ class WLM_Free_Storage {
             }
         }
         $result['allowed_gateways'] = array_values(array_unique($result['allowed_gateways']));
+        // Keep retired IDs reserved: reordering/deleting a period must not reuse its SKU.
+        $registry = array();
+        $used = array();
+        $next = 0;
+        foreach ((isset($data['sku_map']) && is_array($data['sku_map']) ? $data['sku_map'] : array()) as $id => $sku) {
+            $id = (string) $id;
+            if ('' === $id || sanitize_key($id) !== $id || 'asap' === $id || !self::valid_sku($sku) || isset($used[$sku])) {
+                continue;
+            }
+            $registry[$id] = $sku;
+            $used[$sku] = true;
+            $next = max($next, (int) substr($sku, 9));
+        }
+        foreach ($result['periods'] as &$period) {
+            if (!isset($registry[$period['id']])) {
+                $registry[$period['id']] = sprintf('EINLAGER-%03d', ++$next);
+            }
+            $period['sku'] = $registry[$period['id']];
+        }
+        unset($period);
+        $result['sku_map'] = $registry;
         return $result;
+    }
+
+    public static function valid_sku($sku) {
+        return is_string($sku) && preg_match('/^EINLAGER-[0-9]{3,8}$/D', $sku)
+            && (int) substr($sku, 9) > 0 && sprintf('EINLAGER-%03d', (int) substr($sku, 9)) === $sku;
     }
 
     private static function flag($value) {
@@ -322,11 +348,11 @@ class WLM_Free_Storage {
         return array(
             'enabled' => $boolean, 'selected' => $string, 'selected_valid' => $boolean, 'invalid_reason' => $string,
             'options' => array('type' => 'array', 'readonly' => true, 'items' => array('type' => 'object', 'properties' => array(
-                'id' => $string, 'label' => $string, 'start' => $string, 'end' => $string, 'available' => $boolean, 'reason' => $string,
+                'id' => $string, 'label' => $string, 'start' => $string, 'end' => $string, 'available' => $boolean, 'reason' => $string, 'sku' => $string,
             ))),
             'default_window' => $window, 'selected_window' => $window,
             'allowed_gateways' => array('type' => 'array', 'readonly' => true, 'items' => $string),
-            'title' => $string, 'payment_notice' => $string, 'line_name' => $string,
+            'title' => $string, 'payment_notice' => $string, 'line_name' => $string, 'line_sku' => $string,
         );
     }
 
@@ -340,12 +366,14 @@ class WLM_Free_Storage {
         $storage_context = $settings['enabled'] && ('asap' === $selection || $conflict) ? $this->baseline(null, true) : $context;
         $options = array();
         $chosen = null;
+        $chosen_sku = '';
         $reason = 'asap' === $selection ? '' : 'Das gewählte Einlagerungsfenster ist nicht mehr vorhanden. Bitte wählen Sie erneut.';
         foreach ($settings['periods'] as $period) {
             $evaluated = $this->evaluate_period($period, $settings, $storage_context);
-            $options[] = array('id' => $period['id'], 'label' => $period['label'], 'start' => $period['start'], 'end' => $period['end'], 'available' => '' === $evaluated['reason'], 'reason' => $evaluated['reason']);
+            $options[] = array('id' => $period['id'], 'label' => $period['label'], 'start' => $period['start'], 'end' => $period['end'], 'available' => '' === $evaluated['reason'], 'reason' => $evaluated['reason'], 'sku' => $period['sku']);
             if ($period['id'] === $selection) {
                 $chosen = $evaluated['window'];
+                $chosen_sku = $period['sku'];
                 $reason = $evaluated['reason'];
             }
         }
@@ -361,6 +389,7 @@ class WLM_Free_Storage {
             'allowed_gateways' => $settings['allowed_gateways'], 'title' => 'Gratis Einlagerung',
             'payment_notice' => self::PAYMENT_NOTICE,
             'line_name' => 'asap' !== $selection && '' === $reason && $chosen ? 'Gratis Einlagerung – Lieferung ' . $chosen['window'] : '',
+            'line_sku' => 'asap' !== $selection && '' === $reason && $chosen ? $chosen_sku : '',
         );
     }
 
@@ -799,7 +828,7 @@ class WLM_Free_Storage {
                 }
             }
             $this->remove_storage_lines($order);
-            foreach (array('_wlm_storage_selection', '_wlm_storage_start', '_wlm_storage_end', '_wlm_storage_ship_by', '_wlm_storage_label', '_wlm_storage_method_name', '_wlm_storage_default_window', '_wlm_storage_allowed_gateways') as $key) {
+            foreach (array('_wlm_storage_selection', '_wlm_storage_start', '_wlm_storage_end', '_wlm_storage_ship_by', '_wlm_storage_label', '_wlm_storage_method_name', '_wlm_storage_default_window', '_wlm_storage_allowed_gateways', '_wlm_storage_sku') as $key) {
                 $order->delete_meta_data($key);
             }
             return;
@@ -810,6 +839,7 @@ class WLM_Free_Storage {
         // Defaults are recalculated for each draft update, never from client-hidden fields.
         $order->update_meta_data('_wlm_storage_default_window', $default);
         $order->update_meta_data('_wlm_storage_selection', $selected['id']);
+        $order->update_meta_data('_wlm_storage_sku', $selected['period']['sku']);
         $order->update_meta_data('_wlm_storage_start', $window['earliest_date']);
         $order->update_meta_data('_wlm_storage_end', $window['latest_date']);
         $order->update_meta_data('_wlm_storage_ship_by', $window['ship_by_date']);
@@ -857,6 +887,11 @@ class WLM_Free_Storage {
         $line->set_total_tax(0);
         $line->set_taxes(array('total' => array(), 'subtotal' => array()));
         $line->update_meta_data('_wlm_free_storage', '1');
+        $sku = $order->get_meta('_wlm_storage_sku', true);
+        if (self::valid_sku($sku)) {
+            $line->update_meta_data('_wlm_storage_sku', $sku);
+            $line->update_meta_data('Einlagerungs-SKU', $sku);
+        }
         if ($new) {
             $order->add_item($line);
         }

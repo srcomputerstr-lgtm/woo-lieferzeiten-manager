@@ -1,6 +1,6 @@
+.wlm-storage-checkout-step > .wc-block-components-checkout-step__heading { margin-bottom: 16px; }
 .wlm-storage-selector { margin: 0 0 24px; padding: 18px; border: 1px solid currentColor; border-radius: 4px; }
 .wlm-storage-selector fieldset { margin: 0; padding: 0; border: 0; min-width: 0; }
-.wlm-storage-selector legend { font-size: 1.1em; font-weight: 600; padding: 0; }
 .wlm-storage-description { font-size: .9em; margin: 10px 0 16px; }
 .wlm-storage-option { display: flex; align-items: flex-start; gap: 10px; padding: 9px 0; cursor: pointer; }
 .wlm-storage-option input[type="radio"] { flex: 0 0 auto; margin: 4px 0 0; width: 16px; height: 16px; }
@@ -9,7 +9,8 @@
 .wlm-storage-option:focus-within { outline: 2px solid currentColor; outline-offset: 3px; }
 .wlm-storage-payment-notice { font-size: .9em; margin: 16px 0 0; padding: 10px; background: rgba(0, 0, 0, .045); }
 .wlm-storage-error { color: #b32d2e; font-size: .9em; margin: 12px 0 0; }
-.wlm-storage-summary { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin: 12px 0; padding: 12px 0; border-top: 1px solid rgba(0, 0, 0, .12); }
+.wlm-storage-summary { margin: 0; }
+.wlm-storage-summary > .wlm-storage-summary-content.wc-block-components-totals-item { display: flex; flex-wrap: nowrap; justify-content: space-between; align-items: flex-start; gap: 16px; padding-block: 16px; }
 .wlm-storage-summary-name { min-width: 0; }
 .wlm-storage-summary-name strong { font-size: .9em; font-weight: 500; }
 .wlm-storage-summary-name small { display: block; opacity: .7; font-size: .8em; margin-top: 4px; }

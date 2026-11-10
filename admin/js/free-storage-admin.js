@@ -89,6 +89,11 @@
             var startCell = document.createElement('td');
             var endCell = document.createElement('td');
             var labelCell = document.createElement('td');
+            var skuCell = document.createElement('td');
+            var sku = document.createElement('code');
+            sku.className = 'wlm-free-storage-sku';
+            sku.textContent = 'Wird beim Speichern vergeben';
+            skuCell.appendChild(sku);
             var actionsCell = document.createElement('td');
             var idInput = makeInput('hidden', 'id');
             idInput.value = id;
@@ -109,6 +114,7 @@
             row.appendChild(startCell);
             row.appendChild(endCell);
             row.appendChild(labelCell);
+            row.appendChild(skuCell);
             row.appendChild(actionsCell);
             periods.appendChild(row);
             reindexRows();
@@ -174,6 +180,7 @@
                 ['id', 'label', 'start', 'end'].forEach(function (field) {
                     row.querySelector('[data-field="' + field + '"]').value = period[field] || '';
                 });
+                row.querySelector('.wlm-free-storage-sku').textContent = period.sku || '';
                 var generatedLabel = period.start.slice(8, 10) + '.' + period.start.slice(5, 7) + '.' + period.start.slice(0, 4)
                     + ' – ' + period.end.slice(8, 10) + '.' + period.end.slice(5, 7) + '.' + period.end.slice(0, 4);
                 if (period.label === generatedLabel) {

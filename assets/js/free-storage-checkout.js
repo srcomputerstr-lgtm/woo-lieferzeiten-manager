@@ -105,9 +105,12 @@
             defaultLabel += ' – ' + storage.default_window.window;
         }
         var options = [{ id: 'asap', label: defaultLabel, available: true }].concat(storage.options || []);
-        return h('section', { className: 'wlm-storage-selector', 'aria-busy': busy },
+        return h('div', { className: 'wlm-storage-checkout-step wc-block-components-checkout-step' },
+            h('div', { className: 'wc-block-components-checkout-step__heading' },
+                h('h2', { id: 'wlm-storage-heading', className: 'wc-block-components-title wc-block-components-checkout-step__title' }, 'Liefertermin / Gratis Einlagerung')),
+            h('section', { className: 'wlm-storage-selector', 'aria-busy': busy, 'aria-labelledby': 'wlm-storage-heading' },
             h('fieldset', { disabled: busy },
-                h('legend', null, 'Liefertermin / Gratis Einlagerung'),
+                h('legend', { className: 'screen-reader-text' }, 'Liefertermin / Gratis Einlagerung'),
                 h('p', { className: 'wlm-storage-description' }, 'Wählen Sie, wann die gesamte Bestellung bei Ihnen eintreffen soll. Die Einlagerung bis zum gewählten Lieferzeitraum ist kostenlos.'),
                 options.map(function (option) {
                     var blocked = option.available === false;
@@ -125,7 +128,7 @@
             selected !== 'asap' ? h('p', { className: 'wlm-storage-express-notice', role: 'status' }, 'Gratis Einlagerung ist nicht mit Express-Versand kombinierbar. Bei „So schnell wie möglich“ stehen die regulär verfügbaren Express-Optionen wieder zur Auswahl.') : null,
             selected !== 'asap' && storage.selected_valid ? h('p', { className: 'wlm-storage-payment-notice', role: 'status' }, storage.payment_notice || 'Durch die ausgewählte Einlagerungsoption können nur bestimmte Zahlungsarten angeboten werden.') : null,
             invalid ? h('p', { className: 'wlm-storage-error', role: 'alert' }, invalidMessage) : null,
-            error ? h('p', { className: 'wlm-storage-error', role: 'alert' }, error) : null);
+            error ? h('p', { className: 'wlm-storage-error', role: 'alert' }, error) : null));
     }
     function StorageSummary() {
         var cart = useCart();
@@ -138,11 +141,12 @@
         var decimal = totals.currency_decimal_separator || ',';
         var zero = decimals ? '0' + decimal + '0'.repeat(decimals) : '0';
         if (!prefix && !suffix) { suffix = ' ' + (totals.currency_symbol || '€'); }
-        return h('div', { className: 'wlm-storage-summary wc-block-components-order-summary-item', 'aria-live': 'polite' },
+        return h('div', { className: 'wlm-storage-summary wc-block-components-totals-wrapper', 'aria-live': 'polite' },
+            h('div', { className: 'wlm-storage-summary-content wc-block-components-totals-item' },
             h('div', { className: 'wlm-storage-summary-name' },
                 h('strong', null, storage.line_name),
                 h('small', null, '1 × Gratis Einlagerung')),
-            h('span', { className: 'wlm-storage-summary-price' }, prefix + zero + suffix));
+            h('span', { className: 'wlm-storage-summary-price' }, prefix + zero + suffix)));
     }
     if (typeof api.registerCheckoutBlock === 'function') {
         api.registerCheckoutBlock({

@@ -1,4 +1,4 @@
-# Gratis Einlagerung – Woo Lieferzeiten Manager 1.43.1
+# Gratis Einlagerung – Woo Lieferzeiten Manager 1.43.2
 
 ## Vor dem Update
 
@@ -13,6 +13,10 @@ Unter **WooCommerce → Einstellungen → Versand → Lieferzeiten Manager / MEG
 Hier lässt sich die Aktion ein-/ausschalten. Außerdem werden Zahlungsarten per Checkbox freigegeben. Die Liste zeigt auch installierte, momentan deaktivierte Zahlungsarten; eine Einlagerungsfreigabe aktiviert diese nicht automatisch in WooCommerce. Ohne freigegebene Zahlungsmethode kann kein Einlagerungszeitfenster gewählt werden.
 
 Lieferzeitfenster haben Beginn, Ende und eine optionale Bezeichnung. Ohne individuelle Bezeichnung wird der Datumsbereich angezeigt. Fenster können geändert, hinzugefügt oder entfernt werden. Änderungen betreffen zukünftige Auswahlvorgänge; bereits aufgegebene Einlagerungsbestellungen behalten ihre gespeicherten Termine.
+
+Jede Option hat ab 1.43.2 eine automatische SKU, sichtbar in der eigenen Backend-Spalte: `EINLAGER-001`, `EINLAGER-002` usw. Die sechs bestehenden Standardoptionen erhalten 001–006 in ihrer bisherigen Reihenfolge. Nach dem Update einmal die Einlagerungseinstellungen speichern, um die angezeigte Zuordnung dauerhaft in der Konfiguration festzuhalten. Bei neuen Zeilen erscheint die endgültige Nummer nach dem Speichern.
+
+Die SKU gehört zur dauerhaften Options-ID, nicht zur jeweils aktuellen Tabellenposition: Umsortieren und Ändern von Datum oder Bezeichnung behalten sie bei. Entfernte Nummern bleiben reserviert; neu angelegte Optionen bekommen die nächste freie laufende Nummer. Aufgegebene Bestellungen behalten den gespeicherten SKU-Snapshot, auch wenn die Aktion oder die Option später geändert wird. Alte Bestellungen ohne SKU werden nicht nachträglich umgeschrieben.
 
 Vorgegeben sind:
 
@@ -29,11 +33,13 @@ Vorgegeben sind:
 
 Nach Aktivierung erscheint automatisch eine Radioauswahl vor dem Zahlungsbereich. Der gespeicherte Seiteninhalt und das Oxygen-Layout werden nicht umgeschrieben. Die Ergänzung nutzt die nativen Checkout-Innenblöcke von WooCommerce.
 
+Ab 1.43.2 steht die Überschrift wie bei Versand-/Zahlungsoptionen über dem umrandeten Auswahlkasten. Die Gratisposition in der Bestellübersicht übernimmt die nativen horizontalen Innenabstände.
+
 **So schnell wie möglich** ist Standard. Lieferzeitraum, Artikel, Preise und Zahlungsarten entsprechen dann dem bisherigen Verhalten.
 
 Ein anderes Fenster gilt für **die gesamte Bestellung** und beschreibt das **Eintreffen beim Kunden**, nicht die Versandwoche. Neben dem gewählten Fenster erscheint in der Positionsübersicht genau eine kostenlose Zeile: `Gratis Einlagerung – Lieferung [Zeitfenster]`. Bei einem Wechsel wird sie aktualisiert; bei Rückkehr zum Standard verschwindet sie.
 
-Die neue Zeile ist kein zusätzliches Lagerprodukt und verändert selbst weder Warenkorbmengen, Stock-/SKU-Anzeige, Gutscheine noch Gesamtbetrag. Beim Bestellabschluss entsteht daraus eine echte Bestellposition mit Menge 1 und 0,00 € ohne Produktreferenz/SKU. Diese Position ist im Standard-WooCommerce-Mailtemplate sichtbar. Ein ausdrücklich gewählter Wechsel von Express zu Einlagerung berechnet hingegen den regulären Versand ohne Expressaufschlag neu, wie im folgenden Abschnitt beschrieben.
+Die neue Zeile ist kein zusätzliches Lagerprodukt und verändert selbst weder Warenkorbmengen, Stock-/SKU-Anzeige, Gutscheine noch Gesamtbetrag. Beim Bestellabschluss entsteht daraus eine echte Bestellposition mit Menge 1 und 0,00 € ohne Produktreferenz. Ab 1.43.2 wird ihre Einlagerungs-SKU auf der Bestellung und der Position gespeichert; sie ist als Positionsmetadatum „Einlagerungs-SKU“ auch im Standard-WooCommerce-Mailtemplate sichtbar. Ein ausdrücklich gewählter Wechsel von Express zu Einlagerung berechnet hingegen den regulären Versand ohne Expressaufschlag neu, wie im folgenden Abschnitt beschrieben.
 
 Bei Einlagerung werden nur dafür freigegebene, ohnehin in WooCommerce verfügbare Zahlungsarten angeboten. Zusätzlich erscheint: **„Durch die ausgewählte Einlagerungsoption können nur bestimmte Zahlungsarten angeboten werden.“** Die Zahlung wird auch serverseitig geprüft.
 
@@ -67,9 +73,9 @@ Zusätzlich hält die Bestellung einen Einlagerungssnapshot. Zahlungsstatuswechs
 
 ## JTL: vor Live-Freigabe unbedingt prüfen
 
-Der geprüfte offizielle JTL-WooCommerce-Connector exportiert produktlose Artikelpositionen mit Name, Menge und Preis ohne SKU. Das ist ein positiver Exportnachweis, aber **keine Garantie für den Import oder eure Workflows in der konkret eingesetzten JTL-Wawi**.
+Der geprüfte offizielle JTL-WooCommerce-Connector exportiert produktlose Artikelpositionen mit Name, Menge und Preis, liest deren SKU aber nicht aus beliebigen Positionsmetadaten. **Das WLM-Update allein setzt deshalb noch keine SKU im Standard-JTL-Export.** Dafür wird der separat mitgelieferte Connector-Adapter benötigt; siehe `INSTALLATION-JTL-EINLAGER-SKU.md` und `integrations/jtl/WlmFreeStorage/Bootstrap.php` im Plugin-ZIP. Der Adapter setzt ausschließlich das exportierte SKU-Feld und lässt die Produktreferenz leer. Es wird kein Lager-/Warenkorbprodukt angelegt.
 
-Vor Freigabe mindestens eine Einlagerungsbestellung über euren echten Connector importieren. Prüfen: genau eine kostenlose Freiposition, keine neue Lagerartikelanlage, keine zusätzliche SKU, unveränderte Beträge/Versandkosten, sichtbares Zeitfenster in Mails und erhaltene Liefer-/Versanddaten nach Zahlung.
+Vor Freigabe mindestens eine Einlagerungsbestellung über euren echten Connector importieren. Prüfen: genau eine kostenlose Freiposition mit richtiger SKU, keine neue Lagerartikelanlage, unveränderte Beträge/Versandkosten, sichtbares Zeitfenster in Mails und erhaltene Liefer-/Versanddaten nach Zahlung. Erst in der echten JTL-Wawi prüfen, dass die SKU erhalten bleibt und die gewünschte Workflowbedingung darauf reagieren kann. Ein korrektes Exportfeld allein garantiert keinen Wawi-Workflow.
 
 Der Standard-Connector überträgt nicht automatisch beliebige WooCommerce-Order-Metafelder. Falls eure Versandsteuerung bereits die WLM-REST-Routen verwendet, stehen dort die angepassten bestehenden Datumsfelder zur Verfügung. Falls JTL die Versandplanung aus anderen Feldern ableitet, ist diese bestehende Anbindung separat zu prüfen. Die Positionsbezeichnung allein steuert keinen JTL-Versandworkflow.
 
