@@ -545,6 +545,12 @@ class WLM_Admin {
             return;
         }
 
+        if ($active_section === 'surcharges' && isset($data['wlm_surcharges'])
+            && !WLM_Cart_Exclusion::valid_surcharges($data['wlm_surcharges'])) {
+            wp_send_json_error(__('Ungültiger Warenkorb-Ausschluss: Attribut, Taxonomie oder Versandklasse und mindestens einen auszuschließenden Wert auswählen. Bisherige Einstellungen bleiben erhalten.', 'woo-lieferzeiten-manager'));
+            return;
+        }
+
         // Save settings (MERGE with existing to prevent data loss)
         if (isset($data['wlm_settings'])) {
             error_log('Saving wlm_settings: ' . print_r($data['wlm_settings'], true));

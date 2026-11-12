@@ -2,6 +2,18 @@
 
 All notable changes to WooCommerce Lieferzeiten Manager will be documented in this file.
 
+## [1.43.4] - 2026-11-12
+
+### Added
+- Neue Zuschlags-Auswahl „Warenkorb: keiner“: Jeder ausgewählte Attribut-/Taxonomie-/Versandklassenwert ist ein Ausschluss für den gesamten Warenkorb, auch bei getrennten Versandpaketen.
+- Ein ausgeschlossener Artikel verhindert ausschließlich den betreffenden Zuschlag; mehrere Werte wirken als ODER-Ausschluss.
+- Klarer Hinweis im Backend, eigene Auslesung für neue Ausschlüsse und Schutz vor leer gespeicherten Ausschlussregeln. Keine automatische Umstellung vorhandener Regeln.
+
+### Scope
+- Alte „none of“-/„only“-/„all of“-Regeln, Maßprüfung, Gebühren-/Zählregeln, Strategien sowie Lieferzeiten, Einlagerung/SKUs, Express, Zahlungsarten und REST unverändert.
+
+---
+
 ## [1.43.3] - 2026-11-12
 
 ### Added

@@ -1285,8 +1285,32 @@ class WLM_Calculator {
                     $values = $condition['values'] ?? array();
                     $logic = $condition['logic'] ?? 'at_least_one';
                     
+                    // Validate this new mode before even formatting diagnostic field values.
+                    if ($logic === WLM_Cart_Exclusion::LOGIC && !WLM_Cart_Exclusion::is_valid($condition)) {
+                        $all_conditions_met = false;
+                        break;
+                    }
+
                     WLM_Core::log('[WLM Surcharge] Condition - Type: ' . $condition_type . ', Attribute: ' . $attr_slug . ', Values: ' . print_r($values, true));
                     
+                    // Opt-in veto across the complete cart, not just this shipping package.
+                    if ($logic === WLM_Cart_Exclusion::LOGIC) {
+                        $exclusion_contents = $package['contents'];
+                        if (WC()->cart) {
+                            $exclusion_contents = array_merge($exclusion_contents, WC()->cart->get_cart());
+                        }
+                        foreach ($exclusion_contents as $exclusion_item) {
+                            if (!WLM_Cart_Exclusion::allows($exclusion_item['data'] ?? null, $condition)) {
+                                $all_conditions_met = false;
+                                break;
+                            }
+                        }
+                        if (!$all_conditions_met) {
+                            break;
+                        }
+                        continue;
+                    }
+
                     // Numeric shipping dimensions are a separate, fail-closed condition type.
                     if ($condition_type === 'dimension') {
                         $dimension_match = false;
@@ -1631,6 +1655,10 @@ class WLM_Calculator {
                 $attr_slug = $condition['attribute'] ?? '';
                 $values = $condition['values'] ?? array();
                 
+                if (($condition['logic'] ?? '') === WLM_Cart_Exclusion::LOGIC) {
+                    return true; // Retain invalid new rules so they are rejected below.
+                }
+
                 // Keep even malformed numeric rules so the match below rejects them safely.
                 if ($condition_type === 'dimension') {
                     return true;
@@ -1656,6 +1684,14 @@ class WLM_Calculator {
                 $values = $condition['values'] ?? array();
                 $logic = $condition['logic'] ?? 'at_least_one';
                 
+                // Product notices remain a single-product preview, not a cart-side effect.
+                if ($logic === WLM_Cart_Exclusion::LOGIC) {
+                    if (!WLM_Cart_Exclusion::allows($product, $condition)) {
+                        return false;
+                    }
+                    continue;
+                }
+
                 if ($condition_type === 'dimension') {
                     if (!WLM_Dimension_Condition::matches($product, $condition)) {
                         return false;

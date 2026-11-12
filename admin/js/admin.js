@@ -11,6 +11,7 @@
             this.initSortable();
             this.initSelect2(); // Global Init
             this.initConditionTypes(); // Visibility handling only
+            this.initSurchargeLogicNotices();
             this.loadGermanizedProviders();
             this.bindEvents();
             
@@ -37,6 +38,20 @@
                     self.toggleDimensionCondition($(this).closest('.wlm-attribute-condition-row'));
                 }
             });
+        },
+
+        initSurchargeLogicNotices: function() {
+            var self = this;
+            $('.wlm-surcharge-item .wlm-attribute-condition-row').each(function() {
+                self.updateSurchargeLogicNotice($(this));
+            });
+        },
+
+        updateSurchargeLogicNotice: function($row) {
+            if (!$row.closest('.wlm-surcharge-item').length) return;
+            var type = $row.find('.wlm-condition-type-select').val();
+            var isValueCondition = type === 'attribute' || type === 'taxonomy' || type === 'shipping_class';
+            $row.find('.wlm-none-in-cart-notice').toggle(isValueCondition && $row.find('.wlm-logic-select').val() === 'none_in_cart');
         },
 
         initSelect2: function() {
@@ -85,6 +100,9 @@
             $(document).on('click', '.wlm-remove-attribute-condition', this.removeAttributeCondition.bind(this));
             $(document).on('change', '.wlm-attribute-select', this.loadAttributeValues.bind(this));
             $(document).on('change', '.wlm-condition-type-select', this.handleConditionTypeChange.bind(this));
+            $(document).on('change', '.wlm-surcharge-item .wlm-logic-select', function(e) {
+                this.updateSurchargeLogicNotice($(e.currentTarget).closest('.wlm-attribute-condition-row'));
+            }.bind(this));
             $(document).on('click', '#wlm-add-holiday', this.addHoliday.bind(this));
             $(document).on('click', '.wlm-remove-holiday', this.removeHoliday.bind(this));
             $(document).on('click', '#wlm-run-cronjob-now', this.runCronjob.bind(this));
@@ -578,6 +596,7 @@
             var $row = $select.closest('.wlm-attribute-condition-row');
             var $attrSelect = $row.find('.wlm-attribute-select');
             var $valsSelect = $row.find('.wlm-values-select2');
+            this.updateSurchargeLogicNotice($row);
 
             var wasDimension = $row.data('wlm-dimension-active') === true;
             if ($row.find('.wlm-dimension-fields').length) {

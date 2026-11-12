@@ -302,6 +302,7 @@ $dimension_unit = get_option('woocommerce_dimension_unit', 'cm');
                                                                 <option value="all" <?php selected($logic, 'all'); ?>><?php esc_html_e('all of', 'woo-lieferzeiten-manager'); ?></option>
                                                                 <option value="none" <?php selected($logic, 'none'); ?>><?php esc_html_e('none of', 'woo-lieferzeiten-manager'); ?></option>
                                                                 <option value="only" <?php selected($logic, 'only'); ?>><?php esc_html_e('only', 'woo-lieferzeiten-manager'); ?></option>
+                                                                <option value="none_in_cart" <?php selected($logic, 'none_in_cart'); ?>><?php esc_html_e('Warenkorb: keiner', 'woo-lieferzeiten-manager'); ?></option>
                                                             </select>
                                                             
                                                             <!-- Bedingungstyp -->
@@ -356,6 +357,10 @@ $dimension_unit = get_option('woocommerce_dimension_unit', 'cm');
                                                             <button type="button" class="button wlm-remove-attribute-condition" style="margin-left: auto;"><?php esc_html_e('Entfernen', 'woo-lieferzeiten-manager'); ?></button>
                                                         </div>
                                                         
+                                                        <p class="description wlm-none-in-cart-notice" style="margin: 10px 0; padding: 10px 12px; border-left: 4px solid #2271b1; background: #fff; color: #1d2327; font-weight: 600;<?php echo !$is_dimension && $logic === 'none_in_cart' ? '' : ' display: none;'; ?>">
+                                                            <?php esc_html_e('Kein Artikel im gesamten Warenkorb darf einen ausgewählten Wert besitzen. Ein Treffer verhindert diesen Zuschlag – auch bei getrennten Versandpaketen.', 'woo-lieferzeiten-manager'); ?>
+                                                        </p>
+
                                                         <!-- Werte (Select2 Multiselect) -->
                                                         <div class="wlm-condition-values" style="margin-top: 10px;<?php echo $is_dimension ? ' display: none;' : ''; ?>">
                                                             <label style="display: block; margin-bottom: 5px; font-weight: 600;"><?php esc_html_e('Werte:', 'woo-lieferzeiten-manager'); ?></label>
@@ -484,6 +489,7 @@ $dimension_unit = get_option('woocommerce_dimension_unit', 'cm');
                 <option value="all"><?php esc_html_e('all of', 'woo-lieferzeiten-manager'); ?></option>
                 <option value="none"><?php esc_html_e('none of', 'woo-lieferzeiten-manager'); ?></option>
                 <option value="only"><?php esc_html_e('only', 'woo-lieferzeiten-manager'); ?></option>
+                <option value="none_in_cart"><?php esc_html_e('Warenkorb: keiner', 'woo-lieferzeiten-manager'); ?></option>
             </select>
             
             <!-- Bedingungstyp -->
@@ -537,6 +543,10 @@ $dimension_unit = get_option('woocommerce_dimension_unit', 'cm');
             <button type="button" class="button wlm-remove-attribute-condition" style="margin-left: auto;"><?php esc_html_e('Entfernen', 'woo-lieferzeiten-manager'); ?></button>
         </div>
         
+        <p class="description wlm-none-in-cart-notice" style="display: none; margin: 10px 0; padding: 10px 12px; border-left: 4px solid #2271b1; background: #fff; color: #1d2327; font-weight: 600;">
+            <?php esc_html_e('Kein Artikel im gesamten Warenkorb darf einen ausgewählten Wert besitzen. Ein Treffer verhindert diesen Zuschlag – auch bei getrennten Versandpaketen.', 'woo-lieferzeiten-manager'); ?>
+        </p>
+
         <!-- Werte (Select2 Multiselect) -->
         <div class="wlm-condition-values" style="margin-top: 10px;">
             <label style="display: block; margin-bottom: 5px; font-weight: 600;"><?php esc_html_e('Werte:', 'woo-lieferzeiten-manager'); ?></label>
