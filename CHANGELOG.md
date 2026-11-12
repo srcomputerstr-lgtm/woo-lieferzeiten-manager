@@ -2,6 +2,19 @@
 
 All notable changes to WooCommerce Lieferzeiten Manager will be documented in this file.
 
+## [1.43.3] - 2026-11-12
+
+### Added
+- Neuer Zuschlags-Bedingungstyp „Produktmaß“: WooCommerce-Versandmaße Länge, Breite, Höhe oder längste Seite streng größer als einen frei einstellbaren Grenzwert.
+- Dezimalgrenzwerte, sichtbare Maßeinheit je Regel und WooCommerce-eigene Varianten-/Elternmaß-Vererbung; keine Addition oder Mengenmultiplikation der Seitenlängen.
+- Gleiche Maßprüfung für Zuschlagsberechnung und konfigurierte Produkthinweise; fehlende Maße lösen keinen Treffer aus.
+- Ungültige Maßbedingungen werden vor dem Speichern zurückgewiesen statt entfernt; gespeicherte ungültige Regeln sind auch zur Laufzeit nicht pauschal gültig.
+
+### Scope
+- Bestehende Attribute-, Taxonomie- und Versandklassenbedingungen, Zuschlagshäufigkeit, Beträge, Strategien, Steuerfelder und alle Lieferzeit-/Einlagerungs-/Express-/Zahlungsfunktionen unverändert.
+
+---
+
 ## [1.43.2] - 2026-11-10
 
 ### Fixed

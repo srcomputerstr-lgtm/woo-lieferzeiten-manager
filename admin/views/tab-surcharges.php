@@ -8,6 +8,8 @@
 if (!defined('ABSPATH')) {
     exit;
 }
+
+$dimension_unit = get_option('woocommerce_dimension_unit', 'cm');
 ?>
 
 <div class="wlm-tab-content">
@@ -288,11 +290,14 @@ if (!defined('ABSPATH')) {
                                                     $logic = $condition['logic'] ?? 'at_least_one';
                                                     $values = $condition['values'] ?? array();
                                                     $condition_type = $condition['type'] ?? 'attribute';
+                                                    $is_dimension = $condition_type === 'dimension';
+                                                    $condition_dimension = $condition['dimension'] ?? 'max';
+                                                    $condition_unit = $condition['unit'] ?? $dimension_unit;
                                                     ?>
                                                     <div class="wlm-attribute-condition-row" style="margin-bottom: 15px; padding: 15px; border: 1px solid #ddd; border-radius: 4px; background: #f9f9f9;">
                                                         <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 10px;">
                                                             <!-- Logik-Operator -->
-                                                            <select name="wlm_surcharges[<?php echo $index; ?>][attribute_conditions][<?php echo $cond_index; ?>][logic]" class="wlm-logic-select" style="width: 150px;">
+                                                            <select name="wlm_surcharges[<?php echo $index; ?>][attribute_conditions][<?php echo $cond_index; ?>][logic]" class="wlm-logic-select" style="width: 150px;<?php echo $is_dimension ? ' display: none;' : ''; ?>">
                                                                 <option value="at_least_one" <?php selected($logic, 'at_least_one'); ?>><?php esc_html_e('at least one of', 'woo-lieferzeiten-manager'); ?></option>
                                                                 <option value="all" <?php selected($logic, 'all'); ?>><?php esc_html_e('all of', 'woo-lieferzeiten-manager'); ?></option>
                                                                 <option value="none" <?php selected($logic, 'none'); ?>><?php esc_html_e('none of', 'woo-lieferzeiten-manager'); ?></option>
@@ -304,40 +309,55 @@ if (!defined('ABSPATH')) {
                                                                 <option value="attribute" <?php selected($condition_type, 'attribute'); ?>><?php esc_html_e('Attribut', 'woo-lieferzeiten-manager'); ?></option>
                                                                 <option value="taxonomy" <?php selected($condition_type, 'taxonomy'); ?>><?php esc_html_e('Taxonomie', 'woo-lieferzeiten-manager'); ?></option>
                                                                 <option value="shipping_class" <?php selected($condition_type, 'shipping_class'); ?>><?php esc_html_e('Versandklasse', 'woo-lieferzeiten-manager'); ?></option>
+                                                                <option value="dimension" <?php selected($condition_type, 'dimension'); ?>><?php esc_html_e('Produktmaß', 'woo-lieferzeiten-manager'); ?></option>
                                                             </select>
                                                             
                                                             <!-- Attribut/Taxonomie -->
-                                                            <select name="wlm_surcharges[<?php echo $index; ?>][attribute_conditions][<?php echo $cond_index; ?>][attribute]" class="wlm-attribute-select" style="width: 200px;">
+                                                            <select name="wlm_surcharges[<?php echo $index; ?>][attribute_conditions][<?php echo $cond_index; ?>][attribute]" class="wlm-attribute-select" style="width: 200px;<?php echo $is_dimension ? ' display: none;' : ''; ?>">
                                                                 <option value=""><?php esc_html_e('-- Wählen --', 'woo-lieferzeiten-manager'); ?></option>
                                                                 <optgroup label="<?php esc_attr_e('Produkt-Attribute', 'woo-lieferzeiten-manager'); ?>">
                                                                     <?php
                                                                     foreach ($attribute_taxonomies as $tax) {
                                                                         $attr_name = wc_attribute_taxonomy_name($tax->attribute_name);
-                                                                        $selected = ($condition['attribute'] === $attr_name) ? 'selected' : '';
+                                                                        $selected = (($condition['attribute'] ?? '') === $attr_name) ? 'selected' : '';
                                                                         echo '<option value="' . esc_attr($attr_name) . '" ' . $selected . '>' . esc_html($tax->attribute_label) . '</option>';
                                                                     }
                                                                     ?>
                                                                 </optgroup>
                                                                 <optgroup label="<?php esc_attr_e('Taxonomien', 'woo-lieferzeiten-manager'); ?>">
-                                                                    <option value="product_cat" <?php selected($condition['attribute'], 'product_cat'); ?>><?php esc_html_e('Produktkategorie', 'woo-lieferzeiten-manager'); ?></option>
-                                                                    <option value="product_tag" <?php selected($condition['attribute'], 'product_tag'); ?>><?php esc_html_e('Produkt-Tag', 'woo-lieferzeiten-manager'); ?></option>
+                                                                    <option value="product_cat" <?php selected($condition['attribute'] ?? '', 'product_cat'); ?>><?php esc_html_e('Produktkategorie', 'woo-lieferzeiten-manager'); ?></option>
+                                                                    <option value="product_tag" <?php selected($condition['attribute'] ?? '', 'product_tag'); ?>><?php esc_html_e('Produkt-Tag', 'woo-lieferzeiten-manager'); ?></option>
                                                                 </optgroup>
                                                                 <optgroup label="<?php esc_attr_e('Versandklassen', 'woo-lieferzeiten-manager'); ?>">
                                                                     <?php
                                                                     $shipping_classes = WC()->shipping()->get_shipping_classes();
                                                                     foreach ($shipping_classes as $shipping_class) {
-                                                                        $selected = ($condition['attribute'] === $shipping_class->slug) ? 'selected' : '';
+                                                                        $selected = (($condition['attribute'] ?? '') === $shipping_class->slug) ? 'selected' : '';
                                                                         echo '<option value="' . esc_attr($shipping_class->slug) . '" ' . $selected . '>' . esc_html($shipping_class->name) . '</option>';
                                                                     }
                                                                     ?>
                                                                 </optgroup>
                                                             </select>
                                                             
+                                                            <span class="wlm-dimension-fields" style="align-items: center; gap: 8px; flex-wrap: wrap; <?php echo $is_dimension ? 'display: inline-flex;' : 'display: none;'; ?>">
+                                                                <select name="wlm_surcharges[<?php echo $index; ?>][attribute_conditions][<?php echo $cond_index; ?>][dimension]" style="width: 150px;" aria-label="<?php esc_attr_e('Produktmaß', 'woo-lieferzeiten-manager'); ?>" <?php disabled(!$is_dimension); ?>>
+                                                                    <option value="max" <?php selected($condition_dimension, 'max'); ?>><?php esc_html_e('Längste Seite', 'woo-lieferzeiten-manager'); ?></option>
+                                                                    <option value="length" <?php selected($condition_dimension, 'length'); ?>><?php esc_html_e('Länge', 'woo-lieferzeiten-manager'); ?></option>
+                                                                    <option value="width" <?php selected($condition_dimension, 'width'); ?>><?php esc_html_e('Breite', 'woo-lieferzeiten-manager'); ?></option>
+                                                                    <option value="height" <?php selected($condition_dimension, 'height'); ?>><?php esc_html_e('Höhe', 'woo-lieferzeiten-manager'); ?></option>
+                                                                </select>
+                                                                <span style="white-space: nowrap;"><?php esc_html_e('größer als', 'woo-lieferzeiten-manager'); ?></span>
+                                                                <input type="text" inputmode="decimal" name="wlm_surcharges[<?php echo $index; ?>][attribute_conditions][<?php echo $cond_index; ?>][threshold]" value="<?php echo esc_attr($condition['threshold'] ?? ''); ?>" class="small-text" style="width: 90px !important;" aria-label="<?php esc_attr_e('Schwellenwert', 'woo-lieferzeiten-manager'); ?>" <?php disabled(!$is_dimension); ?>>
+                                                                <span class="wlm-dimension-unit"><?php echo esc_html($condition_unit); ?></span>
+                                                                <input type="hidden" name="wlm_surcharges[<?php echo $index; ?>][attribute_conditions][<?php echo $cond_index; ?>][unit]" value="<?php echo esc_attr($condition_unit); ?>" <?php disabled(!$is_dimension); ?>>
+                                                                <input type="hidden" name="wlm_surcharges[<?php echo $index; ?>][attribute_conditions][<?php echo $cond_index; ?>][operator]" value="gt" <?php disabled(!$is_dimension); ?>>
+                                                            </span>
+
                                                             <button type="button" class="button wlm-remove-attribute-condition" style="margin-left: auto;"><?php esc_html_e('Entfernen', 'woo-lieferzeiten-manager'); ?></button>
                                                         </div>
                                                         
                                                         <!-- Werte (Select2 Multiselect) -->
-                                                        <div class="wlm-condition-values" style="margin-top: 10px;">
+                                                        <div class="wlm-condition-values" style="margin-top: 10px;<?php echo $is_dimension ? ' display: none;' : ''; ?>">
                                                             <label style="display: block; margin-bottom: 5px; font-weight: 600;"><?php esc_html_e('Werte:', 'woo-lieferzeiten-manager'); ?></label>
                                                             <select 
                                                                 multiple="multiple" 
@@ -471,6 +491,7 @@ if (!defined('ABSPATH')) {
                 <option value="attribute"><?php esc_html_e('Attribut', 'woo-lieferzeiten-manager'); ?></option>
                 <option value="taxonomy"><?php esc_html_e('Taxonomie', 'woo-lieferzeiten-manager'); ?></option>
                 <option value="shipping_class"><?php esc_html_e('Versandklasse', 'woo-lieferzeiten-manager'); ?></option>
+                <option value="dimension"><?php esc_html_e('Produktmaß', 'woo-lieferzeiten-manager'); ?></option>
             </select>
             
             <!-- Attribut/Taxonomie/Versandklasse -->
@@ -499,6 +520,20 @@ if (!defined('ABSPATH')) {
                 </optgroup>
             </select>
             
+            <span class="wlm-dimension-fields" style="display: none; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <select name="wlm_surcharges[{{SURCHARGE_INDEX}}][attribute_conditions][{{CONDITION_INDEX}}][dimension]" style="width: 150px;" aria-label="<?php esc_attr_e('Produktmaß', 'woo-lieferzeiten-manager'); ?>" disabled>
+                    <option value="max"><?php esc_html_e('Längste Seite', 'woo-lieferzeiten-manager'); ?></option>
+                    <option value="length"><?php esc_html_e('Länge', 'woo-lieferzeiten-manager'); ?></option>
+                    <option value="width"><?php esc_html_e('Breite', 'woo-lieferzeiten-manager'); ?></option>
+                    <option value="height"><?php esc_html_e('Höhe', 'woo-lieferzeiten-manager'); ?></option>
+                </select>
+                <span style="white-space: nowrap;"><?php esc_html_e('größer als', 'woo-lieferzeiten-manager'); ?></span>
+                <input type="text" inputmode="decimal" name="wlm_surcharges[{{SURCHARGE_INDEX}}][attribute_conditions][{{CONDITION_INDEX}}][threshold]" value="" class="small-text" style="width: 90px !important;" aria-label="<?php esc_attr_e('Schwellenwert', 'woo-lieferzeiten-manager'); ?>" disabled>
+                <span class="wlm-dimension-unit"><?php echo esc_html($dimension_unit); ?></span>
+                <input type="hidden" name="wlm_surcharges[{{SURCHARGE_INDEX}}][attribute_conditions][{{CONDITION_INDEX}}][unit]" value="<?php echo esc_attr($dimension_unit); ?>" disabled>
+                <input type="hidden" name="wlm_surcharges[{{SURCHARGE_INDEX}}][attribute_conditions][{{CONDITION_INDEX}}][operator]" value="gt" disabled>
+            </span>
+
             <button type="button" class="button wlm-remove-attribute-condition" style="margin-left: auto;"><?php esc_html_e('Entfernen', 'woo-lieferzeiten-manager'); ?></button>
         </div>
         

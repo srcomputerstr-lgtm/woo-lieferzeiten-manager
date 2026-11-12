@@ -1287,6 +1287,22 @@ class WLM_Calculator {
                     
                     WLM_Core::log('[WLM Surcharge] Condition - Type: ' . $condition_type . ', Attribute: ' . $attr_slug . ', Values: ' . print_r($values, true));
                     
+                    // Numeric shipping dimensions are a separate, fail-closed condition type.
+                    if ($condition_type === 'dimension') {
+                        $dimension_match = false;
+                        foreach ($package['contents'] as $item) {
+                            if (WLM_Dimension_Condition::matches($item['data'], $condition)) {
+                                $dimension_match = true;
+                                break;
+                            }
+                        }
+                        if (!$dimension_match) {
+                            $all_conditions_met = false;
+                            break;
+                        }
+                        continue;
+                    }
+
                     // For shipping_class, attribute is not needed (values are the slugs)
                     if ($condition_type === 'shipping_class') {
                         if (empty($values)) {
@@ -1615,6 +1631,11 @@ class WLM_Calculator {
                 $attr_slug = $condition['attribute'] ?? '';
                 $values = $condition['values'] ?? array();
                 
+                // Keep even malformed numeric rules so the match below rejects them safely.
+                if ($condition_type === 'dimension') {
+                    return true;
+                }
+
                 // For shipping_class, attribute is not needed (values are the slugs)
                 if ($condition_type === 'shipping_class') {
                     return !empty($values);
@@ -1635,6 +1656,13 @@ class WLM_Calculator {
                 $values = $condition['values'] ?? array();
                 $logic = $condition['logic'] ?? 'at_least_one';
                 
+                if ($condition_type === 'dimension') {
+                    if (!WLM_Dimension_Condition::matches($product, $condition)) {
+                        return false;
+                    }
+                    continue;
+                }
+
                 // Get product values based on condition type
                 $product_values = array();
                 

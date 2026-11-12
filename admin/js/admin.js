@@ -29,6 +29,14 @@
             $('.wlm-condition-type-select').each(function() {
                 $(this).trigger('change');
             });
+
+            // Type-change events are not bound yet; initialize dimension rows directly.
+            var self = this;
+            $('.wlm-surcharge-item .wlm-condition-type-select').each(function() {
+                if ($(this).val() === 'dimension') {
+                    self.toggleDimensionCondition($(this).closest('.wlm-attribute-condition-row'));
+                }
+            });
         },
 
         initSelect2: function() {
@@ -263,6 +271,12 @@
                          var $el = $(this);
                          var name = $el.attr('name');
                          if (!name || name.indexOf('wlm_surcharges') === -1) return;
+
+                         // Collection includes disabled fields; scope exclusions to dimension UI.
+                         var $conditionRow = $el.closest('.wlm-attribute-condition-row');
+                         var isDimension = $conditionRow.find('.wlm-condition-type-select').val() === 'dimension';
+                         if (!isDimension && $el.closest('.wlm-dimension-fields').length) return;
+                         if (isDimension && $el.is('.wlm-logic-select, .wlm-attribute-select, .wlm-values-select2')) return;
                          
                          var val = $el.is(':checkbox') ? ($el.is(':checked') ? $el.val() : null) : $el.val();
                          if (val === null) return;
@@ -549,17 +563,34 @@
             });
         },
 
+        toggleDimensionCondition: function($row) {
+            var type = $row.find('.wlm-condition-type-select').val();
+            var isDimension = type === 'dimension';
+            $row.data('wlm-dimension-active', isDimension);
+            $row.find('.wlm-logic-select, .wlm-condition-values').toggle(!isDimension);
+            $row.find('.wlm-attribute-select').toggle(!isDimension && type !== 'shipping_class');
+            $row.find('.wlm-dimension-fields').css('display', isDimension ? 'inline-flex' : 'none').find('input, select').prop('disabled', !isDimension);
+        },
+
         handleConditionTypeChange: function(e) {
             var $select = $(e.currentTarget);
             var type = $select.val();
             var $row = $select.closest('.wlm-attribute-condition-row');
             var $attrSelect = $row.find('.wlm-attribute-select');
             var $valsSelect = $row.find('.wlm-values-select2');
+
+            var wasDimension = $row.data('wlm-dimension-active') === true;
+            if ($row.find('.wlm-dimension-fields').length) {
+                this.toggleDimensionCondition($row);
+                if (type === 'dimension') return;
+            }
             
             if (type === 'shipping_class') {
                 $attrSelect.hide();
                 // Re-init for shipping class
-                $valsSelect.select2('destroy').empty().select2({
+                $valsSelect.select2('destroy');
+                if (!wasDimension) $valsSelect.empty();
+                $valsSelect.select2({
                     placeholder: 'Versandklassen-Slugs...', tags: true, allowClear: true, width: '100%'
                 });
                 

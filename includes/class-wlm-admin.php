@@ -538,6 +538,13 @@ class WLM_Admin {
         $active_section = isset($data['_active_section']) ? $data['_active_section'] : 'all';
         error_log('[WLM Save] Active section: ' . $active_section);
         
+        // Never drop a malformed dimension rule and accidentally save an unconditional fee.
+        if ($active_section === 'surcharges' && isset($data['wlm_surcharges'])
+            && !WLM_Dimension_Condition::valid_surcharges($data['wlm_surcharges'])) {
+            wp_send_json_error(__('Ungültige Produktmaß-Bedingung: Maß auswählen und einen Grenzwert ab 0 ohne Einheit eingeben (z. B. 200 oder 200,5). Bisherige Einstellungen bleiben erhalten.', 'woo-lieferzeiten-manager'));
+            return;
+        }
+
         // Save settings (MERGE with existing to prevent data loss)
         if (isset($data['wlm_settings'])) {
             error_log('Saving wlm_settings: ' . print_r($data['wlm_settings'], true));
@@ -718,6 +725,9 @@ class WLM_Admin {
                 if (isset($surcharge['attribute_conditions']) && is_array($surcharge['attribute_conditions'])) {
                     // Filter out empty or invalid conditions
                     $surcharge['attribute_conditions'] = array_filter($surcharge['attribute_conditions'], function($cond) {
+                        if (isset($cond['type']) && $cond['type'] === 'dimension') {
+                            return true; // Already validated before any option writes.
+                        }
                         // For shipping class: only type and values needed
                         if (isset($cond['type']) && $cond['type'] === 'shipping_class') {
                             return !empty($cond['values']);
@@ -731,6 +741,10 @@ class WLM_Admin {
                     
                     // Ensure values is always an array
                     foreach ($surcharge['attribute_conditions'] as &$cond) {
+                        if (($cond['type'] ?? '') === 'dimension') {
+                            $cond = WLM_Dimension_Condition::normalize($cond);
+                            continue;
+                        }
                         if (isset($cond['values']) && !is_array($cond['values'])) {
                             $cond['values'] = array($cond['values']);
                         }
